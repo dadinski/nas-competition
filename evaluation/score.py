@@ -19,7 +19,7 @@ if __name__ == '__main__':
         for dataset in os.listdir("labels"):
             print("== Scoring {} ==".format(dataset))
 
-            data_path = 'labels/'+dataset
+            data_path = os.path.join('labels', dataset)
 
             with open(os.path.join(data_path, 'metadata'), "r") as f:
                     metadata = json.load(f)
@@ -33,9 +33,10 @@ if __name__ == '__main__':
                 # load user predictions from file
                 
                 labels = np.load(os.path.join(data_path, 'test_y.npy'))
-                
-                prediction_file = [prediction for prediction in os.listdir('predictions') if metadata['codename'] == prediction.replace(".npy", "")][0]
-                predictions = np.load('predictions/'+prediction_file)
+
+                prediction_file = [prediction for prediction in os.listdir('predictions') if
+                                   metadata['codename'] == prediction.replace(".npy", "")][0]
+                predictions = np.load(os.path.join('predictions', prediction_file))
                 # produce accuracy score of predictions
                 labels = labels[:len(predictions)]
 

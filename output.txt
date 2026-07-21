@@ -1,0 +1,432 @@
+$ make submission=submission_baseline all
+rm -Rf scoring
+rm -Rf package
+rm -Rf package
+mkdir package
+mkdir package/predictions
+mkdir package/datasets
+cp -R datasets/* package/datasets/
+find package/datasets -name "test_y.npy" -delete
+cp -R evaluation/main.py package/main.py
+cp -R submission_baseline/* package
+cd package; python main.py
+==============================================================================
+=============    Your NAS Unseen-Data 2026 Submission is running     =============
+==============================================================================
+========== Dataset  Adaline   =============================================
+  Metadata:
+   - num_classes         : 20
+   - input_shape         : [50000, 3, 28, 28]
+   - codename            : Adaline
+   - benchmark           : 89.85
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.725702500029
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=2 (H=28,W=28)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=2
+
+=== Training ===
+  Allotted compute time remaining: ~2m,58s
+  [Trainer] Epoch  1 | val=26.71% | t/ep=  5.9s | rem=   171s
+  [Trainer] Epoch  2 | val=31.46% | t/ep=  5.9s | rem=   164s
+  [Trainer] Epoch  3 | val=33.51% | t/ep=  5.9s | rem=   156s
+  [Trainer] Epoch  4 | val=41.86% | t/ep=  6.0s | rem=   149s
+  [Trainer] Epoch  5 | val=60.81% | t/ep=  6.0s | rem=   141s
+  [Trainer] Epoch  6 | val=58.27% | t/ep=  5.9s | rem=   134s
+  [Trainer] Epoch  7 | val=67.55% | t/ep=  6.2s | rem=   126s
+  [Trainer] Epoch  8 | val=69.91% | t/ep=  5.8s | rem=   119s
+  [Trainer] Epoch  9 | val=75.71% | t/ep=  5.9s | rem=   111s
+  [Trainer] Epoch 10 | val=78.33% | t/ep=  5.9s | rem=   104s
+  [Trainer] Epoch 11 | val=77.86% | t/ep=  5.9s | rem=    97s
+  [Trainer] Epoch 12 | val=83.29% | t/ep=  6.0s | rem=    89s
+  [Trainer] Epoch 13 | val=83.12% | t/ep=  5.9s | rem=    82s
+  [Trainer] Epoch 14 | val=84.73% | t/ep=  5.8s | rem=    74s
+  [Trainer] Epoch 15 | val=85.91% | t/ep=  6.0s | rem=    67s
+  [Trainer] Epoch 16 | val=86.83% | t/ep=  5.9s | rem=    59s
+  [Trainer] Epoch 17 | val=86.43% | t/ep=  5.9s | rem=    52s
+  [Trainer] Epoch 18 | val=87.31% | t/ep=  5.9s | rem=    44s
+  [Trainer] Epoch 19 | val=87.33% | t/ep=  6.0s | rem=    37s
+  [Trainer] Epoch 20 | val=87.27% | t/ep=  5.9s | rem=    29s
+  [Trainer] Epoch 21 | val=87.34% | t/ep=  5.8s | rem=    22s
+
+=== Predicting ===
+  Allotted compute time remaining: ~22.15s
+Run time for Adaline: 158.5517356999917
+Model Training and Prediction Complete
+finished dataset: Adaline
+========== Dataset  Chester   =============================================
+  Metadata:
+   - input_shape         : [49998, 12, 8, 8]
+   - codename            : Chester
+   - benchmark           : 57.826
+   - num_classes         : 3
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.9357051999541
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=1 (H=8,W=8)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=1
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=49.06% | t/ep=  4.8s | rem=   174s
+  [Trainer] Epoch  2 | val=49.95% | t/ep=  4.5s | rem=   169s
+  [Trainer] Epoch  3 | val=48.97% | t/ep=  4.6s | rem=   163s
+  [Trainer] Epoch  4 | val=53.61% | t/ep=  4.6s | rem=   158s
+  [Trainer] Epoch  5 | val=51.62% | t/ep=  4.6s | rem=   153s
+  [Trainer] Epoch  6 | val=49.53% | t/ep=  4.6s | rem=   147s
+  [Trainer] Epoch  7 | val=53.61% | t/ep=  4.6s | rem=   142s
+  [Trainer] Epoch  8 | val=51.39% | t/ep=  4.6s | rem=   137s
+  [Trainer] Epoch  9 | val=52.35% | t/ep=  4.6s | rem=   131s
+  [Trainer] Epoch 10 | val=54.21% | t/ep=  4.7s | rem=   126s
+  [Trainer] Epoch 11 | val=53.39% | t/ep=  4.5s | rem=   120s
+  [Trainer] Epoch 12 | val=53.55% | t/ep=  4.5s | rem=   115s
+  [Trainer] Epoch 13 | val=53.85% | t/ep=  6.0s | rem=   108s
+  [Trainer] Epoch 14 | val=54.48% | t/ep=  6.9s | rem=   100s
+  [Trainer] Epoch 15 | val=54.17% | t/ep=  5.1s | rem=    94s
+  [Trainer] Epoch 16 | val=54.42% | t/ep=  5.0s | rem=    88s
+  [Trainer] Epoch 17 | val=54.22% | t/ep=  5.0s | rem=    82s
+  [Trainer] Epoch 18 | val=54.68% | t/ep=  5.0s | rem=    76s
+  [Trainer] Epoch 19 | val=54.52% | t/ep=  5.0s | rem=    70s
+  [Trainer] Epoch 20 | val=54.45% | t/ep=  4.9s | rem=    64s
+  [Trainer] Epoch 21 | val=54.42% | t/ep=  4.9s | rem=    59s
+  [Trainer] Epoch 22 | val=54.40% | t/ep=  4.9s | rem=    53s
+  [Trainer] Epoch 23 | val=54.37% | t/ep=  4.8s | rem=    47s
+  [Trainer] Epoch 24 | val=54.47% | t/ep=  4.5s | rem=    42s
+  [Trainer] Epoch 25 | val=54.34% | t/ep=  4.5s | rem=    37s
+  [Trainer] Epoch 26 | val=54.29% | t/ep=  4.6s | rem=    31s
+  [Trainer] Epoch 27 | val=54.32% | t/ep=  4.5s | rem=    26s
+  [Trainer] Epoch 28 | val=54.43% | t/ep=  4.6s | rem=    21s
+
+=== Predicting ===
+  Allotted compute time remaining: ~20.65s
+Run time for Chester: 160.07010469998932
+Model Training and Prediction Complete
+finished dataset: Chester
+========== Dataset   conway   =============================================
+  Metadata:
+   - num_classes         : 25
+   - input_shape         : [5000, 1, 10, 10]
+   - codename            : conway
+   - benchmark           : 47.53
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.99046509998152
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=1 (H=10,W=10)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=1
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=13.42% | t/ep=  4.3s | rem=   175s
+  [Trainer] Epoch  2 | val= 4.57% | t/ep=  4.3s | rem=   170s
+  [Trainer] Epoch  3 | val=21.59% | t/ep=  4.3s | rem=   165s
+  [Trainer] Epoch  4 | val= 9.63% | t/ep=  4.4s | rem=   160s
+  [Trainer] Epoch  5 | val=17.94% | t/ep=  4.3s | rem=   155s
+  [Trainer] Epoch  6 | val=28.47% | t/ep=  4.3s | rem=   150s
+  [Trainer] Epoch  7 | val=28.66% | t/ep=  4.3s | rem=   145s
+  [Trainer] Epoch  8 | val=13.68% | t/ep=  4.3s | rem=   140s
+  [Trainer] Epoch  9 | val=27.12% | t/ep=  4.3s | rem=   134s
+  [Trainer] Epoch 10 | val=32.32% | t/ep=  4.3s | rem=   129s
+  [Trainer] Epoch 11 | val= 7.39% | t/ep=  4.3s | rem=   124s
+  [Trainer] Epoch 12 | val=45.36% | t/ep=  4.3s | rem=   119s
+  [Trainer] Epoch 13 | val=40.10% | t/ep=  4.4s | rem=   114s
+  [Trainer] Epoch 14 | val=40.25% | t/ep=  4.3s | rem=   109s
+  [Trainer] Epoch 15 | val=51.95% | t/ep=  4.3s | rem=   104s
+  [Trainer] Epoch 16 | val=12.98% | t/ep=  4.3s | rem=    99s
+  [Trainer] Epoch 17 | val=26.63% | t/ep=  4.3s | rem=    94s
+  [Trainer] Epoch 18 | val=17.52% | t/ep=  4.4s | rem=    89s
+  [Trainer] Epoch 19 | val=14.27% | t/ep=  4.3s | rem=    84s
+  [Trainer] Epoch 20 | val=44.06% | t/ep=  4.3s | rem=    79s
+  [Trainer] Epoch 21 | val=42.63% | t/ep=  4.3s | rem=    74s
+  [Trainer] Epoch 22 | val=52.12% | t/ep=  4.4s | rem=    69s
+  [Trainer] Epoch 23 | val=36.44% | t/ep=  4.3s | rem=    64s
+  [Trainer] Epoch 24 | val=36.30% | t/ep=  4.3s | rem=    59s
+  [Trainer] Epoch 25 | val=47.06% | t/ep=  4.3s | rem=    54s
+  [Trainer] Epoch 26 | val=59.55% | t/ep=  4.3s | rem=    49s
+  [Trainer] Epoch 27 | val=28.78% | t/ep=  4.4s | rem=    44s
+  [Trainer] Epoch 28 | val=55.71% | t/ep=  4.3s | rem=    39s
+  [Trainer] Epoch 29 | val=87.93% | t/ep=  4.3s | rem=    33s
+  [Trainer] Epoch 30 | val=63.86% | t/ep=  4.3s | rem=    28s
+  [Trainer] Epoch 31 | val=76.48% | t/ep=  4.3s | rem=    23s
+
+=== Predicting ===
+  Allotted compute time remaining: ~23.32s
+Run time for conway: 157.36614220001502
+Model Training and Prediction Complete
+finished dataset: conway
+========== Dataset Gutenberg  =============================================
+  Metadata:
+   - input_shape         : [45000, 1, 27, 18]
+   - codename            : Gutenberg
+   - benchmark           : 40.98
+   - num_classes         : 6
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.96511059999466
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=2 (H=27,W=18)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=2
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=28.55% | t/ep=  4.4s | rem=   174s
+  [Trainer] Epoch  2 | val=25.76% | t/ep=  4.2s | rem=   169s
+  [Trainer] Epoch  3 | val=27.93% | t/ep=  4.2s | rem=   163s
+  [Trainer] Epoch  4 | val=38.29% | t/ep=  4.2s | rem=   158s
+  [Trainer] Epoch  5 | val=31.71% | t/ep=  4.3s | rem=   152s
+  [Trainer] Epoch  6 | val=26.71% | t/ep=  4.2s | rem=   147s
+  [Trainer] Epoch  7 | val=32.09% | t/ep=  4.2s | rem=   141s
+  [Trainer] Epoch  8 | val=34.48% | t/ep=  4.2s | rem=   136s
+  [Trainer] Epoch  9 | val=31.09% | t/ep=  4.3s | rem=   130s
+  [Trainer] Epoch 10 | val=31.80% | t/ep=  4.2s | rem=   125s
+  [Trainer] Epoch 11 | val=37.27% | t/ep=  4.2s | rem=   119s
+  [Trainer] Epoch 12 | val=35.81% | t/ep=  4.2s | rem=   114s
+  [Trainer] Epoch 13 | val=35.81% | t/ep=  4.3s | rem=   109s
+  [Trainer] Epoch 14 | val=31.89% | t/ep=  4.3s | rem=   103s
+  [Trainer] Epoch 15 | val=31.84% | t/ep=  4.2s | rem=    98s
+  [Trainer] Epoch 16 | val=33.15% | t/ep=  4.2s | rem=    92s
+  [Trainer] Epoch 17 | val=36.47% | t/ep=  4.2s | rem=    87s
+  [Trainer] Epoch 18 | val=37.28% | t/ep=  4.3s | rem=    81s
+  [Trainer] Epoch 19 | val=39.52% | t/ep=  4.3s | rem=    76s
+  [Trainer] Epoch 20 | val=39.83% | t/ep=  4.2s | rem=    70s
+  [Trainer] Epoch 21 | val=39.98% | t/ep=  4.2s | rem=    65s
+  [Trainer] Epoch 22 | val=41.73% | t/ep=  4.3s | rem=    59s
+  [Trainer] Epoch 23 | val=41.64% | t/ep=  4.3s | rem=    54s
+  [Trainer] Epoch 24 | val=41.65% | t/ep=  4.2s | rem=    48s
+  [Trainer] Epoch 25 | val=41.79% | t/ep=  4.2s | rem=    43s
+  [Trainer] Epoch 26 | val=41.77% | t/ep=  4.2s | rem=    37s
+  [Trainer] Epoch 27 | val=41.84% | t/ep=  4.3s | rem=    32s
+  [Trainer] Epoch 28 | val=41.72% | t/ep=  4.3s | rem=    26s
+  [Trainer] Epoch 29 | val=41.81% | t/ep=  4.2s | rem=    21s
+
+=== Predicting ===
+  Allotted compute time remaining: ~20.60s
+Run time for Gutenberg: 159.84388239996042
+Model Training and Prediction Complete
+finished dataset: Gutenberg
+========== Dataset   LaMelo   =============================================
+  Metadata:
+   - num_classes         : 10
+   - codename            : LaMelo
+   - input_shape         : [50000, 1, 24, 24]
+   - benchmark           : 85.2
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.94729110004846
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=2 (H=24,W=24)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=2
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=69.14% | t/ep=  4.8s | rem=   174s
+  [Trainer] Epoch  2 | val=72.96% | t/ep=  4.7s | rem=   169s
+  [Trainer] Epoch  3 | val=77.81% | t/ep=  4.8s | rem=   163s
+  [Trainer] Epoch  4 | val=74.10% | t/ep=  5.8s | rem=   156s
+  [Trainer] Epoch  5 | val=80.88% | t/ep=  6.4s | rem=   149s
+  [Trainer] Epoch  6 | val=76.69% | t/ep=  5.5s | rem=   142s
+  [Trainer] Epoch  7 | val=81.30% | t/ep=  5.5s | rem=   136s
+  [Trainer] Epoch  8 | val=82.90% | t/ep=  4.7s | rem=   130s
+  [Trainer] Epoch  9 | val=82.87% | t/ep=  4.8s | rem=   125s
+  [Trainer] Epoch 10 | val=82.94% | t/ep=  4.7s | rem=   119s
+  [Trainer] Epoch 11 | val=82.98% | t/ep=  4.7s | rem=   113s
+  [Trainer] Epoch 12 | val=82.77% | t/ep=  4.8s | rem=   108s
+  [Trainer] Epoch 13 | val=82.70% | t/ep=  4.7s | rem=   102s
+  [Trainer] Epoch 14 | val=82.80% | t/ep=  4.7s | rem=    97s
+  [Trainer] Epoch 15 | val=82.74% | t/ep=  4.7s | rem=    91s
+  [Trainer] Epoch 16 | val=82.92% | t/ep=  4.8s | rem=    85s
+  [Trainer] Epoch 17 | val=82.73% | t/ep=  4.7s | rem=    80s
+  [Trainer] Epoch 18 | val=82.84% | t/ep=  4.7s | rem=    74s
+  [Trainer] Epoch 19 | val=82.75% | t/ep=  4.7s | rem=    69s
+  [Trainer] Epoch 20 | val=82.72% | t/ep=  4.7s | rem=    63s
+  [Trainer] Epoch 21 | val=82.66% | t/ep=  4.7s | rem=    58s
+  [Trainer] Epoch 22 | val=82.79% | t/ep=  4.7s | rem=    52s
+  [Trainer] Epoch 23 | val=82.70% | t/ep=  4.7s | rem=    46s
+  [Trainer] Epoch 24 | val=82.58% | t/ep=  4.7s | rem=    41s
+  [Trainer] Epoch 25 | val=82.54% | t/ep=  4.7s | rem=    35s
+  [Trainer] Epoch 26 | val=82.68% | t/ep=  4.8s | rem=    30s
+  [Trainer] Epoch 27 | val=82.62% | t/ep=  4.7s | rem=    24s
+
+=== Predicting ===
+  Allotted compute time remaining: ~24.08s
+Run time for LaMelo: 156.6705459000077
+Model Training and Prediction Complete
+finished dataset: LaMelo
+========== Dataset   Mateo    =============================================
+  Metadata:
+   - num_classes         : 10
+   - input_shape         : [50000, 3, 28, 28]
+   - codename            : Mateo
+   - benchmark           : 90.87
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.8190759999561
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=2 (H=28,W=28)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=2
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=35.73% | t/ep=  6.5s | rem=   172s
+  [Trainer] Epoch  2 | val=45.64% | t/ep=  6.5s | rem=   164s
+  [Trainer] Epoch  3 | val=59.43% | t/ep=  6.5s | rem=   157s
+  [Trainer] Epoch  4 | val=78.11% | t/ep=  6.5s | rem=   149s
+  [Trainer] Epoch  5 | val=82.97% | t/ep=  7.1s | rem=   141s
+  [Trainer] Epoch  6 | val=84.14% | t/ep=  6.9s | rem=   133s
+  [Trainer] Epoch  7 | val=85.57% | t/ep=  7.6s | rem=   124s
+  [Trainer] Epoch  8 | val=85.71% | t/ep=  7.0s | rem=   116s
+  [Trainer] Epoch  9 | val=82.41% | t/ep=  7.0s | rem=   108s
+  [Trainer] Epoch 10 | val=87.98% | t/ep=  7.0s | rem=   100s
+  [Trainer] Epoch 11 | val=88.97% | t/ep=  6.9s | rem=    92s
+  [Trainer] Epoch 12 | val=90.85% | t/ep=  7.0s | rem=    84s
+  [Trainer] Epoch 13 | val=91.98% | t/ep=  6.6s | rem=    76s
+  [Trainer] Epoch 14 | val=92.84% | t/ep=  7.5s | rem=    67s
+  [Trainer] Epoch 15 | val=93.73% | t/ep=  6.9s | rem=    59s
+  [Trainer] Epoch 16 | val=93.84% | t/ep=  6.8s | rem=    51s
+  [Trainer] Epoch 17 | val=94.00% | t/ep=  7.1s | rem=    43s
+  [Trainer] Epoch 18 | val=94.05% | t/ep=  6.7s | rem=    35s
+  [Trainer] Epoch 19 | val=93.86% | t/ep=  6.8s | rem=    28s
+  [Trainer] Epoch 20 | val=93.83% | t/ep=  6.8s | rem=    20s
+
+=== Predicting ===
+  Allotted compute time remaining: ~19.67s
+Run time for Mateo: 161.12418569996953
+Model Training and Prediction Complete
+finished dataset: Mateo
+========== Dataset   Sokoto   =============================================
+  Metadata:
+   - input_shape         : [50000, 1, 9, 9]
+   - codename            : Sokoto
+   - benchmark           : 0.0
+   - num_classes         : 9
+   - time_limit          : 0.05
+   - grace_time          : False
+   - time_remaining      : 179.99034189997474
+
+=== Processing Data ===
+  Allotted compute time remaining: ~2m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~2m,59s
+[NAS] Start-Makro: c0=32 n=2 d=1 (H=9,W=9)
+[NAS] Gewaehltes Makro: c0=32 n=2 d=1
+
+=== Training ===
+  Allotted compute time remaining: ~2m,59s
+  [Trainer] Epoch  1 | val=11.89% | t/ep=  4.4s | rem=   174s
+  [Trainer] Epoch  2 | val=13.56% | t/ep=  4.7s | rem=   169s
+  [Trainer] Epoch  3 | val=20.50% | t/ep=  4.5s | rem=   164s
+  [Trainer] Epoch  4 | val=19.90% | t/ep=  4.5s | rem=   158s
+  [Trainer] Epoch  5 | val=18.31% | t/ep=  4.6s | rem=   153s
+  [Trainer] Epoch  6 | val=27.10% | t/ep=  4.5s | rem=   148s
+  [Trainer] Epoch  7 | val=28.12% | t/ep=  4.5s | rem=   142s
+  [Trainer] Epoch  8 | val=19.69% | t/ep=  4.7s | rem=   137s
+  [Trainer] Epoch  9 | val=24.95% | t/ep=  4.5s | rem=   131s
+  [Trainer] Epoch 10 | val=28.23% | t/ep=  4.4s | rem=   126s
+  [Trainer] Epoch 11 | val=21.60% | t/ep=  4.6s | rem=   121s
+  [Trainer] Epoch 12 | val=30.98% | t/ep=  4.5s | rem=   115s
+  [Trainer] Epoch 13 | val=30.69% | t/ep=  4.5s | rem=   110s
+  [Trainer] Epoch 14 | val=30.90% | t/ep=  4.5s | rem=   105s
+  [Trainer] Epoch 15 | val=27.99% | t/ep=  4.5s | rem=    99s
+  [Trainer] Epoch 16 | val=22.60% | t/ep=  4.7s | rem=    94s
+  [Trainer] Epoch 17 | val=23.23% | t/ep=  4.5s | rem=    89s
+  [Trainer] Epoch 18 | val=28.77% | t/ep=  4.4s | rem=    83s
+  [Trainer] Epoch 19 | val=26.24% | t/ep=  4.8s | rem=    78s
+  [Trainer] Epoch 20 | val=26.29% | t/ep=  4.4s | rem=    73s
+  [Trainer] Epoch 21 | val=24.79% | t/ep=  4.3s | rem=    67s
+  [Trainer] Epoch 22 | val=22.44% | t/ep=  4.3s | rem=    62s
+  [Trainer] Epoch 23 | val=27.15% | t/ep=  4.3s | rem=    57s
+  [Trainer] Epoch 24 | val=25.72% | t/ep=  4.3s | rem=    52s
+  [Trainer] Epoch 25 | val=28.14% | t/ep=  4.5s | rem=    47s
+  [Trainer] Epoch 26 | val=28.60% | t/ep=  4.4s | rem=    42s
+  [Trainer] Epoch 27 | val=27.36% | t/ep=  4.4s | rem=    37s
+  [Trainer] Epoch 28 | val=29.91% | t/ep=  4.4s | rem=    32s
+  [Trainer] Epoch 29 | val=27.82% | t/ep=  4.4s | rem=    27s
+  [Trainer] Epoch 30 | val=27.82% | t/ep=  4.3s | rem=    21s
+
+=== Predicting ===
+  Allotted compute time remaining: ~21.45s
+Run time for Sokoto: 159.24511340004392
+Model Training and Prediction Complete
+finished dataset: Sokoto
+done
+rm -Rf scoring
+mkdir scoring
+mkdir scoring/labels
+mkdir scoring/predictions
+cd datasets && find . \( -name "test_y.npy" -o -name "metadata" \) -exec cp --parents {} ../scoring/labels/ \; && cd ..
+cp -R package/predictions scoring
+cp evaluation/score.py scoring/score.py
+cd scoring; python score.py
+===========================================================================
+=============    Your Unseen Data 2025 Submission is scoring     =============
+===========================================================================
+== Scoring AddNIST ==
+Raw Score:    89.030
+Adj Score:    -0.808
+Model Params: 697908
+Runtime:      158.6s
+== Scoring Chesseract ==
+Raw Score:    56.686
+Adj Score:    -0.270
+Model Params: 172547
+Runtime:      160.1s
+== Scoring GameOfLife ==
+Raw Score:    88.250
+Adj Score:    7.761
+Model Params: 170809
+Runtime:      157.4s
+== Scoring Gutenberg ==
+Raw Score:    42.533
+Adj Score:    0.263
+Model Params: 695526
+Runtime:      159.8s
+== Scoring Language ==
+Raw Score:    82.920
+Adj Score:    -1.541
+Model Params: 696042
+Runtime:      156.7s
+== Scoring MultNIST ==
+Raw Score:    88.560
+Adj Score:    -2.530
+Model Params: 696618
+Runtime:      161.1s
+== Scoring Sudoku ==
+Raw Score:    30.050
+Adj Score:    3.005
+Model Params: 169769
+Runtime:      159.2s
+===========================
+Final Score: 5.880
