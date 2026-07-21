@@ -155,7 +155,7 @@ def run_submission(runclock:Clock, dataset:str):
         # perform data processing/augmentation/etc using your DataProcessor
         print("\n=== Processing Data ===")
         print("  Allotted compute time remaining: ~{}".format(show_time(IMUT_CLOCK.check())))
-        if is_out_of_time(IMUT_CLOCK, metadata):
+        if is_out_of_time(IMUT_CLOCK, metadata, metadata['grace_time']):
             return
         data_processor = DataProcessor(train_x, train_y, valid_x, valid_y, test_x, metadata, runclock)
         train_loader, valid_loader, test_loader = data_processor.process()
@@ -169,7 +169,7 @@ def run_submission(runclock:Clock, dataset:str):
         # search for best model using your NAS algorithm
         print("\n=== Performing NAS ===")
         print("  Allotted compute time remaining: ~{}".format(show_time(IMUT_CLOCK.check())))
-        if is_out_of_time(IMUT_CLOCK, metadata):
+        if is_out_of_time(IMUT_CLOCK, metadata, metadata['grace_time']):
             return
         model = NAS(train_loader, valid_loader, metadata, runclock).search()
         model_params = int(general_num_params(model))
@@ -178,7 +178,7 @@ def run_submission(runclock:Clock, dataset:str):
         # train model using your Trainer
         print("\n=== Training ===")
         print("  Allotted compute time remaining: ~{}".format(show_time(IMUT_CLOCK.check())))
-        if is_out_of_time(IMUT_CLOCK, metadata):
+        if is_out_of_time(IMUT_CLOCK, metadata, metadata['grace_time']):
             return
         device = torch.device("cuda") if torch.cuda.is_available() else torch.device('cpu')
         trainer = Trainer(model, device, train_loader, valid_loader, metadata, runclock)

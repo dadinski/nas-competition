@@ -1,0 +1,6 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:pyenv",
+    "python.analysis.extraPaths": [
+        "./submission_template"
+    ]
+}
