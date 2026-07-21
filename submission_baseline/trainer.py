@@ -59,6 +59,17 @@ class Trainer:
         except Exception:
             return 1e9   # Uhr nicht abfragbar -> nicht kuenstlich abbrechen
 
+    def _shrink_train_loader(self):
+        """Batch-Size halbieren und Train-Loader neu bauen (Laufzeit-OOM-Schutz)."""
+        bs = max(1, self.train_dataloader.batch_size // 2)
+        ds = self.train_dataloader.dataset
+        drop_last = len(ds) > 2 * bs
+        self.train_dataloader = torch.utils.data.DataLoader(
+            ds, batch_size=bs, shuffle=True, drop_last=drop_last)
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        return bs
+
     def train(self):
         try:
             self.model.to(self.device)
@@ -107,7 +118,9 @@ class Trainer:
                             if torch.cuda.is_available():
                                 torch.cuda.empty_cache()
                             if oom_batches > 5:
-                                raise      # anhaltendes OOM -> Training beenden
+                                new_bs = self._shrink_train_loader()
+                                print("[Trainer] Anhaltendes OOM -> Batch-Size auf {} reduziert".format(new_bs))
+                                break   # Epoche abbrechen, naechste laeuft mit kleinerem Loader
                             continue
                         raise
                     if self._remaining() < margin:  # harten Timeout vermeiden
@@ -153,6 +166,21 @@ class Trainer:
                     continue
         return _acc(y_true, y_pred) if y_true else 0.0
 
+    def _predict_batch(self, data):
+        """Vorhersage fuer einen Batch; bei OOM rekursiv halbieren (Reihenfolge bleibt)."""
+        try:
+            out = self.model(data.to(self.device))
+            return torch.argmax(out, 1).cpu().tolist()
+        except RuntimeError as e:
+            if not _is_oom(e):
+                raise
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            if data.shape[0] > 1:
+                mid = data.shape[0] // 2
+                return self._predict_batch(data[:mid]) + self._predict_batch(data[mid:])
+            return [self.fallback_label]   # einzelnes Sample passt nicht -> Fallback
+
     def predict(self, test_loader):
         n_test = len(test_loader.dataset)
         preds = []
@@ -165,16 +193,7 @@ class Trainer:
         try:
             with torch.no_grad():
                 for data in test_loader:
-                    try:
-                        data = data.to(self.device)
-                        out = self.model(data)
-                        preds += torch.argmax(out, 1).cpu().tolist()
-                    except RuntimeError as e:
-                        # z.B. OOM: Batch mit Fallback-Label auffuellen (Reihenfolge bleibt)
-                        if _is_oom(e) and torch.cuda.is_available():
-                            torch.cuda.empty_cache()
-                        bs = int(data.shape[0]) if hasattr(data, 'shape') else 1
-                        preds += [self.fallback_label] * bs
+                    preds += self._predict_batch(data)
         except Exception as e:
             print("[Trainer] predict-Notfall:", repr(e))
 

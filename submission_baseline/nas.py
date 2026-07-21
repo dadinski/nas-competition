@@ -1,55 +1,24 @@
 """
-NAS - Schritt 1 (Fallback-first Baseline)
+NAS - Schritt 2
 
-In diesem Schritt gibt es noch KEINE Architektursuche. search() liefert ein
-bekannt gutes, robustes Modell zurueck:
-  * adaptiertes ResNet18 (Stem an Kanalzahl angepasst, kein Download -> offline ok)
-  * bei kleinen Inputs kein aggressives Downsampling (MaxPool raus),
-    damit winzige Grids (z.B. 8x8) nicht "weggepoolt" werden
-  * schlaegt der Aufbau fehl -> TinyNet, das fuer beliebige C/H/W funktioniert
+search() baut jetzt ein adaptives Makro-Geruest (Skeleton), dessen Struktur aus
+der Eingabegroesse abgeleitet wird, und stellt per Speicher-Probe sicher, dass
+das Modell mit dem realen Batch mindestens einen Trainingsschritt schafft.
+Bei OOM wird in fester Reihenfolge geschrumpft: C0 -> N -> D. Scheitert alles,
+gibt es das TinyNet.
 
-Die eigentliche Suche (Zell-Suchraum + Proxies) kommt in Schritt 3.
+Noch keine echte Architektursuche - die kommt in Schritt 3 und ersetzt den
+festen Block im Skeleton durch gesuchte Zellen.
 """
 
 import torch
 import torch.nn as nn
 
-try:
-    import torchvision
-    _HAS_TV = True
-except Exception:
-    _HAS_TV = False
+from model import Skeleton, TinyNet, derive_macro
 
 
-class _TinyNet(nn.Module):
-    """Ultimativer Fallback: kleines CNN, laeuft fuer jede Eingabeform."""
-    def __init__(self, in_ch, num_classes):
-        super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(in_ch, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(inplace=True),
-            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(inplace=True),
-        )
-        self.pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64, num_classes)
-
-    def forward(self, x):
-        x = self.features(x)
-        x = self.pool(x).flatten(1)
-        return self.fc(x)
-
-
-def build_baseline_model(in_ch, num_classes, h, w):
-    """Adaptiertes ResNet18; Fallback auf TinyNet, falls torchvision fehlt."""
-    if not _HAS_TV:
-        return _TinyNet(in_ch, num_classes)
-    model = torchvision.models.resnet18()  # pretrained=False (Default) -> kein Netzwerkzugriff
-    # Stem an Kanalzahl anpassen, stride 1 statt 2 (Inputs sind meist klein)
-    model.conv1 = nn.Conv2d(in_ch, 64, kernel_size=3, stride=1, padding=1, bias=False)
-    # Bei kleinen Bildern MaxPool entfernen, sonst geht zu viel Aufloesung verloren
-    if min(int(h), int(w)) <= 32:
-        model.maxpool = nn.Identity()
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
-    return model
+def _is_oom(e):
+    return isinstance(e, RuntimeError) and 'out of memory' in str(e).lower()
 
 
 class NAS:
@@ -59,22 +28,69 @@ class NAS:
         self.metadata = metadata
         self.clock = clock
 
-    def _infer_chw(self):
-        """C/H/W direkt aus einem echten Batch lesen (robuster als Metadata)."""
+    def _sample_batch(self):
+        xb, yb = next(iter(self.train_loader))
+        return xb, yb
+
+    def _fits(self, model, xb, yb, device):
+        """Ein echter forward+backward als Speicher-Probe. True = passt."""
         try:
-            xb = next(iter(self.train_loader))
-            if isinstance(xb, (list, tuple)):
-                xb = xb[0]
-            return int(xb.shape[1]), int(xb.shape[2]), int(xb.shape[3])
-        except Exception:
-            s = self.metadata['input_shape']
-            return int(s[1]), int(s[2]), int(s[3])
+            model.to(device)
+            opt = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+            opt.zero_grad(set_to_none=True)
+            out = model(xb.to(device))
+            loss = nn.CrossEntropyLoss()(out, yb.to(device))
+            loss.backward()
+            opt.step()
+            opt.zero_grad(set_to_none=True)
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            return True
+        except RuntimeError as e:
+            if _is_oom(e):
+                try:
+                    model.to('cpu')
+                except Exception:
+                    pass
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                return False
+            raise
 
     def search(self):
         num_classes = int(self.metadata['num_classes'])
-        in_ch, h, w = self._infer_chw()
+        device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+        # Realen Batch ziehen; klappt das nicht, direkt TinyNet aus der Metadata
         try:
-            return build_baseline_model(in_ch, num_classes, h, w)
+            xb, yb = self._sample_batch()
+            in_ch, h, w = int(xb.shape[1]), int(xb.shape[2]), int(xb.shape[3])
         except Exception as e:
-            print("[NAS] Fallback auf TinyNet wegen:", repr(e))
-            return _TinyNet(in_ch, num_classes)
+            print('[NAS] Kein Batch verfuegbar, TinyNet:', repr(e))
+            s = self.metadata['input_shape']
+            return TinyNet(int(s[1]), num_classes)
+
+        c0, n, d = derive_macro(h, w)
+        print('[NAS] Start-Makro: c0={} n={} d={} (H={},W={})'.format(c0, n, d, h, w))
+
+        try:
+            while True:
+                model = Skeleton(in_ch, num_classes, c0, n, d)
+                if self._fits(model, xb, yb, device):
+                    self.metadata['macro'] = {'c0': c0, 'n': n, 'd': d}
+                    print('[NAS] Gewaehltes Makro: c0={} n={} d={}'.format(c0, n, d))
+                    return model
+                # Speicher zu knapp -> schrumpfen: erst C0, dann N, dann D
+                if c0 > 8:
+                    c0 = max(8, c0 // 2)
+                elif n > 1:
+                    n -= 1
+                elif d > 0:
+                    d -= 1
+                else:
+                    break   # schon minimal -> TinyNet
+                print('[NAS] OOM bei Probe, schrumpfe auf c0={} n={} d={}'.format(c0, n, d))
+        except Exception as e:
+            print('[NAS] Aufbau fehlgeschlagen, TinyNet:', repr(e))
+
+        return TinyNet(in_ch, num_classes)
