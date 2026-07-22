@@ -138,13 +138,25 @@ class Trainer:
                     extra = int((self._remaining() - margin) / epoch_time)
                     planned = max(1, min(MAX_EPOCHS, (epoch + 1) + extra))
 
-                val = self._evaluate()
+                # Never start a validation pass that could eat into the
+                # margin reserved for predict() - a slow/large valid set
+                # would otherwise risk pushing the whole dataset past its
+                # time limit (-> instant -10 for this dataset).
+                remaining = self._remaining()
+                if remaining <= margin:
+                    print("  [Trainer] Epoch {:>2} | skipping validation - "
+                          "no time left beyond the {:.0f}s margin".format(epoch + 1, margin))
+                    break
+
+                eval_budget = remaining - margin
+                t_eval = time.time()
+                val = self._evaluate(time_budget=eval_budget)
                 if val >= best_val:
                     best_val = val
                     best_state = copy.deepcopy(self.model.state_dict())
 
-                print("  [Trainer] Epoch {:>2} | val={:5.2f}% | t/ep={:5.1f}s | rem={:6.0f}s".format(
-                    epoch + 1, val * 100, epoch_time, self._remaining()))
+                print("  [Trainer] Epoch {:>2} | val={:5.2f}% | t/ep={:5.1f}s | t/eval={:5.1f}s | rem={:6.0f}s".format(
+                    epoch + 1, val * 100, epoch_time, time.time() - t_eval, self._remaining()))
         except Exception as e:
             print("[Trainer] training ended early:", repr(e))
 
@@ -155,9 +167,14 @@ class Trainer:
             pass
         return self.model
 
-    def _evaluate(self):
+    def _evaluate(self, time_budget=None):
+        """Validation pass. If time_budget (seconds) is given, the pass
+        stops early once it's exceeded, so a slow or unexpectedly large
+        validation set can never run past it - it just scores on however
+        many batches it got through instead of blowing the time budget."""
         self.model.eval()
         y_true, y_pred = [], []
+        t0 = time.time()
         with torch.no_grad():
             for data, target in self.valid_dataloader:
                 try:
@@ -169,6 +186,11 @@ class Trainer:
                     if _is_oom(e) and torch.cuda.is_available():
                         torch.cuda.empty_cache()
                     continue
+                if time_budget is not None and (time.time() - t0) > time_budget:
+                    print("  [Trainer] validation time budget ({:.0f}s) reached, "
+                          "scoring on {}/{} valid samples".format(
+                              time_budget, len(y_true), len(self.valid_dataloader.dataset)))
+                    break
         return _acc(y_true, y_pred) if y_true else 0.0
 
     def _predict_batch(self, data):

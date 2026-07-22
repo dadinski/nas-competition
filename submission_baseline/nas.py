@@ -20,7 +20,7 @@ import time
 import torch
 import torch.nn as nn
 
-from model import TinyNet, build_skeleton, derive_macro, EDGES, OPS, is_degenerate
+from model import TinyNet, MinimalNet, build_skeleton, derive_macro, EDGES, OPS, is_degenerate
 from proxies import naswot_score, synflow_score
 
 
@@ -87,8 +87,11 @@ class NAS:
             else:
                 return c0, n, d   # already minimal
 
-    def _quick_val_acc(self, model, device, max_batches):
-        """One short training pass over at most max_batches, then val accuracy."""
+    def _quick_val_acc(self, model, device, max_batches, deadline=None):
+        """One short training pass over at most max_batches, then val accuracy.
+        If deadline (perf_counter timestamp) is given, the validation part
+        is also time-bounded so a slow/large valid set can't blow through
+        the (small) per-dataset search budget."""
         model.to(device)
         opt = torch.optim.SGD(model.parameters(), lr=0.05, momentum=0.9)
         crit = nn.CrossEntropyLoss()
@@ -122,6 +125,8 @@ class NAS:
                     if _is_oom(e) and torch.cuda.is_available():
                         torch.cuda.empty_cache()
                     continue
+                if deadline is not None and time.perf_counter() >= deadline:
+                    break
         return correct / total if total else 0.0
 
     def search(self):
@@ -134,7 +139,10 @@ class NAS:
         except Exception as e:
             print('[NAS] no batch available, using TinyNet:', repr(e))
             s = self.metadata['input_shape']
-            return TinyNet(int(s[1]), num_classes)
+            # no batch/device to fit-check against here - this is the one
+            # path where we truly have nothing to probe with, so we just
+            # return our best (size-adaptive) guess
+            return TinyNet(int(s[1]), num_classes, h=int(s[2]), w=int(s[3]))
 
         # --- Phase 1: memory-safe macro sizing ---
         try:
@@ -143,7 +151,7 @@ class NAS:
             print('[NAS] macro: c0={} n={} d={} (H={}, W={})'.format(c0, n, d, h, w))
         except Exception as e:
             print('[NAS] macro sizing failed, using TinyNet:', repr(e))
-            return TinyNet(in_ch, num_classes)
+            return self._safe_fallback(in_ch, num_classes, h, w, xb, yb, device)
 
         # --- Phase 2: cell search (skipped if the budget is too small) ---
         total_budget = self._remaining()
@@ -169,11 +177,25 @@ class NAS:
                 print('[NAS] searched cell does not fit, falling back to fixed block')
                 model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=None)
                 if not self._fits(model, xb, yb, device):
-                    return TinyNet(in_ch, num_classes)
+                    print('[NAS] even the minimal fixed-block skeleton does not fit')
+                    return self._safe_fallback(in_ch, num_classes, h, w, xb, yb, device)
             return model
         except Exception as e:
             print('[NAS] final build failed, using TinyNet:', repr(e))
-            return TinyNet(in_ch, num_classes)
+            return self._safe_fallback(in_ch, num_classes, h, w, xb, yb, device)
+
+    def _safe_fallback(self, in_ch, num_classes, h, w, xb, yb, device):
+        """Bottom of the fallback chain: TinyNet, fit-checked, and if even
+        that doesn't fit, MinimalNet (near-zero memory, virtually always
+        fits). Used whenever the searched/fixed Skeleton can't be used."""
+        try:
+            tiny = TinyNet(in_ch, num_classes, h=h, w=w)
+            if self._fits(tiny, xb, yb, device):
+                return tiny
+            print('[NAS] TinyNet does not fit either, falling back to MinimalNet')
+        except Exception as e:
+            print('[NAS] TinyNet build/fit-check failed, falling back to MinimalNet:', repr(e))
+        return MinimalNet(in_ch, num_classes)
 
     def _search_cell(self, in_ch, num_classes, c0, n, d, xb, device, search_budget):
         deadline = time.perf_counter() + search_budget
@@ -231,7 +253,7 @@ class NAS:
             t_start = time.perf_counter()
             try:
                 m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno).to(device)
-                acc = self._quick_val_acc(m, device, max_batches=20)
+                acc = self._quick_val_acc(m, device, max_batches=20, deadline=deadline)
             except RuntimeError as e:
                 if _is_oom(e) and torch.cuda.is_available():
                     torch.cuda.empty_cache()

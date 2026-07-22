@@ -178,16 +178,57 @@ def build_skeleton(in_ch, num_classes, c0, n, d, genotype=None):
 
 
 class TinyNet(nn.Module):
-    """Ultimate fallback: works for any C/H/W."""
-    def __init__(self, in_ch, num_classes):
+    """Fallback network, used when the searched/fixed Skeleton doesn't fit
+    in memory even at its smallest size.
+
+    The old version ran two conv layers at FULL input resolution with no
+    downsampling - on a large image that can need more memory than the
+    already-minimal Skeleton it was replacing, defeating the point of a
+    'safe' fallback. This version adds up to two stride-2 downsampling
+    steps (reusing the same s_min=4 floor as derive_macro) so its memory
+    footprint actually shrinks with a shrinking Skeleton instead of
+    staying flat, while still working for any C/H/W (h/w are optional -
+    without them it behaves like the old flat, no-downsample version)."""
+    def __init__(self, in_ch, num_classes, h=None, w=None, channels=32, s_min=4):
         super().__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(in_ch, 32, 3, padding=1), nn.BatchNorm2d(32), nn.ReLU(inplace=True),
-            nn.Conv2d(32, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(inplace=True))
+        n_down = 0
+        if h is not None and w is not None:
+            m = max(1, min(int(h), int(w)))
+            if m > s_min:
+                n_down = min(2, int(math.floor(math.log2(m / s_min))))
+
+        layers = []
+        cin, cout = in_ch, channels
+        n_layers = max(1, n_down + 1)
+        for i in range(n_layers):
+            stride = 2 if i < n_down else 1
+            layers += [nn.Conv2d(cin, cout, 3, stride=stride, padding=1, bias=False),
+                       nn.BatchNorm2d(cout), nn.ReLU(inplace=True)]
+            cin = cout
+        layers += [nn.Conv2d(cin, cout * 2, 3, padding=1, bias=False),
+                   nn.BatchNorm2d(cout * 2), nn.ReLU(inplace=True)]
+        self.features = nn.Sequential(*layers)
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64, num_classes)
+        self.fc = nn.Linear(cout * 2, num_classes)
 
     def forward(self, x):
         x = self.features(x)
+        x = self.pool(x).flatten(1)
+        return self.fc(x)
+
+
+class MinimalNet(nn.Module):
+    """Absolute last-resort fallback, used only if even TinyNet doesn't
+    fit in memory. No convolutions at all: the input is pooled straight
+    down to one value per channel and fed to a linear classifier, so its
+    memory footprint is essentially just the input batch itself,
+    independent of H/W. This should fit under virtually any circumstance
+    a single sample could be loaded at all."""
+    def __init__(self, in_ch, num_classes):
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(in_ch, num_classes)
+
+    def forward(self, x):
         x = self.pool(x).flatten(1)
         return self.fc(x)

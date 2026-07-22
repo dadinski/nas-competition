@@ -52,19 +52,49 @@ class DataProcessor:
         self.metadata = metadata
         self.clock = clock
 
+    def _query_free_gpu_mem_mb(self):
+        """Best-effort query of currently-free GPU memory in MB.
+        Returns None if there is no GPU or the query fails for any reason
+        (e.g. older CUDA driver) - callers must treat None as 'unknown'."""
+        if not torch.cuda.is_available():
+            return None
+        try:
+            free_bytes, _total_bytes = torch.cuda.mem_get_info()
+            return free_bytes / (1024 ** 2)
+        except Exception:
+            return None
+
     def _choose_batch_size(self, c, h, w, n_train):
-        """Rough, conservative heuristic based on elements per sample."""
+        """Batch size from the GPU memory actually free right now. The
+        NAS/model architecture isn't known yet at this stage, so we can't
+        compute an exact per-sample memory cost - instead we budget a
+        conservative slice of free memory and divide by the raw sample
+        size times a generous overhead factor (activations + gradients +
+        optimizer state of a small-to-medium CNN). If no GPU is available
+        (or the query fails), we fall back to the old fixed heuristic."""
         elems = int(c) * int(h) * int(w)
-        if elems <= 1024:
-            bs = 256
-        elif elems <= 4096:
-            bs = 128
-        elif elems <= 16384:
-            bs = 64
-        elif elems <= 65536:
-            bs = 32
+        bytes_per_sample = max(1, elems * 4)  # float32
+
+        free_mb = self._query_free_gpu_mem_mb()
+        if free_mb is not None:
+            usable_fraction = 0.2      # leave the rest for model + activations/gradients
+            overhead_factor = 40       # rough multiplier for a training step, not just storage
+            budget_bytes = free_mb * (1024 ** 2) * usable_fraction
+            bs = int(budget_bytes / (bytes_per_sample * overhead_factor))
+            bs = max(4, min(bs, 512))
         else:
-            bs = 16
+            # CPU-only fallback: previous fixed, element-count based heuristic
+            if elems <= 1024:
+                bs = 256
+            elif elems <= 4096:
+                bs = 128
+            elif elems <= 16384:
+                bs = 64
+            elif elems <= 65536:
+                bs = 32
+            else:
+                bs = 16
+
         if n_train >= 2:
             bs = min(bs, n_train // 2)
         return max(1, bs)
