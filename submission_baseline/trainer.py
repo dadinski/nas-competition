@@ -1,17 +1,19 @@
 """
-Trainer - Schritt 1 (Fallback-first Baseline)
+Trainer - Step 1 (fallback-first baseline) + Step 2 (OOM-safe runtime)
 
-Leitgedanke: NIE einen -10-Fall ausloesen (Timeout / Crash / fehlende
-Vorhersagen). Daher:
-  * Training laeuft clock-budgetiert: es wird eine Reserve fuer predict
-    zurueckgehalten und rechtzeitig abgebrochen
-  * Bestes Val-Modell wird als Checkpoint gehalten und am Ende wiederhergestellt
-  * OOM-Batches werden abgefangen (Cache leeren, Batch ueberspringen);
-    anhaltendes OOM beendet das Training sauber statt zu crashen
-  * predict() gibt IMMER exakt n_test Vorhersagen in Reihenfolge zurueck -
-    im Notfall mit der haeufigsten Trainingsklasse aufgefuellt
+Guiding principle: NEVER trigger a -10 outcome (timeout / crash / missing
+predictions). Therefore:
+  * Training is clock-budgeted: a reserve for predict() is held back and
+    training stops in time
+  * The best validation checkpoint is kept and restored at the end
+  * OOM batches are caught (clear cache, skip batch); persistent OOM shrinks
+    the batch size and rebuilds the loader instead of crashing
+  * predict() ALWAYS returns exactly n_test predictions in order - filled
+    with the most frequent training class as a last resort, and halves the
+    batch recursively on OOM
 
-Feineres Training (LR-Schedule, AMP, Augmentation) kommt in Schritt 4.
+Better training policy (LR schedule tuning, AMP, augmentation) comes in
+Step 4.
 """
 
 import copy
@@ -57,10 +59,10 @@ class Trainer:
         try:
             return float(self.clock.check())
         except Exception:
-            return 1e9   # Uhr nicht abfragbar -> nicht kuenstlich abbrechen
+            return 1e9   # clock unavailable -> don't abort artificially
 
     def _shrink_train_loader(self):
-        """Batch-Size halbieren und Train-Loader neu bauen (Laufzeit-OOM-Schutz)."""
+        """Halve the batch size and rebuild the train loader (runtime OOM guard)."""
         bs = max(1, self.train_dataloader.batch_size // 2)
         ds = self.train_dataloader.dataset
         drop_last = len(ds) > 2 * bs
@@ -80,20 +82,23 @@ class Trainer:
         best_val = -1.0
 
         budget = self._remaining()
-        # Reserve fuer predict + Overhead: 10% des Budgets, gedeckelt auf [20s, 120s]
-        margin = max(20.0, min(0.10 * budget, 120.0))
+        # Reserve for predict() + overhead, proportional to the budget.
+        # IMPORTANT: no large fixed floor - under very short budgets (<=60s)
+        # a fixed 20s floor used to eat the ENTIRE budget, so not a single
+        # epoch ever ran (bug found via a 20s stress test).
+        margin = max(2.0, min(0.15 * budget, 60.0))
 
         base_lr = 0.01
-        planned = None          # geschaetzte Gesamt-Epochenzahl (nach 1. Epoche)
+        planned = None          # estimated total epoch count (after epoch 1)
         epoch_time = 0.0
 
         try:
             for epoch in range(MAX_EPOCHS):
-                # Nur starten, wenn geschaetzte Epoche + Reserve noch reinpasst
+                # only start if the estimated epoch + reserve still fits
                 if self._remaining() - epoch_time < margin:
                     break
 
-                # Manuelle Cosine-LR, sobald die Epochenzahl geschaetzt ist
+                # manual cosine LR once the epoch count is estimated
                 if planned is not None:
                     lr = 0.5 * base_lr * (1.0 + math.cos(math.pi * min(epoch, planned) / planned))
                     for g in self.optimizer.param_groups:
@@ -119,16 +124,16 @@ class Trainer:
                                 torch.cuda.empty_cache()
                             if oom_batches > 5:
                                 new_bs = self._shrink_train_loader()
-                                print("[Trainer] Anhaltendes OOM -> Batch-Size auf {} reduziert".format(new_bs))
-                                break   # Epoche abbrechen, naechste laeuft mit kleinerem Loader
+                                print("[Trainer] persistent OOM -> batch size reduced to {}".format(new_bs))
+                                break   # abort this epoch, next one uses the smaller loader
                             continue
                         raise
-                    if self._remaining() < margin:  # harten Timeout vermeiden
+                    if self._remaining() < margin:  # avoid a hard timeout
                         break
 
                 epoch_time = time.time() - t0
 
-                # Nach der 1. Epoche das Restbudget in eine Gesamt-Epochenzahl umrechnen
+                # after epoch 1, convert remaining budget into a total epoch estimate
                 if planned is None and epoch_time > 0:
                     extra = int((self._remaining() - margin) / epoch_time)
                     planned = max(1, min(MAX_EPOCHS, (epoch + 1) + extra))
@@ -141,9 +146,9 @@ class Trainer:
                 print("  [Trainer] Epoch {:>2} | val={:5.2f}% | t/ep={:5.1f}s | rem={:6.0f}s".format(
                     epoch + 1, val * 100, epoch_time, self._remaining()))
         except Exception as e:
-            print("[Trainer] Training vorzeitig beendet:", repr(e))
+            print("[Trainer] training ended early:", repr(e))
 
-        # Bestes gesehenes Modell wiederherstellen
+        # restore the best model seen so far
         try:
             self.model.load_state_dict(best_state)
         except Exception:
@@ -167,7 +172,7 @@ class Trainer:
         return _acc(y_true, y_pred) if y_true else 0.0
 
     def _predict_batch(self, data):
-        """Vorhersage fuer einen Batch; bei OOM rekursiv halbieren (Reihenfolge bleibt)."""
+        """Predict one batch; halve recursively on OOM (order is preserved)."""
         try:
             out = self.model(data.to(self.device))
             return torch.argmax(out, 1).cpu().tolist()
@@ -179,7 +184,7 @@ class Trainer:
             if data.shape[0] > 1:
                 mid = data.shape[0] // 2
                 return self._predict_batch(data[:mid]) + self._predict_batch(data[mid:])
-            return [self.fallback_label]   # einzelnes Sample passt nicht -> Fallback
+            return [self.fallback_label]   # a single sample still doesn't fit -> fallback
 
     def predict(self, test_loader):
         n_test = len(test_loader.dataset)
@@ -195,9 +200,9 @@ class Trainer:
                 for data in test_loader:
                     preds += self._predict_batch(data)
         except Exception as e:
-            print("[Trainer] predict-Notfall:", repr(e))
+            print("[Trainer] predict() emergency handling:", repr(e))
 
-        # Laenge exakt auf n_test bringen - nie kuerzer, nie laenger
+        # force the length to exactly n_test - never shorter, never longer
         if len(preds) < n_test:
             preds += [self.fallback_label] * (n_test - len(preds))
         elif len(preds) > n_test:

@@ -1,23 +1,30 @@
 """
-model.py - Schritt 2
+model.py - Step 2 (adaptive skeleton) + Step 3 (searchable cell)
 
-Adaptives Makro-Geruest, dessen Struktur aus der Eingabegroesse (H, W) abgeleitet
-wird. Der Block ('ResidualBlock') ist vorerst fest - in Schritt 3 wird genau
-dieser Block durch die gesuchte Zelle ersetzt, das Geruest bleibt gleich.
+Two building blocks:
+  * Skeleton: adaptive macro-architecture, structure derived from input size.
+    Accepts any block class that maps (cin, cout, stride) -> nn.Module.
+  * Cell: a NAS-Bench-201-style searchable block, built from a genotype
+    (one op choice per edge in a small DAG). Used by Skeleton once search
+    has picked a genotype; ResidualBlock remains as a simple fixed fallback
+    block.
 
-TinyNet dient weiterhin als ultimativer Fallback.
+TinyNet is the ultimate fallback network (works for any C/H/W).
 """
 
 import math
 import torch
 import torch.nn as nn
 
+# ---------------------------------------------------------------------------
+# Macro-architecture sizing
+# ---------------------------------------------------------------------------
 
 def derive_macro(h, w, s_min=4, d_max=3, c0=32, n=2):
     """
-    Makro-Struktur aus der Eingabegroesse ableiten.
+    Derive the macro structure from the input size.
       D = clamp(floor(log2(min(H,W)/s_min)), 0, d_max)
-    Rueckgabe: (c0, n, d) = Startkanaele, Bloecke pro Stage, Anzahl Downsamples.
+    Returns (c0, n, d) = start channels, blocks per stage, downsample steps.
     """
     m = max(1, min(int(h), int(w)))
     d = int(math.floor(math.log2(m / s_min))) if m > s_min else 0
@@ -25,8 +32,85 @@ def derive_macro(h, w, s_min=4, d_max=3, c0=32, n=2):
     return c0, n, d
 
 
+# ---------------------------------------------------------------------------
+# NAS-Bench-201-style cell (Step 3)
+# ---------------------------------------------------------------------------
+
+# 4 nodes, 6 edges (fully connected DAG on 4 nodes), 5 candidate ops per edge.
+NUM_NODES = 4
+EDGES = [(i, j) for j in range(1, NUM_NODES) for i in range(j)]   # 6 edges
+OPS = ['conv3x3', 'conv1x1', 'avgpool3x3', 'skip', 'none']
+
+
+def _make_op(name, c):
+    """Build a single-edge operation; stride is always 1 (Cell is stride-1),
+    spatial downsampling happens in the stage's first block via a separate
+    stride-conv wrapper (see Cell.__init__)."""
+    if name == 'conv3x3':
+        return nn.Sequential(
+            nn.Conv2d(c, c, 3, padding=1, bias=False), nn.BatchNorm2d(c), nn.ReLU(inplace=True))
+    if name == 'conv1x1':
+        return nn.Sequential(
+            nn.Conv2d(c, c, 1, bias=False), nn.BatchNorm2d(c), nn.ReLU(inplace=True))
+    if name == 'avgpool3x3':
+        return nn.AvgPool2d(3, stride=1, padding=1)
+    if name == 'skip':
+        return nn.Identity()
+    if name == 'none':
+        return _Zero()
+    raise ValueError('unknown op: ' + name)
+
+
+class _Zero(nn.Module):
+    """The 'none' op: outputs zeros (edge effectively disconnected)."""
+    def forward(self, x):
+        return x * 0.0
+
+
+class Cell(nn.Module):
+    """
+    Searchable NAS-Bench-201 style cell.
+    genotype: list of op names, one per edge in EDGES (len == 6).
+    Optionally changes channels/stride once at the cell input (stem-like proj),
+    all internal edges then operate at (cout, stride=1).
+    """
+    def __init__(self, cin, cout, stride, genotype):
+        super().__init__()
+        assert len(genotype) == len(EDGES)
+        self.pre = None
+        if stride != 1 or cin != cout:
+            self.pre = nn.Sequential(
+                nn.Conv2d(cin, cout, 1, stride=stride, bias=False),
+                nn.BatchNorm2d(cout))
+        self.edge_ops = nn.ModuleDict({
+            '{}_{}'.format(i, j): _make_op(op, cout)
+            for (i, j), op in zip(EDGES, genotype)
+        })
+
+    def forward(self, x):
+        x0 = self.pre(x) if self.pre is not None else x
+        nodes = [x0]
+        for j in range(1, NUM_NODES):
+            acc = None
+            for i in range(j):
+                e = self.edge_ops['{}_{}'.format(i, j)](nodes[i])
+                acc = e if acc is None else acc + e
+            nodes.append(acc)
+        return nodes[-1]
+
+
+def is_degenerate(genotype):
+    """A cell that is (almost) only 'none'/'skip' carries no real signal."""
+    useful = sum(1 for op in genotype if op not in ('none', 'skip'))
+    return useful == 0
+
+
+# ---------------------------------------------------------------------------
+# Fixed fallback block (used before search / if search is skipped)
+# ---------------------------------------------------------------------------
+
 class ResidualBlock(nn.Module):
-    """Fester Residual-Block (Platzhalter fuer die spaeter gesuchte Zelle)."""
+    """Fixed residual block, used as a safe default block for the Skeleton."""
     def __init__(self, cin, cout, stride=1):
         super().__init__()
         self.relu = nn.ReLU(inplace=True)
@@ -35,7 +119,7 @@ class ResidualBlock(nn.Module):
         self.conv2 = nn.Conv2d(cout, cout, 3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(cout)
         self.proj = None
-        if stride != 1 or cin != cout:               # Dimensionen fuer den Skip angleichen
+        if stride != 1 or cin != cout:               # match dims for the skip path
             self.proj = nn.Sequential(
                 nn.Conv2d(cin, cout, 1, stride=stride, bias=False),
                 nn.BatchNorm2d(cout))
@@ -47,9 +131,18 @@ class ResidualBlock(nn.Module):
         return self.relu(out + idt)
 
 
+# ---------------------------------------------------------------------------
+# Macro skeleton
+# ---------------------------------------------------------------------------
+
 class Skeleton(nn.Module):
-    """Stem -> (d+1) Stages mit je n Bloecken -> Global-Pool -> Linear."""
-    def __init__(self, in_ch, num_classes, c0, n, d):
+    """Stem -> (d+1) stages of n blocks -> global pool -> linear.
+
+    block_fn(cin, cout, stride) -> nn.Module must be supplied; this lets the
+    same skeleton be built either with the fixed ResidualBlock or with a
+    searched Cell genotype (see nas.py).
+    """
+    def __init__(self, in_ch, num_classes, c0, n, d, block_fn):
         super().__init__()
         self.stem = nn.Sequential(
             nn.Conv2d(in_ch, c0, 3, stride=1, padding=1, bias=False),
@@ -57,11 +150,11 @@ class Skeleton(nn.Module):
 
         blocks = []
         cin = c0
-        for i in range(d + 1):                        # i=0 ohne Downsample
+        for i in range(d + 1):                        # i=0 has no downsample
             cout = c0 * (2 ** i)
             for b in range(n):
-                stride = 2 if (b == 0 and i > 0) else 1   # Downsample am Stage-Beginn
-                blocks.append(ResidualBlock(cin, cout, stride=stride))
+                stride = 2 if (b == 0 and i > 0) else 1   # downsample at stage start
+                blocks.append(block_fn(cin, cout, stride))
                 cin = cout
         self.features = nn.Sequential(*blocks)
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
@@ -74,8 +167,18 @@ class Skeleton(nn.Module):
         return self.fc(x)
 
 
+def build_skeleton(in_ch, num_classes, c0, n, d, genotype=None):
+    """Convenience factory: fixed ResidualBlock if genotype is None,
+    else a Skeleton made of searched Cells sharing that genotype."""
+    if genotype is None:
+        block_fn = lambda cin, cout, stride: ResidualBlock(cin, cout, stride)
+    else:
+        block_fn = lambda cin, cout, stride: Cell(cin, cout, stride, genotype)
+    return Skeleton(in_ch, num_classes, c0, n, d, block_fn)
+
+
 class TinyNet(nn.Module):
-    """Ultimativer Fallback: laeuft fuer beliebige C/H/W."""
+    """Ultimate fallback: works for any C/H/W."""
     def __init__(self, in_ch, num_classes):
         super().__init__()
         self.features = nn.Sequential(

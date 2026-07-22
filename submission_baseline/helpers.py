@@ -1,1 +1,1 @@
-# Platz fuer Hilfsfunktionen (in Schritt 1 nicht benoetigt).
+# Space for shared helper functions (none needed so far).
