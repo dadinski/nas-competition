@@ -21,7 +21,7 @@ cd package; python main.py
    - benchmark           : 89.85
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.81443869999998
+   - time_remaining      : 179.79565600000024
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -29,35 +29,34 @@ cd package; python main.py
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=2 (H=28, W=28)
-[NAS] sampling K=69 genotypes (t_eval~0.18s)
-[NAS] scored 69 genotypes, verifying top 10
-  [NAS] verify: val=6.93% t=2.6s
-  [NAS] verify: val=4.93% t=2.5s
-  [NAS] verify: val=9.81% t=2.4s
-  [NAS] verify: val=9.67% t=2.5s
-  [NAS] verify: val=8.14% t=2.6s
-  [NAS] verify: val=6.29% t=2.6s
-[NAS] selected genotype (val=9.81%): ['conv3x3', 'none', 'conv3x3', 'conv1x1', 'avgpool3x3', 'conv1x1']
+[NAS] sampling K=89 genotypes (t_eval~0.14s)
+[NAS] scored 89 genotypes, verifying top 10
+  [NAS] verify: val=10.21% t=3.5s
+  [NAS] verify: val=5.25% t=3.5s
+  [NAS] verify: val=6.15% t=4.0s
+  [NAS] verify: val=4.84% t=3.5s
+[NAS] selected genotype (val=10.21%): ['conv3x3', 'none', 'conv3x3', 'skip', 'conv1x1', 'conv3x3']
 
 === Training ===
   Allotted compute time remaining: ~2m,40s
-  [Trainer] Epoch  1 | val=24.06% | t/ep=  8.7s | rem=   150s
-  [Trainer] Epoch  2 | val=36.59% | t/ep=  8.4s | rem=   139s
-  [Trainer] Epoch  3 | val=26.57% | t/ep=  8.1s | rem=   129s
-  [Trainer] Epoch  4 | val=58.03% | t/ep=  8.1s | rem=   119s
-  [Trainer] Epoch  5 | val=55.57% | t/ep=  8.1s | rem=   109s
-  [Trainer] Epoch  6 | val=73.05% | t/ep=  8.1s | rem=    99s
-  [Trainer] Epoch  7 | val=75.21% | t/ep=  8.1s | rem=    89s
-  [Trainer] Epoch  8 | val=78.93% | t/ep=  8.3s | rem=    79s
-  [Trainer] Epoch  9 | val=81.22% | t/ep=  8.1s | rem=    69s
-  [Trainer] Epoch 10 | val=83.90% | t/ep=  8.2s | rem=    59s
-  [Trainer] Epoch 11 | val=87.70% | t/ep=  8.1s | rem=    49s
-  [Trainer] Epoch 12 | val=88.15% | t/ep=  8.2s | rem=    39s
-  [Trainer] Epoch 13 | val=88.84% | t/ep=  8.1s | rem=    29s
+  [Trainer] Epoch  1 | val=13.53% | t/ep=  7.5s | t/eval=  1.8s | rem=   151s
+  [Trainer] Epoch  2 | val=17.50% | t/ep=  7.4s | t/eval=  1.8s | rem=   142s
+  [Trainer] Epoch  3 | val=26.57% | t/ep=  7.5s | t/eval=  1.9s | rem=   133s
+  [Trainer] Epoch  4 | val=31.35% | t/ep=  7.5s | t/eval=  1.8s | rem=   124s
+  [Trainer] Epoch  5 | val=28.29% | t/ep=  7.5s | t/eval=  1.8s | rem=   114s
+  [Trainer] Epoch  6 | val=48.73% | t/ep=  7.6s | t/eval=  1.8s | rem=   105s
+  [Trainer] Epoch  7 | val=53.27% | t/ep=  7.5s | t/eval=  1.8s | rem=    96s
+  [Trainer] Epoch  8 | val=52.25% | t/ep=  7.5s | t/eval=  1.8s | rem=    86s
+  [Trainer] Epoch  9 | val=54.92% | t/ep=  7.5s | t/eval=  1.8s | rem=    77s
+  [Trainer] Epoch 10 | val=69.63% | t/ep=  7.6s | t/eval=  1.8s | rem=    68s
+  [Trainer] Epoch 11 | val=70.27% | t/ep=  7.5s | t/eval=  1.8s | rem=    58s
+  [Trainer] Epoch 12 | val=71.07% | t/ep=  7.5s | t/eval=  1.8s | rem=    49s
+  [Trainer] Epoch 13 | val=73.62% | t/ep=  7.6s | t/eval=  1.8s | rem=    40s
+  [Trainer] Epoch 14 | val=74.67% | t/ep=  7.5s | t/eval=  1.8s | rem=    30s
 
 === Predicting ===
-  Allotted compute time remaining: ~29.13s
-Run time for Adaline: 151.9097891
+  Allotted compute time remaining: ~30.26s
+Run time for Adaline: 150.65815949999978
 Model Training and Prediction Complete
 finished dataset: Adaline
 ========== Dataset  Chester   =============================================
@@ -68,7 +67,7 @@ finished dataset: Adaline
    - num_classes         : 3
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.92614250000003
+   - time_remaining      : 179.9280974000003
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -76,48 +75,48 @@ finished dataset: Adaline
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=1 (H=8, W=8)
-[NAS] sampling K=164 genotypes (t_eval~0.08s)
-[NAS] scored 164 genotypes, verifying top 10
-  [NAS] verify: val=36.91% t=1.5s
-  [NAS] verify: val=40.91% t=1.5s
-  [NAS] verify: val=36.86% t=1.4s
-  [NAS] verify: val=33.31% t=1.4s
-  [NAS] verify: val=35.13% t=1.4s
-  [NAS] verify: val=38.17% t=1.4s
-  [NAS] verify: val=38.35% t=1.4s
-  [NAS] verify: val=34.70% t=1.4s
-  [NAS] verify: val=37.72% t=1.4s
-  [NAS] verify: val=35.91% t=1.4s
-[NAS] selected genotype (val=40.91%): ['conv1x1', 'conv3x3', 'conv3x3', 'skip', 'avgpool3x3', 'conv3x3']
+[NAS] sampling K=224 genotypes (t_eval~0.06s)
+[NAS] scored 224 genotypes, verifying top 10
+  [NAS] verify: val=33.35% t=1.7s
+  [NAS] verify: val=33.62% t=1.7s
+  [NAS] verify: val=44.85% t=1.7s
+  [NAS] verify: val=35.64% t=1.7s
+  [NAS] verify: val=33.54% t=1.8s
+  [NAS] verify: val=36.00% t=1.7s
+  [NAS] verify: val=33.50% t=1.6s
+[NAS] selected genotype (val=44.85%): ['conv3x3', 'conv1x1', 'conv3x3', 'conv1x1', 'conv1x1', 'conv1x1']
 
 === Training ===
   Allotted compute time remaining: ~2m,41s
-  [Trainer] Epoch  1 | val=57.22% | t/ep=  5.2s | rem=   155s
-  [Trainer] Epoch  2 | val=54.62% | t/ep=  5.3s | rem=   149s
-  [Trainer] Epoch  3 | val=46.27% | t/ep=  5.2s | rem=   143s
-  [Trainer] Epoch  4 | val=54.30% | t/ep=  5.2s | rem=   137s
-  [Trainer] Epoch  5 | val=54.88% | t/ep=  5.2s | rem=   131s
-  [Trainer] Epoch  6 | val=53.57% | t/ep=  5.2s | rem=   125s
-  [Trainer] Epoch  7 | val=51.58% | t/ep=  5.3s | rem=   119s
-  [Trainer] Epoch  8 | val=54.51% | t/ep=  5.2s | rem=   113s
-  [Trainer] Epoch  9 | val=54.24% | t/ep=  5.2s | rem=   107s
-  [Trainer] Epoch 10 | val=54.33% | t/ep=  5.2s | rem=   101s
-  [Trainer] Epoch 11 | val=54.62% | t/ep=  5.3s | rem=    95s
-  [Trainer] Epoch 12 | val=55.58% | t/ep=  5.2s | rem=    89s
-  [Trainer] Epoch 13 | val=56.18% | t/ep=  5.2s | rem=    83s
-  [Trainer] Epoch 14 | val=56.80% | t/ep=  5.2s | rem=    77s
-  [Trainer] Epoch 15 | val=56.41% | t/ep=  5.2s | rem=    70s
-  [Trainer] Epoch 16 | val=56.28% | t/ep=  5.2s | rem=    64s
-  [Trainer] Epoch 17 | val=56.27% | t/ep=  5.5s | rem=    58s
-  [Trainer] Epoch 18 | val=56.49% | t/ep=  5.2s | rem=    52s
-  [Trainer] Epoch 19 | val=56.47% | t/ep=  5.2s | rem=    46s
-  [Trainer] Epoch 20 | val=56.39% | t/ep=  5.3s | rem=    40s
-  [Trainer] Epoch 21 | val=56.32% | t/ep=  5.3s | rem=    34s
-  [Trainer] Epoch 22 | val=56.25% | t/ep=  5.5s | rem=    27s
+  [Trainer] Epoch  1 | val=49.47% | t/ep=  4.4s | t/eval=  0.8s | rem=   156s
+  [Trainer] Epoch  2 | val=54.69% | t/ep=  4.4s | t/eval=  0.8s | rem=   151s
+  [Trainer] Epoch  3 | val=52.57% | t/ep=  4.5s | t/eval=  0.8s | rem=   146s
+  [Trainer] Epoch  4 | val=53.42% | t/ep=  4.7s | t/eval=  0.8s | rem=   141s
+  [Trainer] Epoch  5 | val=47.70% | t/ep=  4.5s | t/eval=  0.8s | rem=   135s
+  [Trainer] Epoch  6 | val=49.97% | t/ep=  4.5s | t/eval=  0.8s | rem=   130s
+  [Trainer] Epoch  7 | val=50.81% | t/ep=  4.6s | t/eval=  0.8s | rem=   125s
+  [Trainer] Epoch  8 | val=51.38% | t/ep=  4.5s | t/eval=  0.8s | rem=   119s
+  [Trainer] Epoch  9 | val=51.60% | t/ep=  4.5s | t/eval=  0.8s | rem=   114s
+  [Trainer] Epoch 10 | val=52.65% | t/ep=  4.6s | t/eval=  0.8s | rem=   108s
+  [Trainer] Epoch 11 | val=49.73% | t/ep=  4.5s | t/eval=  0.8s | rem=   103s
+  [Trainer] Epoch 12 | val=52.83% | t/ep=  4.5s | t/eval=  0.8s | rem=    98s
+  [Trainer] Epoch 13 | val=52.32% | t/ep=  4.7s | t/eval=  0.8s | rem=    92s
+  [Trainer] Epoch 14 | val=52.33% | t/ep=  4.6s | t/eval=  0.8s | rem=    87s
+  [Trainer] Epoch 15 | val=53.06% | t/ep=  4.5s | t/eval=  0.9s | rem=    81s
+  [Trainer] Epoch 16 | val=53.70% | t/ep=  4.9s | t/eval=  0.8s | rem=    76s
+  [Trainer] Epoch 17 | val=53.59% | t/ep=  4.5s | t/eval=  0.8s | rem=    71s
+  [Trainer] Epoch 18 | val=53.77% | t/ep=  4.5s | t/eval=  0.8s | rem=    65s
+  [Trainer] Epoch 19 | val=53.82% | t/ep=  4.6s | t/eval=  0.8s | rem=    60s
+  [Trainer] Epoch 20 | val=53.85% | t/ep=  4.5s | t/eval=  0.8s | rem=    55s
+  [Trainer] Epoch 21 | val=53.72% | t/ep=  4.6s | t/eval=  0.8s | rem=    49s
+  [Trainer] Epoch 22 | val=53.72% | t/ep=  4.9s | t/eval=  0.8s | rem=    43s
+  [Trainer] Epoch 23 | val=53.75% | t/ep=  5.7s | t/eval=  0.9s | rem=    37s
+  [Trainer] Epoch 24 | val=53.73% | t/ep=  5.2s | t/eval=  1.2s | rem=    30s
+  [Trainer] Epoch 25 | val=53.76% | t/ep=  4.9s | t/eval=  1.2s | rem=    24s
 
 === Predicting ===
-  Allotted compute time remaining: ~27.27s
-Run time for Chester: 153.43017359999993
+  Allotted compute time remaining: ~24.39s
+Run time for Chester: 156.56144930000028
 Model Training and Prediction Complete
 finished dataset: Chester
 ========== Dataset   conway   =============================================
@@ -128,7 +127,7 @@ finished dataset: Chester
    - benchmark           : 47.53
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.94417959999998
+   - time_remaining      : 179.9876352000001
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -136,48 +135,51 @@ finished dataset: Chester
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=1 (H=10, W=10)
-[NAS] sampling K=129 genotypes (t_eval~0.10s)
-[NAS] scored 129 genotypes, verifying top 10
-  [NAS] verify: val=7.54% t=1.5s
-  [NAS] verify: val=7.45% t=1.4s
-  [NAS] verify: val=6.98% t=1.4s
-  [NAS] verify: val=8.55% t=1.4s
-  [NAS] verify: val=8.56% t=1.3s
-  [NAS] verify: val=7.78% t=1.4s
-  [NAS] verify: val=7.76% t=1.4s
-  [NAS] verify: val=8.31% t=1.3s
-  [NAS] verify: val=7.44% t=1.3s
-  [NAS] verify: val=7.43% t=1.3s
-[NAS] selected genotype (val=8.56%): ['conv3x3', 'skip', 'conv1x1', 'conv3x3', 'none', 'conv1x1']
+[NAS] sampling K=215 genotypes (t_eval~0.06s)
+[NAS] scored 215 genotypes, verifying top 10
+  [NAS] verify: val=7.48% t=1.7s
+  [NAS] verify: val=7.45% t=1.6s
+  [NAS] verify: val=7.45% t=1.7s
+  [NAS] verify: val=7.43% t=1.6s
+  [NAS] verify: val=6.91% t=1.6s
+  [NAS] verify: val=7.43% t=1.6s
+  [NAS] verify: val=7.94% t=1.6s
+[NAS] selected genotype (val=7.94%): ['skip', 'conv1x1', 'conv3x3', 'conv3x3', 'conv1x1', 'conv3x3']
 
 === Training ===
-  Allotted compute time remaining: ~2m,42s
-  [Trainer] Epoch  1 | val=23.89% | t/ep=  5.1s | rem=   157s
-  [Trainer] Epoch  2 | val=20.56% | t/ep=  5.3s | rem=   151s
-  [Trainer] Epoch  3 | val=20.78% | t/ep=  5.1s | rem=   145s
-  [Trainer] Epoch  4 | val=33.36% | t/ep=  5.1s | rem=   139s
-  [Trainer] Epoch  5 | val=32.57% | t/ep=  5.1s | rem=   133s
-  [Trainer] Epoch  6 | val=15.18% | t/ep=  5.3s | rem=   127s
-  [Trainer] Epoch  7 | val=35.55% | t/ep=  5.2s | rem=   121s
-  [Trainer] Epoch  8 | val=45.95% | t/ep=  5.0s | rem=   115s
-  [Trainer] Epoch  9 | val=40.17% | t/ep=  5.0s | rem=   109s
-  [Trainer] Epoch 10 | val=43.04% | t/ep=  5.0s | rem=   103s
-  [Trainer] Epoch 11 | val=56.84% | t/ep=  5.2s | rem=    97s
-  [Trainer] Epoch 12 | val=40.02% | t/ep=  5.0s | rem=    92s
-  [Trainer] Epoch 13 | val=52.08% | t/ep=  5.1s | rem=    86s
-  [Trainer] Epoch 14 | val=22.45% | t/ep=  5.7s | rem=    79s
-  [Trainer] Epoch 15 | val=45.66% | t/ep=  6.1s | rem=    72s
-  [Trainer] Epoch 16 | val=25.74% | t/ep=  5.9s | rem=    65s
-  [Trainer] Epoch 17 | val=68.32% | t/ep=  5.4s | rem=    59s
-  [Trainer] Epoch 18 | val=76.14% | t/ep=  6.2s | rem=    52s
-  [Trainer] Epoch 19 | val=71.55% | t/ep=  5.9s | rem=    45s
-  [Trainer] Epoch 20 | val=60.14% | t/ep=  5.7s | rem=    38s
-  [Trainer] Epoch 21 | val=56.37% | t/ep=  5.7s | rem=    32s
-  [Trainer] Epoch 22 | val=81.56% | t/ep=  5.5s | rem=    25s
+  Allotted compute time remaining: ~2m,41s
+  [Trainer] Epoch  1 | val=21.50% | t/ep=  4.1s | t/eval=  0.7s | rem=   157s
+  [Trainer] Epoch  2 | val=15.25% | t/ep=  4.2s | t/eval=  0.7s | rem=   152s
+  [Trainer] Epoch  3 | val=19.57% | t/ep=  4.0s | t/eval=  0.7s | rem=   147s
+  [Trainer] Epoch  4 | val=14.85% | t/ep=  4.0s | t/eval=  0.7s | rem=   143s
+  [Trainer] Epoch  5 | val=24.84% | t/ep=  4.1s | t/eval=  0.7s | rem=   138s
+  [Trainer] Epoch  6 | val=29.95% | t/ep=  4.1s | t/eval=  0.7s | rem=   133s
+  [Trainer] Epoch  7 | val=17.26% | t/ep=  4.0s | t/eval=  0.7s | rem=   128s
+  [Trainer] Epoch  8 | val=30.20% | t/ep=  4.1s | t/eval=  0.7s | rem=   123s
+  [Trainer] Epoch  9 | val=30.49% | t/ep=  4.1s | t/eval=  0.7s | rem=   119s
+  [Trainer] Epoch 10 | val=50.50% | t/ep=  4.1s | t/eval=  0.7s | rem=   114s
+  [Trainer] Epoch 11 | val=48.45% | t/ep=  4.1s | t/eval=  0.7s | rem=   109s
+  [Trainer] Epoch 12 | val=39.62% | t/ep=  4.0s | t/eval=  0.7s | rem=   104s
+  [Trainer] Epoch 13 | val=33.66% | t/ep=  4.1s | t/eval=  0.7s | rem=    99s
+  [Trainer] Epoch 14 | val=44.97% | t/ep=  4.1s | t/eval=  0.7s | rem=    95s
+  [Trainer] Epoch 15 | val=27.04% | t/ep=  4.0s | t/eval=  0.7s | rem=    90s
+  [Trainer] Epoch 16 | val=51.58% | t/ep=  4.0s | t/eval=  0.7s | rem=    85s
+  [Trainer] Epoch 17 | val=34.92% | t/ep=  4.0s | t/eval=  0.8s | rem=    80s
+  [Trainer] Epoch 18 | val=54.98% | t/ep=  4.0s | t/eval=  0.8s | rem=    75s
+  [Trainer] Epoch 19 | val=50.51% | t/ep=  4.2s | t/eval=  0.7s | rem=    70s
+  [Trainer] Epoch 20 | val=42.22% | t/ep=  4.1s | t/eval=  0.7s | rem=    66s
+  [Trainer] Epoch 21 | val=61.96% | t/ep=  4.1s | t/eval=  0.7s | rem=    61s
+  [Trainer] Epoch 22 | val=39.50% | t/ep=  4.0s | t/eval=  0.7s | rem=    56s
+  [Trainer] Epoch 23 | val=36.28% | t/ep=  4.1s | t/eval=  0.7s | rem=    51s
+  [Trainer] Epoch 24 | val=57.72% | t/ep=  4.1s | t/eval=  0.7s | rem=    46s
+  [Trainer] Epoch 25 | val=70.05% | t/ep=  4.1s | t/eval=  0.7s | rem=    42s
+  [Trainer] Epoch 26 | val=72.27% | t/ep=  4.0s | t/eval=  0.7s | rem=    37s
+  [Trainer] Epoch 27 | val=74.21% | t/ep=  4.1s | t/eval=  0.7s | rem=    32s
+  [Trainer] Epoch 28 | val=73.08% | t/ep=  4.1s | t/eval=  0.7s | rem=    27s
 
 === Predicting ===
-  Allotted compute time remaining: ~25.38s
-Run time for conway: 155.3542040000001
+  Allotted compute time remaining: ~27.27s
+Run time for conway: 153.40705870000056
 Model Training and Prediction Complete
 finished dataset: conway
 ========== Dataset Gutenberg  =============================================
@@ -188,7 +190,7 @@ finished dataset: conway
    - num_classes         : 6
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.90164679999998
+   - time_remaining      : 179.96256210000047
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -196,36 +198,42 @@ finished dataset: conway
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=2 (H=27, W=18)
-[NAS] sampling K=128 genotypes (t_eval~0.10s)
-[NAS] scored 128 genotypes, verifying top 10
-  [NAS] verify: val=16.93% t=2.5s
-  [NAS] verify: val=17.71% t=2.6s
-  [NAS] verify: val=16.22% t=2.4s
-  [NAS] verify: val=16.41% t=2.6s
-  [NAS] verify: val=16.76% t=2.4s
-[NAS] selected genotype (val=17.71%): ['conv1x1', 'conv3x3', 'conv3x3', 'conv3x3', 'conv1x1', 'conv1x1']
+[NAS] sampling K=204 genotypes (t_eval~0.06s)
+[NAS] scored 204 genotypes, verifying top 10
+  [NAS] verify: val=16.27% t=3.3s
+  [NAS] verify: val=16.76% t=2.6s
+  [NAS] verify: val=16.27% t=2.9s
+  [NAS] verify: val=15.62% t=1.4s
+[NAS] selected genotype (val=16.76%): ['conv3x3', 'none', 'conv3x3', 'conv1x1', 'none', 'conv1x1']
 
 === Training ===
-  Allotted compute time remaining: ~2m,40s
-  [Trainer] Epoch  1 | val=26.56% | t/ep=  7.0s | rem=   152s
-  [Trainer] Epoch  2 | val=32.03% | t/ep=  7.0s | rem=   143s
-  [Trainer] Epoch  3 | val=33.47% | t/ep=  7.0s | rem=   135s
-  [Trainer] Epoch  4 | val=28.87% | t/ep=  7.0s | rem=   126s
-  [Trainer] Epoch  5 | val=32.01% | t/ep=  7.2s | rem=   117s
-  [Trainer] Epoch  6 | val=38.73% | t/ep=  7.0s | rem=   108s
-  [Trainer] Epoch  7 | val=38.69% | t/ep=  7.0s | rem=    99s
-  [Trainer] Epoch  8 | val=36.72% | t/ep=  7.0s | rem=    91s
-  [Trainer] Epoch  9 | val=38.37% | t/ep=  7.1s | rem=    82s
-  [Trainer] Epoch 10 | val=39.36% | t/ep=  7.0s | rem=    73s
-  [Trainer] Epoch 11 | val=35.77% | t/ep=  7.0s | rem=    65s
-  [Trainer] Epoch 12 | val=39.89% | t/ep=  7.2s | rem=    55s
-  [Trainer] Epoch 13 | val=40.00% | t/ep=  7.4s | rem=    46s
-  [Trainer] Epoch 14 | val=40.37% | t/ep=  7.1s | rem=    37s
-  [Trainer] Epoch 15 | val=41.23% | t/ep=  7.1s | rem=    29s
+  Allotted compute time remaining: ~2m,41s
+  [Trainer] Epoch  1 | val=23.81% | t/ep=  4.8s | t/eval=  1.4s | rem=   155s
+  [Trainer] Epoch  2 | val=29.11% | t/ep=  4.8s | t/eval=  1.4s | rem=   149s
+  [Trainer] Epoch  3 | val=30.74% | t/ep=  4.9s | t/eval=  1.4s | rem=   142s
+  [Trainer] Epoch  4 | val=30.42% | t/ep=  4.8s | t/eval=  1.4s | rem=   136s
+  [Trainer] Epoch  5 | val=30.25% | t/ep=  4.8s | t/eval=  1.4s | rem=   130s
+  [Trainer] Epoch  6 | val=32.46% | t/ep=  4.9s | t/eval=  1.4s | rem=   123s
+  [Trainer] Epoch  7 | val=37.89% | t/ep=  4.8s | t/eval=  1.4s | rem=   117s
+  [Trainer] Epoch  8 | val=34.05% | t/ep=  4.8s | t/eval=  1.4s | rem=   111s
+  [Trainer] Epoch  9 | val=30.58% | t/ep=  4.8s | t/eval=  1.5s | rem=   105s
+  [Trainer] Epoch 10 | val=34.61% | t/ep=  4.8s | t/eval=  1.4s | rem=    98s
+  [Trainer] Epoch 11 | val=30.91% | t/ep=  4.8s | t/eval=  1.5s | rem=    92s
+  [Trainer] Epoch 12 | val=33.54% | t/ep=  5.8s | t/eval=  1.6s | rem=    85s
+  [Trainer] Epoch 13 | val=34.50% | t/ep=  5.4s | t/eval=  2.0s | rem=    77s
+  [Trainer] Epoch 14 | val=30.73% | t/ep=  5.4s | t/eval=  2.1s | rem=    70s
+  [Trainer] Epoch 15 | val=33.07% | t/ep=  5.5s | t/eval=  1.5s | rem=    63s
+  [Trainer] Epoch 16 | val=36.07% | t/ep=  5.6s | t/eval=  1.9s | rem=    55s
+  [Trainer] Epoch 17 | val=36.31% | t/ep=  5.4s | t/eval=  1.4s | rem=    48s
+  [Trainer] Epoch 18 | val=37.66% | t/ep=  4.8s | t/eval=  1.4s | rem=    42s
+  [Trainer] Epoch 19 | val=39.21% | t/ep=  4.9s | t/eval=  1.4s | rem=    36s
+  [Trainer] Epoch 20 | val=39.41% | t/ep=  4.9s | t/eval=  1.4s | rem=    30s
+  [Trainer] validation time budget (1s) reached, scoring on 6144/15000 valid samples
+  [Trainer] Epoch 21 | val=40.27% | t/ep=  4.8s | t/eval=  0.6s | rem=    24s
 
 === Predicting ===
-  Allotted compute time remaining: ~28.66s
-Run time for Gutenberg: 151.88102259999994
+  Allotted compute time remaining: ~24.12s
+Run time for Gutenberg: 156.3907009000004
 Model Training and Prediction Complete
 finished dataset: Gutenberg
 ========== Dataset   LaMelo   =============================================
@@ -236,7 +244,7 @@ finished dataset: Gutenberg
    - benchmark           : 85.2
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.8966552999999
+   - time_remaining      : 179.95126190000065
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -244,34 +252,39 @@ finished dataset: Gutenberg
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=2 (H=24, W=24)
-[NAS] sampling K=149 genotypes (t_eval~0.08s)
-[NAS] scored 149 genotypes, verifying top 10
-  [NAS] verify: val=10.02% t=2.4s
-  [NAS] verify: val=11.73% t=2.1s
-  [NAS] verify: val=10.36% t=2.0s
-  [NAS] verify: val=36.83% t=2.3s
-  [NAS] verify: val=10.00% t=2.0s
-  [NAS] verify: val=10.16% t=2.0s
-[NAS] selected genotype (val=36.83%): ['conv3x3', 'conv3x3', 'conv3x3', 'conv3x3', 'avgpool3x3', 'conv3x3']
+[NAS] sampling K=126 genotypes (t_eval~0.10s)
+[NAS] scored 126 genotypes, verifying top 10
+  [NAS] verify: val=10.02% t=3.1s
+  [NAS] verify: val=22.84% t=2.5s
+  [NAS] verify: val=12.61% t=2.0s
+  [NAS] verify: val=10.47% t=2.7s
+  [NAS] verify: val=22.31% t=2.3s
+  [NAS] verify: val=22.66% t=1.6s
+[NAS] selected genotype (val=22.84%): ['conv3x3', 'conv3x3', 'skip', 'conv3x3', 'skip', 'conv3x3']
 
 === Training ===
   Allotted compute time remaining: ~2m,40s
-  [Trainer] Epoch  1 | val=56.71% | t/ep= 10.0s | rem=   149s
-  [Trainer] Epoch  2 | val=67.64% | t/ep= 10.0s | rem=   138s
-  [Trainer] Epoch  3 | val=71.27% | t/ep= 10.0s | rem=   127s
-  [Trainer] Epoch  4 | val=79.17% | t/ep= 10.0s | rem=   116s
-  [Trainer] Epoch  5 | val=72.73% | t/ep= 10.1s | rem=   104s
-  [Trainer] Epoch  6 | val=83.55% | t/ep= 10.0s | rem=    93s
-  [Trainer] Epoch  7 | val=84.32% | t/ep= 10.0s | rem=    82s
-  [Trainer] Epoch  8 | val=84.81% | t/ep= 10.0s | rem=    70s
-  [Trainer] Epoch  9 | val=84.69% | t/ep= 10.1s | rem=    59s
-  [Trainer] Epoch 10 | val=84.72% | t/ep= 10.0s | rem=    48s
-  [Trainer] Epoch 11 | val=84.74% | t/ep= 10.1s | rem=    37s
-  [Trainer] Epoch 12 | val=84.72% | t/ep= 10.0s | rem=    25s
+  [Trainer] Epoch  1 | val=62.11% | t/ep=  6.9s | t/eval=  1.1s | rem=   152s
+  [Trainer] Epoch  2 | val=67.61% | t/ep=  6.9s | t/eval=  1.1s | rem=   144s
+  [Trainer] Epoch  3 | val=68.76% | t/ep=  6.9s | t/eval=  1.1s | rem=   137s
+  [Trainer] Epoch  4 | val=72.10% | t/ep=  6.9s | t/eval=  1.1s | rem=   129s
+  [Trainer] Epoch  5 | val=74.62% | t/ep=  6.9s | t/eval=  1.1s | rem=   121s
+  [Trainer] Epoch  6 | val=76.03% | t/ep=  6.9s | t/eval=  1.1s | rem=   113s
+  [Trainer] Epoch  7 | val=77.85% | t/ep=  6.9s | t/eval=  1.1s | rem=   105s
+  [Trainer] Epoch  8 | val=80.16% | t/ep=  6.9s | t/eval=  1.1s | rem=    97s
+  [Trainer] Epoch  9 | val=82.09% | t/ep=  6.9s | t/eval=  1.1s | rem=    89s
+  [Trainer] Epoch 10 | val=82.12% | t/ep=  6.9s | t/eval=  1.1s | rem=    81s
+  [Trainer] Epoch 11 | val=81.99% | t/ep=  6.9s | t/eval=  1.0s | rem=    73s
+  [Trainer] Epoch 12 | val=82.03% | t/ep=  6.9s | t/eval=  1.1s | rem=    65s
+  [Trainer] Epoch 13 | val=82.17% | t/ep=  7.0s | t/eval=  1.1s | rem=    57s
+  [Trainer] Epoch 14 | val=81.98% | t/ep=  6.9s | t/eval=  1.0s | rem=    49s
+  [Trainer] Epoch 15 | val=82.05% | t/ep=  7.0s | t/eval=  1.1s | rem=    41s
+  [Trainer] Epoch 16 | val=82.06% | t/ep=  6.9s | t/eval=  1.1s | rem=    33s
+  [Trainer] Epoch 17 | val=81.91% | t/ep=  6.9s | t/eval=  1.1s | rem=    25s
 
 === Predicting ===
-  Allotted compute time remaining: ~25.33s
-Run time for LaMelo: 155.7273792000001
+  Allotted compute time remaining: ~24.88s
+Run time for LaMelo: 156.05030950000037
 Model Training and Prediction Complete
 finished dataset: LaMelo
 ========== Dataset   Mateo    =============================================
@@ -282,7 +295,7 @@ finished dataset: LaMelo
    - benchmark           : 90.87
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.73968029999992
+   - time_remaining      : 179.78278769999997
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -290,30 +303,30 @@ finished dataset: LaMelo
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=2 (H=28, W=28)
-[NAS] sampling K=225 genotypes (t_eval~0.06s)
-[NAS] scored 225 genotypes, verifying top 10
-  [NAS] verify: val=10.23% t=2.0s
-  [NAS] verify: val=11.31% t=1.9s
-  [NAS] verify: val=10.70% t=2.0s
-  [NAS] verify: val=12.36% t=2.0s
-[NAS] selected genotype (val=12.36%): ['conv3x3', 'conv1x1', 'avgpool3x3', 'conv3x3', 'conv3x3', 'conv1x1']
+[NAS] sampling K=300 genotypes (t_eval~0.04s)
+[NAS] scored 300 genotypes, verifying top 10
+  [NAS] verify: val=10.21% t=3.2s
+  [NAS] verify: val=9.85% t=2.7s
+[NAS] selected genotype (val=10.21%): ['conv1x1', 'none', 'conv3x3', 'conv3x3', 'conv1x1', 'conv3x3']
 
 === Training ===
   Allotted compute time remaining: ~2m,40s
-  [Trainer] Epoch  1 | val=35.91% | t/ep= 11.3s | rem=   148s
-  [Trainer] Epoch  2 | val=50.67% | t/ep= 11.3s | rem=   136s
-  [Trainer] Epoch  3 | val=70.31% | t/ep= 11.2s | rem=   123s
-  [Trainer] Epoch  4 | val=81.69% | t/ep= 11.2s | rem=   110s
-  [Trainer] Epoch  5 | val=81.92% | t/ep= 11.2s | rem=    98s
-  [Trainer] Epoch  6 | val=83.77% | t/ep= 11.2s | rem=    85s
-  [Trainer] Epoch  7 | val=88.88% | t/ep= 11.2s | rem=    73s
-  [Trainer] Epoch  8 | val=91.62% | t/ep= 11.2s | rem=    60s
-  [Trainer] Epoch  9 | val=91.72% | t/ep= 11.2s | rem=    48s
-  [Trainer] Epoch 10 | val=93.20% | t/ep= 11.2s | rem=    35s
+  [Trainer] Epoch  1 | val=30.37% | t/ep=  9.4s | t/eval=  1.4s | rem=   150s
+  [Trainer] Epoch  2 | val=35.72% | t/ep=  9.4s | t/eval=  1.3s | rem=   140s
+  [Trainer] Epoch  3 | val=28.29% | t/ep=  9.4s | t/eval=  1.3s | rem=   129s
+  [Trainer] Epoch  4 | val=43.34% | t/ep=  9.4s | t/eval=  1.3s | rem=   118s
+  [Trainer] Epoch  5 | val=50.33% | t/ep=  9.5s | t/eval=  1.3s | rem=   107s
+  [Trainer] Epoch  6 | val=63.31% | t/ep=  9.4s | t/eval=  1.3s | rem=    97s
+  [Trainer] Epoch  7 | val=70.40% | t/ep=  9.4s | t/eval=  1.3s | rem=    86s
+  [Trainer] Epoch  8 | val=72.82% | t/ep=  9.4s | t/eval=  1.3s | rem=    75s
+  [Trainer] Epoch  9 | val=79.10% | t/ep=  9.4s | t/eval=  1.4s | rem=    65s
+  [Trainer] Epoch 10 | val=80.83% | t/ep=  9.4s | t/eval=  1.3s | rem=    54s
+  [Trainer] Epoch 11 | val=81.54% | t/ep=  9.4s | t/eval=  1.3s | rem=    43s
+  [Trainer] Epoch 12 | val=84.25% | t/ep=  9.4s | t/eval=  1.3s | rem=    33s
 
 === Predicting ===
-  Allotted compute time remaining: ~34.87s
-Run time for Mateo: 146.1857511999999
+  Allotted compute time remaining: ~32.61s
+Run time for Mateo: 148.34389980000014
 Model Training and Prediction Complete
 finished dataset: Mateo
 ========== Dataset   Sokoto   =============================================
@@ -324,7 +337,7 @@ finished dataset: Mateo
    - num_classes         : 9
    - time_limit          : 0.05
    - grace_time          : False
-   - time_remaining      : 179.94607410000003
+   - time_remaining      : 179.99205940000047
 
 === Processing Data ===
   Allotted compute time remaining: ~2m,59s
@@ -332,47 +345,53 @@ finished dataset: Mateo
 === Performing NAS ===
   Allotted compute time remaining: ~2m,59s
 [NAS] macro: c0=32 n=2 d=1 (H=9, W=9)
-[NAS] sampling K=236 genotypes (t_eval~0.05s)
-[NAS] scored 236 genotypes, verifying top 10
-  [NAS] verify: val=11.63% t=1.5s
-  [NAS] verify: val=11.12% t=1.3s
-  [NAS] verify: val=11.11% t=1.5s
-  [NAS] verify: val=11.11% t=1.4s
-  [NAS] verify: val=11.07% t=1.4s
-  [NAS] verify: val=11.70% t=1.4s
-  [NAS] verify: val=11.12% t=1.3s
-  [NAS] verify: val=11.13% t=1.3s
-  [NAS] verify: val=11.16% t=1.3s
-[NAS] selected genotype (val=11.70%): ['conv3x3', 'conv1x1', 'conv1x1', 'conv3x3', 'avgpool3x3', 'conv3x3']
+[NAS] sampling K=244 genotypes (t_eval~0.05s)
+[NAS] scored 244 genotypes, verifying top 10
+  [NAS] verify: val=11.10% t=1.7s
+  [NAS] verify: val=11.11% t=1.6s
+  [NAS] verify: val=10.97% t=1.5s
+  [NAS] verify: val=11.30% t=1.6s
+  [NAS] verify: val=11.70% t=1.6s
+  [NAS] verify: val=11.12% t=1.6s
+  [NAS] verify: val=11.11% t=1.6s
+  [NAS] verify: val=10.94% t=0.9s
+[NAS] selected genotype (val=11.70%): ['conv3x3', 'conv1x1', 'avgpool3x3', 'skip', 'conv3x3', 'conv1x1']
 
 === Training ===
   Allotted compute time remaining: ~2m,41s
-  [Trainer] Epoch  1 | val=12.51% | t/ep=  5.3s | rem=   155s
-  [Trainer] Epoch  2 | val=12.79% | t/ep=  5.3s | rem=   149s
-  [Trainer] Epoch  3 | val=20.62% | t/ep=  5.8s | rem=   143s
-  [Trainer] Epoch  4 | val=23.35% | t/ep=  5.4s | rem=   136s
-  [Trainer] Epoch  5 | val=23.81% | t/ep=  5.4s | rem=   130s
-  [Trainer] Epoch  6 | val=22.54% | t/ep=  5.3s | rem=   124s
-  [Trainer] Epoch  7 | val=25.12% | t/ep=  5.4s | rem=   118s
-  [Trainer] Epoch  8 | val=17.94% | t/ep=  5.5s | rem=   112s
-  [Trainer] Epoch  9 | val=22.39% | t/ep=  5.4s | rem=   105s
-  [Trainer] Epoch 10 | val=21.91% | t/ep=  5.4s | rem=    99s
-  [Trainer] Epoch 11 | val=28.90% | t/ep=  5.6s | rem=    93s
-  [Trainer] Epoch 12 | val=27.19% | t/ep=  5.4s | rem=    87s
-  [Trainer] Epoch 13 | val=23.25% | t/ep=  5.3s | rem=    81s
-  [Trainer] Epoch 14 | val=29.12% | t/ep=  5.3s | rem=    74s
-  [Trainer] Epoch 15 | val=24.21% | t/ep=  5.3s | rem=    68s
-  [Trainer] Epoch 16 | val=26.29% | t/ep=  5.4s | rem=    62s
-  [Trainer] Epoch 17 | val=24.10% | t/ep=  5.3s | rem=    56s
-  [Trainer] Epoch 18 | val=27.67% | t/ep=  5.3s | rem=    50s
-  [Trainer] Epoch 19 | val=26.31% | t/ep=  5.3s | rem=    44s
-  [Trainer] Epoch 20 | val=27.11% | t/ep=  5.4s | rem=    38s
-  [Trainer] Epoch 21 | val=27.75% | t/ep=  5.3s | rem=    32s
-  [Trainer] Epoch 22 | val=26.79% | t/ep=  5.3s | rem=    26s
+  [Trainer] Epoch  1 | val=11.33% | t/ep=  4.0s | t/eval=  0.7s | rem=   157s
+  [Trainer] Epoch  2 | val=13.47% | t/ep=  3.9s | t/eval=  0.7s | rem=   152s
+  [Trainer] Epoch  3 | val=14.09% | t/ep=  3.9s | t/eval=  0.7s | rem=   147s
+  [Trainer] Epoch  4 | val=15.83% | t/ep=  4.0s | t/eval=  0.7s | rem=   143s
+  [Trainer] Epoch  5 | val=16.21% | t/ep=  3.9s | t/eval=  0.7s | rem=   138s
+  [Trainer] Epoch  6 | val=18.24% | t/ep=  3.9s | t/eval=  0.7s | rem=   133s
+  [Trainer] Epoch  7 | val=19.00% | t/ep=  3.9s | t/eval=  0.7s | rem=   129s
+  [Trainer] Epoch  8 | val=20.10% | t/ep=  4.0s | t/eval=  0.7s | rem=   124s
+  [Trainer] Epoch  9 | val=18.12% | t/ep=  3.9s | t/eval=  0.7s | rem=   119s
+  [Trainer] Epoch 10 | val=20.67% | t/ep=  3.9s | t/eval=  0.7s | rem=   115s
+  [Trainer] Epoch 11 | val=17.21% | t/ep=  4.0s | t/eval=  0.7s | rem=   110s
+  [Trainer] Epoch 12 | val=19.21% | t/ep=  3.9s | t/eval=  0.7s | rem=   106s
+  [Trainer] Epoch 13 | val=14.28% | t/ep=  3.9s | t/eval=  0.7s | rem=   101s
+  [Trainer] Epoch 14 | val=18.06% | t/ep=  3.9s | t/eval=  0.7s | rem=    96s
+  [Trainer] Epoch 15 | val=20.23% | t/ep=  4.0s | t/eval=  0.7s | rem=    92s
+  [Trainer] Epoch 16 | val=19.27% | t/ep=  3.9s | t/eval=  0.7s | rem=    87s
+  [Trainer] Epoch 17 | val=20.53% | t/ep=  3.9s | t/eval=  0.7s | rem=    82s
+  [Trainer] Epoch 18 | val=14.43% | t/ep=  4.0s | t/eval=  0.7s | rem=    78s
+  [Trainer] Epoch 19 | val=16.17% | t/ep=  3.9s | t/eval=  0.7s | rem=    73s
+  [Trainer] Epoch 20 | val=19.34% | t/ep=  3.9s | t/eval=  0.7s | rem=    68s
+  [Trainer] Epoch 21 | val=17.85% | t/ep=  4.0s | t/eval=  0.7s | rem=    64s
+  [Trainer] Epoch 22 | val=18.40% | t/ep=  3.9s | t/eval=  0.7s | rem=    59s
+  [Trainer] Epoch 23 | val=20.37% | t/ep=  3.9s | t/eval=  0.7s | rem=    54s
+  [Trainer] Epoch 24 | val=18.03% | t/ep=  4.0s | t/eval=  0.7s | rem=    50s
+  [Trainer] Epoch 25 | val=19.34% | t/ep=  3.9s | t/eval=  0.7s | rem=    45s
+  [Trainer] Epoch 26 | val=17.06% | t/ep=  3.9s | t/eval=  0.7s | rem=    40s
+  [Trainer] Epoch 27 | val=19.91% | t/ep=  4.0s | t/eval=  0.7s | rem=    36s
+  [Trainer] Epoch 28 | val=18.96% | t/ep=  3.9s | t/eval=  0.7s | rem=    31s
+  [Trainer] Epoch 29 | val=19.45% | t/ep=  3.9s | t/eval=  0.7s | rem=    26s
 
 === Predicting ===
-  Allotted compute time remaining: ~25.59s
-Run time for Sokoto: 155.08014409999987
+  Allotted compute time remaining: ~26.39s
+Run time for Sokoto: 154.2790845999998
 Model Training and Prediction Complete
 finished dataset: Sokoto
 done
@@ -388,39 +407,39 @@ cd scoring; python score.py
 =============    Your Unseen Data 2025 Submission is scoring     =============
 ===========================================================================
 == Scoring AddNIST ==
-Raw Score:    89.340
-Adj Score:    -0.502
-Model Params: 877876
-Runtime:      151.9s
+Raw Score:    75.230
+Adj Score:    -10.000
+Model Params: 1221940
+Runtime:      150.7s
 == Scoring Chesseract ==
-Raw Score:    56.796
-Adj Score:    -0.244
-Model Params: 294147
-Runtime:      153.4s
+Raw Score:    54.865
+Adj Score:    -0.702
+Model Params: 233475
+Runtime:      156.6s
 == Scoring GameOfLife ==
-Raw Score:    82.150
-Adj Score:    6.598
-Model Params: 210489
-Runtime:      155.3s
+Raw Score:    74.360
+Adj Score:    5.113
+Model Params: 303033
+Runtime:      153.4s
 == Scoring Gutenberg ==
-Raw Score:    40.633
-Adj Score:    -0.059
-Model Params: 1307366
-Runtime:      151.9s
+Raw Score:    40.200
+Adj Score:    -0.132
+Model Params: 875494
+Runtime:      156.4s
 == Scoring Language ==
-Raw Score:    84.530
-Adj Score:    -0.453
-Model Params: 1952106
-Runtime:      155.7s
+Raw Score:    81.840
+Adj Score:    -2.270
+Model Params: 1564138
+Runtime:      156.1s
 == Scoring MultNIST ==
-Raw Score:    87.210
-Adj Score:    -4.009
+Raw Score:    75.370
+Adj Score:    -10.000
 Model Params: 1264554
-Runtime:      146.2s
+Runtime:      148.3s
 == Scoring Sudoku ==
-Raw Score:    28.330
-Adj Score:    2.833
-Model Params: 301993
-Runtime:      155.1s
+Raw Score:    20.720
+Adj Score:    2.072
+Model Params: 209449
+Runtime:      154.3s
 ===========================
-Final Score: 4.164
+Final Score: -15.919
