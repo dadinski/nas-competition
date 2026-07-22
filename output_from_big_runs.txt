@@ -1,0 +1,584 @@
+$ make submission=submission_baseline all
+rm -Rf scoring
+rm -Rf package
+rm -Rf package
+mkdir package
+mkdir package/predictions
+mkdir package/datasets
+cp -R datasets/* package/datasets/
+find package/datasets -name "test_y.npy" -delete
+cp -R evaluation/main.py package/main.py
+cp -R submission_baseline/* package
+cd package; python main.py
+==============================================================================
+=============    Your NAS Unseen-Data 2026 Submission is running     =============
+==============================================================================
+========== Dataset  Adaline   =============================================
+  Metadata:
+   - num_classes         : 20
+   - input_shape         : [50000, 3, 28, 28]
+   - codename            : Adaline
+   - benchmark           : 89.85
+   - time_limit          : 8.0
+   - grace_time          : False
+   - time_remaining      : 28799.817929700002
+
+=== Processing Data ===
+  Allotted compute time remaining: ~7h,59m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~7h,59m,59s
+[NAS] macro: c0=32 n=2 d=2 (H=28, W=28)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 1000 genotypes
+[NAS] scored 1000 genotypes, verifying top 100 (max_batches=233, t_batch~0.116s, t_val~1.23s)
+  [NAS] verify: val=19.79% t=12.0s
+  [NAS] verify: val=9.47% t=10.2s
+  [NAS] verify: val=17.76% t=9.4s
+  [NAS] verify: val=20.99% t=11.2s
+  [NAS] verify: val=18.64% t=11.0s
+  [NAS] verify: val=13.89% t=10.2s
+  [NAS] verify: val=23.15% t=9.3s
+  [NAS] verify: val=24.97% t=11.1s
+  [NAS] verify: val=21.82% t=10.2s
+  [NAS] verify: val=10.71% t=11.1s
+  [NAS] verify: val=20.91% t=9.3s
+  [NAS] verify: val=14.16% t=9.3s
+  [NAS] verify: val=16.65% t=10.4s
+  [NAS] verify: val=17.05% t=10.0s
+  [NAS] verify: val=23.59% t=10.4s
+  [NAS] verify: val=14.55% t=10.2s
+  [NAS] verify: val=20.63% t=8.2s
+  [NAS] verify: val=18.42% t=8.2s
+  [NAS] verify: val=15.58% t=8.6s
+  [NAS] verify: val=16.15% t=11.9s
+  [NAS] verify: val=19.25% t=9.4s
+  [NAS] verify: val=22.49% t=9.2s
+  [NAS] verify: val=22.75% t=10.3s
+  [NAS] verify: val=22.98% t=11.9s
+  [NAS] verify: val=15.37% t=7.8s
+  [NAS] verify: val=24.25% t=9.3s
+  [NAS] verify: val=17.96% t=10.2s
+  [NAS] verify: val=12.58% t=10.0s
+  [NAS] verify: val=21.61% t=9.2s
+  [NAS] verify: val=10.52% t=8.3s
+  [NAS] verify: val=17.23% t=11.1s
+  [NAS] verify: val=15.63% t=10.0s
+  [NAS] verify: val=16.75% t=9.9s
+  [NAS] verify: val=16.61% t=10.1s
+  [NAS] verify: val=14.58% t=10.0s
+  [NAS] verify: val=15.73% t=7.1s
+  [NAS] verify: val=15.92% t=10.5s
+  [NAS] verify: val=8.76% t=8.2s
+  [NAS] verify: val=18.59% t=9.3s
+  [NAS] verify: val=13.31% t=10.1s
+  [NAS] verify: val=14.58% t=9.2s
+  [NAS] verify: val=16.49% t=9.9s
+  [NAS] verify: val=20.51% t=9.4s
+  [NAS] verify: val=18.71% t=11.9s
+  [NAS] verify: val=14.84% t=8.3s
+  [NAS] verify: val=16.33% t=9.5s
+  [NAS] verify: val=14.48% t=8.9s
+  [NAS] verify: val=21.21% t=9.8s
+  [NAS] verify: val=17.39% t=8.3s
+  [NAS] verify: val=18.68% t=10.1s
+  [NAS] verify: val=18.25% t=9.1s
+  [NAS] verify: val=17.81% t=7.4s
+  [NAS] verify: val=16.81% t=9.3s
+  [NAS] verify: val=18.85% t=8.5s
+  [NAS] verify: val=10.85% t=9.1s
+  [NAS] verify: val=22.99% t=9.3s
+  [NAS] verify: val=16.12% t=10.4s
+  [NAS] verify: val=15.63% t=8.2s
+  [NAS] verify: val=11.48% t=8.7s
+  [NAS] verify: val=19.20% t=7.4s
+  [NAS] verify: val=18.16% t=7.2s
+  [NAS] verify: val=20.63% t=9.8s
+  [NAS] verify: val=17.55% t=8.3s
+  [NAS] verify: val=22.19% t=8.7s
+  [NAS] verify: val=9.85% t=9.1s
+  [NAS] verify: val=11.97% t=8.9s
+  [NAS] verify: val=19.81% t=10.0s
+  [NAS] verify: val=14.91% t=9.9s
+  [NAS] verify: val=21.02% t=9.1s
+  [NAS] verify: val=22.52% t=11.1s
+  [NAS] verify: val=23.05% t=10.7s
+  [NAS] verify: val=8.79% t=9.1s
+  [NAS] verify: val=13.07% t=8.0s
+  [NAS] verify: val=14.33% t=8.4s
+  [NAS] verify: val=12.21% t=7.3s
+  [NAS] verify: val=6.71% t=8.4s
+  [NAS] verify: val=7.57% t=8.3s
+  [NAS] verify: val=6.40% t=8.0s
+  [NAS] verify: val=18.55% t=8.0s
+  [NAS] verify: val=6.78% t=7.4s
+  [NAS] verify: val=24.70% t=9.2s
+  [NAS] verify: val=26.73% t=11.2s
+  [NAS] verify: val=17.85% t=8.1s
+  [NAS] verify: val=14.21% t=9.0s
+  [NAS] verify: val=22.53% t=11.2s
+  [NAS] verify: val=23.17% t=9.7s
+  [NAS] verify: val=21.06% t=9.1s
+  [NAS] verify: val=17.08% t=7.3s
+  [NAS] verify: val=24.81% t=8.1s
+  [NAS] verify: val=15.43% t=8.5s
+  [NAS] verify: val=7.31% t=7.2s
+  [NAS] verify: val=14.74% t=7.9s
+  [NAS] verify: val=15.81% t=8.4s
+  [NAS] verify: val=22.03% t=8.4s
+  [NAS] verify: val=18.43% t=9.0s
+  [NAS] verify: val=23.00% t=9.4s
+  [NAS] verify: val=14.65% t=10.1s
+  [NAS] verify: val=7.97% t=7.4s
+  [NAS] verify: val=14.77% t=8.6s
+  [NAS] verify: val=11.49% t=8.3s
+[NAS] selected genotype (val=26.73%): ['conv3x3', 'conv3x3', 'avgpool3x3', 'conv3x3', 'conv3x3', 'skip']
+
+=== Training ===
+  Allotted compute time remaining: ~7h,43m,46s
+  [Trainer] Epoch  1 | val=17.49% | t/ep=  9.1s | t/eval=  2.0s | rem= 27815s
+  [Trainer] Epoch  2 | val=23.77% | t/ep=  9.1s | t/eval=  2.0s | rem= 27804s
+  [Trainer] Epoch  3 | val=30.13% | t/ep=  9.1s | t/eval=  2.1s | rem= 27793s
+  [Trainer] Epoch  4 | val=38.75% | t/ep=  9.1s | t/eval=  2.0s | rem= 27782s
+  [Trainer] Epoch  5 | val=42.15% | t/ep=  9.1s | t/eval=  2.0s | rem= 27770s
+  [Trainer] Epoch  6 | val=43.76% | t/ep=  9.1s | t/eval=  2.1s | rem= 27759s
+  [Trainer] Epoch  7 | val=48.44% | t/ep=  9.1s | t/eval=  2.0s | rem= 27748s
+  [Trainer] Epoch  8 | val=47.91% | t/ep=  9.1s | t/eval=  2.0s | rem= 27737s
+  [Trainer] Epoch  9 | val=67.41% | t/ep=  9.1s | t/eval=  2.0s | rem= 27726s
+  [Trainer] Epoch 10 | val=56.15% | t/ep=  9.1s | t/eval=  2.0s | rem= 27715s
+  [Trainer] Epoch 11 | val=60.67% | t/ep=  9.1s | t/eval=  2.0s | rem= 27704s
+  [Trainer] Epoch 12 | val=64.51% | t/ep=  9.1s | t/eval=  2.0s | rem= 27693s
+  [Trainer] Epoch 13 | val=64.55% | t/ep=  9.1s | t/eval=  2.0s | rem= 27682s
+  [Trainer] Epoch 14 | val=65.91% | t/ep=  9.1s | t/eval=  2.1s | rem= 27670s
+  [Trainer] Epoch 15 | val=55.15% | t/ep=  9.3s | t/eval=  2.0s | rem= 27659s
+  [Trainer] Epoch 16 | val=70.01% | t/ep=  9.3s | t/eval=  2.0s | rem= 27648s
+  [Trainer] Epoch 17 | val=78.91% | t/ep=  9.3s | t/eval=  2.0s | rem= 27637s
+  [Trainer] Epoch 18 | val=78.39% | t/ep=  9.3s | t/eval=  2.0s | rem= 27625s
+  [Trainer] Epoch 19 | val=79.17% | t/ep=  9.1s | t/eval=  2.0s | rem= 27614s
+  [Trainer] Epoch 20 | val=81.66% | t/ep=  9.1s | t/eval=  2.1s | rem= 27603s
+  [Trainer] Epoch 21 | val=83.72% | t/ep=  9.1s | t/eval=  2.0s | rem= 27592s
+  [Trainer] Epoch 22 | val=82.47% | t/ep=  9.1s | t/eval=  2.0s | rem= 27581s
+  [Trainer] Epoch 23 | val=84.17% | t/ep=  9.1s | t/eval=  2.0s | rem= 27570s
+  [Trainer] Epoch 24 | val=84.15% | t/ep=  9.2s | t/eval=  2.0s | rem= 27559s
+  [Trainer] Epoch 25 | val=84.35% | t/ep=  9.1s | t/eval=  2.0s | rem= 27547s
+  [Trainer] Epoch 26 | val=84.28% | t/ep=  9.2s | t/eval=  2.0s | rem= 27536s
+  [Trainer] Epoch 27 | val=84.31% | t/ep= 10.3s | t/eval=  2.7s | rem= 27523s
+  [Trainer] Epoch 28 | val=84.21% | t/ep=  9.2s | t/eval=  2.0s | rem= 27512s
+  [Trainer] Epoch 29 | val=84.53% | t/ep=  9.2s | t/eval=  2.0s | rem= 27501s
+  [Trainer] Epoch 30 | val=84.40% | t/ep=  9.1s | t/eval=  2.0s | rem= 27490s
+  [Trainer] Epoch 31 | val=84.41% | t/ep=  9.2s | t/eval=  2.2s | rem= 27478s
+  [Trainer] Epoch 32 | val=84.25% | t/ep=  9.2s | t/eval=  2.0s | rem= 27467s
+  [Trainer] Epoch 33 | val=84.20% | t/ep=  9.1s | t/eval=  2.0s | rem= 27456s
+  [Trainer] Epoch 34 | val=84.39% | t/ep=  9.3s | t/eval=  2.1s | rem= 27445s
+  [Trainer] Epoch 35 | val=84.37% | t/ep=  9.2s | t/eval=  2.1s | rem= 27433s
+  [Trainer] Epoch 36 | val=84.31% | t/ep=  9.7s | t/eval=  2.2s | rem= 27421s
+  [Trainer] Epoch 37 | val=84.45% | t/ep=  9.3s | t/eval=  2.0s | rem= 27410s
+  [Trainer] Epoch 38 | val=84.32% | t/ep=  9.3s | t/eval=  2.0s | rem= 27399s
+  [Trainer] Epoch 39 | val=84.30% | t/ep=  9.2s | t/eval=  2.1s | rem= 27388s
+  [Trainer] Epoch 40 | val=84.38% | t/ep=  9.3s | t/eval=  2.0s | rem= 27376s
+  [Trainer] Epoch 41 | val=84.38% | t/ep=  9.2s | t/eval=  2.0s | rem= 27365s
+  [Trainer] Epoch 42 | val=84.41% | t/ep=  9.1s | t/eval=  2.1s | rem= 27354s
+  [Trainer] Epoch 43 | val=84.41% | t/ep=  9.1s | t/eval=  2.0s | rem= 27343s
+  [Trainer] Epoch 44 | val=84.40% | t/ep=  9.1s | t/eval=  2.0s | rem= 27332s
+  [Trainer] Epoch 45 | val=84.51% | t/ep=  9.2s | t/eval=  2.0s | rem= 27320s
+  [Trainer] Epoch 46 | val=84.45% | t/ep=  9.2s | t/eval=  2.0s | rem= 27309s
+  [Trainer] Epoch 47 | val=84.42% | t/ep=  9.2s | t/eval=  2.0s | rem= 27298s
+  [Trainer] Epoch 48 | val=84.35% | t/ep=  9.1s | t/eval=  2.0s | rem= 27287s
+  [Trainer] Epoch 49 | val=84.48% | t/ep=  9.1s | t/eval=  2.0s | rem= 27276s
+  [Trainer] Epoch 50 | val=84.41% | t/ep=  9.2s | t/eval=  2.2s | rem= 27265s
+
+=== Predicting ===
+  Allotted compute time remaining: ~7h,34m,24s
+Run time for Adaline: 1536.6705972
+Model Training and Prediction Complete
+finished dataset: Adaline
+========== Dataset  Chester   =============================================
+  Metadata:
+   - input_shape         : [49998, 12, 8, 8]
+   - codename            : Chester
+   - benchmark           : 57.826
+   - num_classes         : 3
+   - time_limit          : 8.0
+   - grace_time          : False
+   - time_remaining      : 28799.936091500007
+
+=== Processing Data ===
+  Allotted compute time remaining: ~7h,59m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~7h,59m,59s
+[NAS] macro: c0=32 n=2 d=1 (H=8, W=8)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 1000 genotypes
+[NAS] scored 1000 genotypes, verifying top 100 (max_batches=387, t_batch~0.071s, t_val~0.85s)
+  [NAS] verify: val=53.53% t=5.8s
+  [NAS] verify: val=51.09% t=5.2s
+  [NAS] verify: val=55.21% t=5.4s
+  [NAS] verify: val=55.73% t=5.2s
+  [NAS] verify: val=57.05% t=5.4s
+  [NAS] verify: val=50.30% t=5.2s
+  [NAS] verify: val=54.30% t=5.2s
+  [NAS] verify: val=54.67% t=5.3s
+  [NAS] verify: val=52.60% t=5.1s
+  [NAS] verify: val=55.95% t=5.2s
+  [NAS] verify: val=46.99% t=5.1s
+  [NAS] verify: val=49.48% t=5.2s
+  [NAS] verify: val=42.47% t=5.2s
+  [NAS] verify: val=50.13% t=5.3s
+  [NAS] verify: val=53.39% t=5.1s
+  [NAS] verify: val=54.01% t=5.2s
+  [NAS] verify: val=47.02% t=5.3s
+  [NAS] verify: val=56.10% t=5.1s
+  [NAS] verify: val=52.98% t=5.2s
+  [NAS] verify: val=52.40% t=5.2s
+  [NAS] verify: val=52.15% t=5.2s
+  [NAS] verify: val=44.84% t=5.2s
+  [NAS] verify: val=47.05% t=5.3s
+  [NAS] verify: val=43.80% t=5.2s
+  [NAS] verify: val=50.39% t=5.2s
+  [NAS] verify: val=56.28% t=5.1s
+  [NAS] verify: val=54.92% t=5.1s
+  [NAS] verify: val=55.33% t=5.2s
+  [NAS] verify: val=47.09% t=5.3s
+  [NAS] verify: val=52.66% t=5.3s
+  [NAS] verify: val=50.13% t=5.1s
+  [NAS] verify: val=54.92% t=5.2s
+  [NAS] verify: val=53.39% t=5.1s
+  [NAS] verify: val=53.71% t=5.1s
+  [NAS] verify: val=51.10% t=5.3s
+  [NAS] verify: val=53.62% t=5.0s
+  [NAS] verify: val=48.71% t=5.0s
+  [NAS] verify: val=51.05% t=5.2s
+  [NAS] verify: val=51.53% t=5.1s
+  [NAS] verify: val=53.67% t=5.1s
+  [NAS] verify: val=55.75% t=5.3s
+  [NAS] verify: val=56.88% t=5.0s
+  [NAS] verify: val=53.40% t=5.1s
+  [NAS] verify: val=55.22% t=5.2s
+  [NAS] verify: val=48.79% t=5.1s
+  [NAS] verify: val=53.23% t=5.2s
+  [NAS] verify: val=55.92% t=5.1s
+  [NAS] verify: val=50.75% t=5.2s
+  [NAS] verify: val=55.76% t=5.2s
+  [NAS] verify: val=54.32% t=5.1s
+  [NAS] verify: val=48.32% t=5.1s
+  [NAS] verify: val=50.05% t=5.2s
+  [NAS] verify: val=56.05% t=5.0s
+  [NAS] verify: val=53.86% t=4.9s
+  [NAS] verify: val=50.10% t=5.2s
+  [NAS] verify: val=55.25% t=5.3s
+  [NAS] verify: val=52.69% t=5.1s
+  [NAS] verify: val=53.25% t=5.2s
+  [NAS] verify: val=52.39% t=5.2s
+  [NAS] verify: val=43.46% t=5.1s
+  [NAS] verify: val=38.73% t=5.3s
+  [NAS] verify: val=48.62% t=5.2s
+  [NAS] verify: val=49.23% t=5.0s
+  [NAS] verify: val=55.96% t=5.2s
+  [NAS] verify: val=52.54% t=5.1s
+  [NAS] verify: val=55.88% t=5.1s
+  [NAS] verify: val=52.82% t=5.3s
+  [NAS] verify: val=53.46% t=5.0s
+  [NAS] verify: val=53.09% t=5.2s
+  [NAS] verify: val=54.46% t=5.1s
+  [NAS] verify: val=58.05% t=5.0s
+  [NAS] verify: val=50.54% t=5.1s
+  [NAS] verify: val=56.33% t=5.1s
+  [NAS] verify: val=56.14% t=5.1s
+  [NAS] verify: val=57.56% t=5.0s
+  [NAS] verify: val=52.21% t=5.3s
+  [NAS] verify: val=55.23% t=5.0s
+  [NAS] verify: val=50.38% t=5.1s
+  [NAS] verify: val=54.67% t=5.2s
+  [NAS] verify: val=50.69% t=5.1s
+  [NAS] verify: val=53.08% t=5.0s
+  [NAS] verify: val=52.65% t=5.2s
+  [NAS] verify: val=56.24% t=5.2s
+  [NAS] verify: val=49.96% t=5.1s
+  [NAS] verify: val=57.03% t=5.1s
+  [NAS] verify: val=55.04% t=5.0s
+  [NAS] verify: val=48.70% t=5.1s
+  [NAS] verify: val=54.02% t=5.0s
+  [NAS] verify: val=53.21% t=5.1s
+  [NAS] verify: val=53.82% t=5.2s
+  [NAS] verify: val=53.18% t=5.1s
+  [NAS] verify: val=51.19% t=5.0s
+  [NAS] verify: val=56.79% t=5.0s
+  [NAS] verify: val=52.92% t=5.1s
+  [NAS] verify: val=45.85% t=5.0s
+  [NAS] verify: val=48.37% t=5.1s
+  [NAS] verify: val=53.83% t=5.1s
+  [NAS] verify: val=41.84% t=5.0s
+  [NAS] verify: val=44.94% t=5.2s
+  [NAS] verify: val=53.28% t=5.1s
+[NAS] selected genotype (val=58.05%): ['conv3x3', 'none', 'conv1x1', 'skip', 'conv3x3', 'skip']
+
+=== Training ===
+  Allotted compute time remaining: ~7h,50m,54s
+  [Trainer] Epoch  1 | val=54.85% | t/ep=  4.1s | t/eval=  0.8s | rem= 28250s
+  [Trainer] Epoch  2 | val=55.87% | t/ep=  4.1s | t/eval=  0.8s | rem= 28245s
+  [Trainer] Epoch  3 | val=48.90% | t/ep=  4.0s | t/eval=  0.8s | rem= 28240s
+  [Trainer] Epoch  4 | val=52.48% | t/ep=  4.1s | t/eval=  0.8s | rem= 28235s
+  [Trainer] Epoch  5 | val=52.14% | t/ep=  4.1s | t/eval=  0.8s | rem= 28230s
+  [Trainer] Epoch  6 | val=53.67% | t/ep=  4.1s | t/eval=  0.8s | rem= 28225s
+  [Trainer] Epoch  7 | val=53.84% | t/ep=  4.1s | t/eval=  0.8s | rem= 28220s
+  [Trainer] Epoch  8 | val=54.85% | t/ep=  4.1s | t/eval=  0.8s | rem= 28215s
+  [Trainer] Epoch  9 | val=48.49% | t/ep=  4.0s | t/eval=  0.8s | rem= 28211s
+  [Trainer] Epoch 10 | val=53.09% | t/ep=  4.0s | t/eval=  0.8s | rem= 28206s
+  [Trainer] Epoch 11 | val=50.46% | t/ep=  4.1s | t/eval=  0.8s | rem= 28201s
+  [Trainer] Epoch 12 | val=51.88% | t/ep=  4.0s | t/eval=  0.8s | rem= 28196s
+  [Trainer] Epoch 13 | val=53.74% | t/ep=  4.0s | t/eval=  0.8s | rem= 28191s
+  [Trainer] Epoch 14 | val=53.02% | t/ep=  4.1s | t/eval=  0.8s | rem= 28186s
+  [Trainer] Epoch 15 | val=53.88% | t/ep=  4.0s | t/eval=  0.8s | rem= 28182s
+  [Trainer] Epoch 16 | val=54.75% | t/ep=  4.1s | t/eval=  0.8s | rem= 28177s
+  [Trainer] Epoch 17 | val=54.27% | t/ep=  4.1s | t/eval=  0.8s | rem= 28172s
+  [Trainer] Epoch 18 | val=54.18% | t/ep=  4.0s | t/eval=  0.8s | rem= 28167s
+  [Trainer] Epoch 19 | val=54.83% | t/ep=  4.1s | t/eval=  0.8s | rem= 28162s
+  [Trainer] Epoch 20 | val=54.50% | t/ep=  4.1s | t/eval=  0.8s | rem= 28157s
+  [Trainer] Epoch 21 | val=54.51% | t/ep=  4.0s | t/eval=  0.8s | rem= 28153s
+  [Trainer] Epoch 22 | val=54.92% | t/ep=  4.0s | t/eval=  0.8s | rem= 28148s
+  [Trainer] Epoch 23 | val=54.70% | t/ep=  4.1s | t/eval=  0.8s | rem= 28143s
+  [Trainer] Epoch 24 | val=54.58% | t/ep=  4.0s | t/eval=  0.8s | rem= 28138s
+  [Trainer] Epoch 25 | val=55.20% | t/ep=  4.1s | t/eval=  0.8s | rem= 28133s
+  [Trainer] Epoch 26 | val=54.90% | t/ep=  4.1s | t/eval=  0.8s | rem= 28128s
+  [Trainer] Epoch 27 | val=54.79% | t/ep=  4.1s | t/eval=  0.8s | rem= 28123s
+  [Trainer] Epoch 28 | val=54.79% | t/ep=  4.0s | t/eval=  0.8s | rem= 28119s
+  [Trainer] Epoch 29 | val=54.89% | t/ep=  4.1s | t/eval=  0.8s | rem= 28114s
+  [Trainer] Epoch 30 | val=54.59% | t/ep=  4.0s | t/eval=  0.8s | rem= 28109s
+  [Trainer] Epoch 31 | val=54.82% | t/ep=  4.0s | t/eval=  0.8s | rem= 28104s
+  [Trainer] Epoch 32 | val=54.91% | t/ep=  4.1s | t/eval=  0.8s | rem= 28099s
+  [Trainer] Epoch 33 | val=54.83% | t/ep=  4.0s | t/eval=  0.8s | rem= 28094s
+  [Trainer] Epoch 34 | val=54.80% | t/ep=  4.1s | t/eval=  0.8s | rem= 28089s
+  [Trainer] Epoch 35 | val=54.76% | t/ep=  4.1s | t/eval=  0.8s | rem= 28085s
+  [Trainer] Epoch 36 | val=54.81% | t/ep=  4.0s | t/eval=  0.8s | rem= 28080s
+  [Trainer] Epoch 37 | val=54.81% | t/ep=  4.1s | t/eval=  0.8s | rem= 28075s
+  [Trainer] Epoch 38 | val=54.79% | t/ep=  4.1s | t/eval=  0.8s | rem= 28070s
+  [Trainer] Epoch 39 | val=54.89% | t/ep=  4.0s | t/eval=  0.8s | rem= 28065s
+  [Trainer] Epoch 40 | val=54.84% | t/ep=  4.0s | t/eval=  0.8s | rem= 28060s
+  [Trainer] Epoch 41 | val=54.73% | t/ep=  4.1s | t/eval=  0.8s | rem= 28055s
+  [Trainer] Epoch 42 | val=54.81% | t/ep=  4.0s | t/eval=  0.8s | rem= 28051s
+  [Trainer] Epoch 43 | val=54.73% | t/ep=  4.0s | t/eval=  0.8s | rem= 28046s
+  [Trainer] Epoch 44 | val=54.90% | t/ep=  4.1s | t/eval=  0.8s | rem= 28041s
+  [Trainer] Epoch 45 | val=54.65% | t/ep=  4.0s | t/eval=  0.8s | rem= 28036s
+  [Trainer] Epoch 46 | val=54.77% | t/ep=  4.0s | t/eval=  0.8s | rem= 28031s
+  [Trainer] Epoch 47 | val=54.71% | t/ep=  4.1s | t/eval=  0.8s | rem= 28026s
+  [Trainer] Epoch 48 | val=54.70% | t/ep=  4.2s | t/eval=  0.8s | rem= 28021s
+  [Trainer] Epoch 49 | val=54.75% | t/ep=  4.1s | t/eval=  0.8s | rem= 28017s
+  [Trainer] Epoch 50 | val=54.68% | t/ep=  4.2s | t/eval=  0.8s | rem= 28012s
+
+=== Predicting ===
+  Allotted compute time remaining: ~7h,46m,51s
+Run time for Chester: 789.1468108999998
+Model Training and Prediction Complete
+finished dataset: Chester
+========== Dataset   Sokoto   =============================================
+  Metadata:
+   - input_shape         : [50000, 1, 9, 9]
+   - codename            : Sokoto
+   - benchmark           : 0.0
+   - num_classes         : 9
+   - time_limit          : 8.0
+   - grace_time          : False
+   - time_remaining      : 28799.991455800002
+
+=== Processing Data ===
+  Allotted compute time remaining: ~7h,59m,59s
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~7h,59m,59s
+[NAS] macro: c0=32 n=2 d=1 (H=9, W=9)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 1000 genotypes
+[NAS] scored 1000 genotypes, verifying top 100 (max_batches=520, t_batch~0.053s, t_val~0.74s)
+  [NAS] verify: val=12.32% t=5.2s
+  [NAS] verify: val=11.15% t=4.9s
+  [NAS] verify: val=11.54% t=4.9s
+  [NAS] verify: val=11.94% t=5.0s
+  [NAS] verify: val=11.33% t=4.8s
+  [NAS] verify: val=11.11% t=4.9s
+  [NAS] verify: val=11.54% t=4.9s
+  [NAS] verify: val=16.09% t=4.9s
+  [NAS] verify: val=11.63% t=5.0s
+  [NAS] verify: val=12.22% t=5.0s
+  [NAS] verify: val=13.27% t=4.8s
+  [NAS] verify: val=14.14% t=4.9s
+  [NAS] verify: val=16.31% t=5.0s
+  [NAS] verify: val=12.51% t=4.8s
+  [NAS] verify: val=13.04% t=4.8s
+  [NAS] verify: val=11.86% t=5.0s
+  [NAS] verify: val=12.03% t=4.8s
+  [NAS] verify: val=11.92% t=4.8s
+  [NAS] verify: val=11.33% t=5.0s
+  [NAS] verify: val=12.09% t=4.8s
+  [NAS] verify: val=11.19% t=4.9s
+  [NAS] verify: val=11.13% t=5.0s
+  [NAS] verify: val=12.87% t=4.9s
+  [NAS] verify: val=12.18% t=4.9s
+  [NAS] verify: val=11.69% t=4.9s
+  [NAS] verify: val=13.41% t=4.9s
+  [NAS] verify: val=11.12% t=4.8s
+  [NAS] verify: val=11.26% t=5.0s
+  [NAS] verify: val=11.10% t=4.9s
+  [NAS] verify: val=10.99% t=4.8s
+  [NAS] verify: val=12.89% t=5.0s
+  [NAS] verify: val=11.12% t=4.8s
+  [NAS] verify: val=11.19% t=4.8s
+  [NAS] verify: val=12.40% t=4.7s
+  [NAS] verify: val=11.61% t=4.8s
+  [NAS] verify: val=13.68% t=4.9s
+  [NAS] verify: val=11.97% t=4.8s
+  [NAS] verify: val=11.77% t=4.9s
+  [NAS] verify: val=11.56% t=5.0s
+  [NAS] verify: val=13.87% t=4.7s
+  [NAS] verify: val=11.88% t=5.0s
+  [NAS] verify: val=12.31% t=4.9s
+  [NAS] verify: val=13.01% t=4.8s
+  [NAS] verify: val=12.71% t=5.0s
+  [NAS] verify: val=11.12% t=4.9s
+  [NAS] verify: val=13.48% t=4.7s
+  [NAS] verify: val=13.66% t=5.0s
+  [NAS] verify: val=11.95% t=4.8s
+  [NAS] verify: val=12.22% t=5.0s
+  [NAS] verify: val=11.40% t=4.9s
+  [NAS] verify: val=11.05% t=4.9s
+  [NAS] verify: val=11.09% t=5.0s
+  [NAS] verify: val=13.63% t=4.7s
+  [NAS] verify: val=11.57% t=4.9s
+  [NAS] verify: val=11.58% t=4.8s
+  [NAS] verify: val=11.79% t=4.9s
+  [NAS] verify: val=12.10% t=4.9s
+  [NAS] verify: val=12.68% t=4.8s
+  [NAS] verify: val=11.38% t=4.8s
+  [NAS] verify: val=12.12% t=4.9s
+  [NAS] verify: val=12.58% t=4.9s
+  [NAS] verify: val=13.59% t=4.9s
+  [NAS] verify: val=12.81% t=5.0s
+  [NAS] verify: val=11.67% t=4.7s
+  [NAS] verify: val=11.46% t=4.9s
+  [NAS] verify: val=11.35% t=4.9s
+  [NAS] verify: val=13.13% t=4.9s
+  [NAS] verify: val=11.36% t=4.9s
+  [NAS] verify: val=12.32% t=4.8s
+  [NAS] verify: val=11.79% t=4.8s
+  [NAS] verify: val=11.23% t=4.9s
+  [NAS] verify: val=11.21% t=5.0s
+  [NAS] verify: val=11.25% t=4.8s
+  [NAS] verify: val=11.33% t=4.9s
+  [NAS] verify: val=12.26% t=4.8s
+  [NAS] verify: val=16.01% t=4.9s
+  [NAS] verify: val=11.83% t=4.9s
+  [NAS] verify: val=13.08% t=5.0s
+  [NAS] verify: val=14.88% t=4.8s
+  [NAS] verify: val=11.66% t=4.8s
+  [NAS] verify: val=13.60% t=4.9s
+  [NAS] verify: val=11.76% t=4.9s
+  [NAS] verify: val=13.95% t=4.7s
+  [NAS] verify: val=11.08% t=5.0s
+  [NAS] verify: val=12.91% t=4.8s
+  [NAS] verify: val=11.27% t=4.9s
+  [NAS] verify: val=11.06% t=5.0s
+  [NAS] verify: val=13.75% t=4.7s
+  [NAS] verify: val=12.64% t=4.7s
+  [NAS] verify: val=13.38% t=4.8s
+  [NAS] verify: val=14.52% t=5.0s
+  [NAS] verify: val=11.09% t=4.8s
+  [NAS] verify: val=13.51% t=4.8s
+  [NAS] verify: val=11.10% t=5.0s
+  [NAS] verify: val=11.13% t=4.8s
+  [NAS] verify: val=13.11% t=4.7s
+  [NAS] verify: val=11.31% t=5.0s
+  [NAS] verify: val=11.10% t=4.8s
+  [NAS] verify: val=12.59% t=5.0s
+  [NAS] verify: val=11.10% t=4.9s
+[NAS] selected genotype (val=16.31%): ['conv3x3', 'avgpool3x3', 'conv1x1', 'conv1x1', 'conv1x1', 'conv3x3']
+
+=== Training ===
+  Allotted compute time remaining: ~7h,51m,22s
+  [Trainer] Epoch  1 | val=13.03% | t/ep=  4.1s | t/eval=  0.7s | rem= 28277s
+  [Trainer] Epoch  2 | val=15.24% | t/ep=  4.1s | t/eval=  0.7s | rem= 28273s
+  [Trainer] Epoch  3 | val=17.72% | t/ep=  4.2s | t/eval=  0.8s | rem= 28268s
+  [Trainer] Epoch  4 | val=18.03% | t/ep=  4.2s | t/eval=  0.7s | rem= 28263s
+  [Trainer] Epoch  5 | val=18.60% | t/ep=  4.1s | t/eval=  0.7s | rem= 28258s
+  [Trainer] Epoch  6 | val=21.14% | t/ep=  4.1s | t/eval=  0.7s | rem= 28253s
+  [Trainer] Epoch  7 | val=20.47% | t/ep=  4.1s | t/eval=  0.8s | rem= 28248s
+  [Trainer] Epoch  8 | val=19.21% | t/ep=  4.1s | t/eval=  0.7s | rem= 28243s
+  [Trainer] Epoch  9 | val=19.29% | t/ep=  4.1s | t/eval=  0.7s | rem= 28238s
+  [Trainer] Epoch 10 | val=21.21% | t/ep=  4.2s | t/eval=  0.7s | rem= 28233s
+  [Trainer] Epoch 11 | val=21.68% | t/ep=  4.2s | t/eval=  0.7s | rem= 28228s
+  [Trainer] Epoch 12 | val=18.50% | t/ep=  4.1s | t/eval=  0.7s | rem= 28224s
+  [Trainer] Epoch 13 | val=20.79% | t/ep=  4.1s | t/eval=  0.7s | rem= 28219s
+  [Trainer] Epoch 14 | val=22.45% | t/ep=  4.2s | t/eval=  0.7s | rem= 28214s
+  [Trainer] Epoch 15 | val=21.64% | t/ep=  4.2s | t/eval=  0.7s | rem= 28209s
+  [Trainer] Epoch 16 | val=17.97% | t/ep=  4.1s | t/eval=  0.7s | rem= 28204s
+  [Trainer] Epoch 17 | val=21.20% | t/ep=  4.2s | t/eval=  0.8s | rem= 28199s
+  [Trainer] Epoch 18 | val=20.88% | t/ep=  4.1s | t/eval=  0.7s | rem= 28194s
+  [Trainer] Epoch 19 | val=22.09% | t/ep=  4.1s | t/eval=  0.7s | rem= 28189s
+  [Trainer] Epoch 20 | val=20.53% | t/ep=  4.1s | t/eval=  0.7s | rem= 28184s
+  [Trainer] Epoch 21 | val=21.28% | t/ep=  4.2s | t/eval=  0.7s | rem= 28179s
+  [Trainer] Epoch 22 | val=18.82% | t/ep=  4.1s | t/eval=  0.7s | rem= 28174s
+  [Trainer] Epoch 23 | val=17.46% | t/ep=  4.1s | t/eval=  0.7s | rem= 28170s
+  [Trainer] Epoch 24 | val=20.46% | t/ep=  4.2s | t/eval=  0.7s | rem= 28165s
+  [Trainer] Epoch 25 | val=20.45% | t/ep=  4.1s | t/eval=  0.7s | rem= 28160s
+  [Trainer] Epoch 26 | val=19.87% | t/ep=  4.1s | t/eval=  0.7s | rem= 28155s
+  [Trainer] Epoch 27 | val=20.00% | t/ep=  4.2s | t/eval=  0.7s | rem= 28150s
+  [Trainer] Epoch 28 | val=19.32% | t/ep=  4.1s | t/eval=  0.7s | rem= 28145s
+  [Trainer] Epoch 29 | val=20.28% | t/ep=  4.1s | t/eval=  0.7s | rem= 28140s
+  [Trainer] Epoch 30 | val=20.90% | t/ep=  4.2s | t/eval=  0.7s | rem= 28135s
+  [Trainer] Epoch 31 | val=17.63% | t/ep=  4.7s | t/eval=  0.8s | rem= 28130s
+  [Trainer] Epoch 32 | val=20.53% | t/ep=  4.9s | t/eval=  0.8s | rem= 28124s
+  [Trainer] Epoch 33 | val=20.68% | t/ep=  4.5s | t/eval=  0.8s | rem= 28119s
+  [Trainer] Epoch 34 | val=21.44% | t/ep=  4.4s | t/eval=  0.8s | rem= 28114s
+  [Trainer] Epoch 35 | val=20.02% | t/ep=  4.4s | t/eval=  0.8s | rem= 28108s
+  [Trainer] Epoch 36 | val=21.29% | t/ep=  4.5s | t/eval=  0.8s | rem= 28103s
+  [Trainer] Epoch 37 | val=21.32% | t/ep=  4.8s | t/eval=  0.9s | rem= 28097s
+  [Trainer] Epoch 38 | val=20.84% | t/ep=  4.6s | t/eval=  0.8s | rem= 28092s
+  [Trainer] Epoch 39 | val=21.23% | t/ep=  4.5s | t/eval=  0.8s | rem= 28087s
+  [Trainer] Epoch 40 | val=20.95% | t/ep=  4.3s | t/eval=  0.8s | rem= 28082s
+  [Trainer] Epoch 41 | val=21.06% | t/ep=  4.4s | t/eval=  0.8s | rem= 28076s
+  [Trainer] Epoch 42 | val=21.69% | t/ep=  4.5s | t/eval=  0.8s | rem= 28071s
+  [Trainer] Epoch 43 | val=21.46% | t/ep=  4.4s | t/eval=  0.8s | rem= 28066s
+  [Trainer] Epoch 44 | val=21.50% | t/ep=  4.5s | t/eval=  0.8s | rem= 28061s
+  [Trainer] Epoch 45 | val=21.65% | t/ep=  4.8s | t/eval=  0.8s | rem= 28055s
+  [Trainer] Epoch 46 | val=21.61% | t/ep=  4.6s | t/eval=  0.8s | rem= 28050s
+  [Trainer] Epoch 47 | val=21.41% | t/ep=  4.7s | t/eval=  0.8s | rem= 28044s
+  [Trainer] Epoch 48 | val=21.62% | t/ep=  4.4s | t/eval=  0.8s | rem= 28039s
+  [Trainer] Epoch 49 | val=21.60% | t/ep=  4.4s | t/eval=  0.8s | rem= 28034s
+  [Trainer] Epoch 50 | val=21.54% | t/ep=  4.4s | t/eval=  0.8s | rem= 28028s
+
+=== Predicting ===
+  Allotted compute time remaining: ~7h,47m,8s
+Run time for Sokoto: 772.2765894999975
+Model Training and Prediction Complete
+finished dataset: Sokoto
+done
+rm -Rf scoring
+mkdir scoring
+mkdir scoring/labels
+mkdir scoring/predictions
+cd datasets && find . \( -name "test_y.npy" -o -name "metadata" \) -exec cp --parents {} ../scoring/labels/ \; && cd ..
+cp -R package/predictions scoring
+cp evaluation/score.py scoring/score.py
+cd scoring; python score.py
+===========================================================================
+=============    Your Unseen Data 2025 Submission is scoring     =============
+===========================================================================
+== Scoring AddNIST ==
+Raw Score:    85.320
+Adj Score:    -4.463
+Model Params: 1566004
+Runtime:      1,536.7s
+== Scoring Chesseract ==
+Raw Score:    55.526
+Adj Score:    -0.545
+Model Params: 201603
+Runtime:      789.1s
+== Scoring Sudoku ==
+Raw Score:    22.560
+Adj Score:    2.256
+Model Params: 220073
+Runtime:      772.3s
+===========================
+Final Score: -2.753
