@@ -8,3 +8,4 @@ scoring/*
 .DS_Store
 .vscode
 .idea
+temp

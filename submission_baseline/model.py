@@ -12,6 +12,7 @@ Two building blocks:
 TinyNet is the ultimate fallback network (works for any C/H/W).
 """
 
+import itertools
 import math
 import torch
 import torch.nn as nn
@@ -97,6 +98,12 @@ class Cell(nn.Module):
                 acc = e if acc is None else acc + e
             nodes.append(acc)
         return nodes[-1]
+
+
+def all_genotypes():
+    """Every possible genotype: one op per edge, all combinations.
+    len(OPS) ** len(EDGES) total (5**6 = 15625 with the current op/edge counts)."""
+    return [list(combo) for combo in itertools.product(OPS, repeat=len(EDGES))]
 
 
 def is_degenerate(genotype):

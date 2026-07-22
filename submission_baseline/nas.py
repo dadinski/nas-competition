@@ -4,8 +4,8 @@ NAS - Step 3 (training-free search with NASWOT + SynFlow, short verification)
 search() proceeds in three phases:
   1. Macro sizing: same OOM-safe probe/shrink loop as Step 2, using the fixed
      ResidualBlock skeleton, to determine (c0, n, d) that fits in memory.
-  2. Cell search: sample K random genotypes (K derived from a measured proxy
-     eval time and the remaining search budget), discard degenerate ones,
+  2. Cell search: iterate the full genotype search space (shuffled, so a
+     time cutoff still samples it uniformly), discard degenerate ones,
      score with NASWOT + SynFlow, combine via rank aggregation, verify the
      top-n with a few quick training epochs, and keep the best by
      validation accuracy.
@@ -20,16 +20,12 @@ import time
 import torch
 import torch.nn as nn
 
-from model import TinyNet, MinimalNet, build_skeleton, derive_macro, EDGES, OPS, is_degenerate
+from model import TinyNet, MinimalNet, build_skeleton, derive_macro, all_genotypes, is_degenerate
 from proxies import naswot_score, synflow_score
 
 
 def _is_oom(e):
     return isinstance(e, RuntimeError) and 'out of memory' in str(e).lower()
-
-
-def _random_genotype():
-    return [random.choice(OPS) for _ in EDGES]
 
 
 class NAS:
@@ -99,6 +95,8 @@ class NAS:
         for bi, (data, target) in enumerate(self.train_loader):
             if bi >= max_batches:
                 break
+            if deadline is not None and time.perf_counter() >= deadline:
+                break
             try:
                 opt.zero_grad(set_to_none=True)
                 out = model(data.to(device))
@@ -155,7 +153,7 @@ class NAS:
 
         # --- Phase 2: cell search (skipped if the budget is too small) ---
         total_budget = self._remaining()
-        search_budget = max(0.0, min(0.10 * total_budget, 90.0))
+        search_budget = max(0.0, 0.10 * total_budget)
         min_search_budget = 8.0   # below this, searching isn't worth it
         genotype = None          # None -> Skeleton uses the fixed ResidualBlock
 
@@ -197,27 +195,53 @@ class NAS:
             print('[NAS] TinyNet build/fit-check failed, falling back to MinimalNet:', repr(e))
         return MinimalNet(in_ch, num_classes)
 
+    def _calibrate_verify_cost(self, genotype, in_ch, num_classes, c0, n, d, device):
+        """Time one training batch and one full validation pass for `genotype`.
+        Used to size the verify phase (how many candidates, how many batches
+        each) to the time actually left, instead of hardcoded constants."""
+        m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype).to(device)
+        opt = torch.optim.SGD(m.parameters(), lr=0.05, momentum=0.9)
+        crit = nn.CrossEntropyLoss()
+
+        m.train()
+        data, target = next(iter(self.train_loader))
+        t0 = time.perf_counter()
+        opt.zero_grad(set_to_none=True)
+        out = m(data.to(device))
+        loss = crit(out, target.to(device))
+        loss.backward()
+        opt.step()
+        t_batch = max(1e-4, time.perf_counter() - t0)
+
+        m.eval()
+        t0 = time.perf_counter()
+        with torch.no_grad():
+            for vd, _ in self.valid_loader:
+                m(vd.to(device))
+        t_val = max(1e-4, time.perf_counter() - t0)
+        return t_batch, t_val
+
     def _search_cell(self, in_ch, num_classes, c0, n, d, xb, device, search_budget):
         deadline = time.perf_counter() + search_budget
         xb_s = xb[:min(32, xb.shape[0])].to(device)
 
-        # calibrate K from a measured proxy-evaluation time
-        t0 = time.perf_counter()
-        probe_model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=_random_genotype()).to(device)
-        naswot_score(probe_model, xb_s)
-        synflow_score(probe_model, in_ch, xb.shape[2], xb.shape[3], device)
-        t_eval = max(1e-3, time.perf_counter() - t0)
-        k_budget = max(0.0, deadline - time.perf_counter())
-        k = int(0.7 * k_budget / t_eval)
-        k = max(20, min(k, 300))
-        print('[NAS] sampling K={} genotypes (t_eval~{:.2f}s)'.format(k, t_eval))
+        # zero-cost proxies are cheap, so score the whole search space instead
+        # of a random subsample; shuffle so a time cutoff still covers it
+        # roughly uniformly rather than favoring one region.
+        genotypes = all_genotypes()
+        random.shuffle(genotypes)
+        print('[NAS] scoring up to {} genotypes (full search space)'.format(len(genotypes)))
 
-        # sample and score candidates
+        # score candidates
         scored = []   # list of (naswot, synflow, genotype)
-        tries = 0
-        while len(scored) < k and tries < k * 3 and time.perf_counter() < deadline:
-            tries += 1
-            geno = _random_genotype()
+        counter = 0
+        for geno in genotypes:
+            if counter % 1000 == 0:
+                print('[NAS] scored {} genotypes'.format(counter))
+            if counter == 1000:
+                break
+            if time.perf_counter() >= deadline:
+                break
             if is_degenerate(geno):
                 continue
             try:
@@ -225,6 +249,7 @@ class NAS:
                 nw = naswot_score(m, xb_s)
                 sf = synflow_score(m, in_ch, xb.shape[2], xb.shape[3], device)
                 scored.append((nw, sf, geno))
+                counter += 1
             except RuntimeError as e:
                 if _is_oom(e) and torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -241,9 +266,43 @@ class NAS:
         rank_sf = {idx: r for r, idx in enumerate(by_synflow)}
         order = sorted(range(len(scored)), key=lambda i: rank_nw[i] + rank_sf[i])
 
-        n_verify = min(10, len(order))
+        top_geno = scored[order[0]][2]   # best by proxy rank alone; used if there's no time to verify
+
+        if time.perf_counter() >= deadline:
+            print('[NAS] no time left to verify, using top-ranked genotype by proxy score')
+            return top_geno
+
+        # calibrate training/validation cost on the top candidate so n_verify
+        # and max_batches can be sized to the time actually remaining, rather
+        # than being fixed constants.
+        try:
+            t_batch, t_val = self._calibrate_verify_cost(top_geno, in_ch, num_classes, c0, n, d, device)
+        except RuntimeError as e:
+            if _is_oom(e) and torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            print('[NAS] verify timing calibration failed, using top-ranked genotype by proxy score')
+            return top_geno
+
+        verify_budget = deadline - time.perf_counter()
+        breadth_cap = 100    # ceiling on candidates: past this, more training depth per
+                             # candidate is worth more than more candidates, so surplus
+                             # time should go to max_batches, not n_verify
+        min_batches = 20     # floor: every verified candidate gets at least this much training
+        max_batches_cap = 2000   # safety valve only; the deadline check inside the training
+                                  # loop is what actually bounds a candidate's runtime
+        cost_per_candidate = t_val + min_batches * t_batch
+
+        if verify_budget <= 0:
+            print('[NAS] no time left to verify, using top-ranked genotype by proxy score')
+            return top_geno
+
+        n_verify = max(1, min(len(order), breadth_cap, int(verify_budget / cost_per_candidate)))
+        leftover = verify_budget - n_verify * t_val
+        max_batches = max(min_batches, min(max_batches_cap, int(leftover / (n_verify * t_batch))))
+
         shortlist = [scored[i][2] for i in order[:n_verify]]
-        print('[NAS] scored {} genotypes, verifying top {}'.format(len(scored), n_verify))
+        print('[NAS] scored {} genotypes, verifying top {} (max_batches={}, t_batch~{:.3f}s, t_val~{:.2f}s)'
+              .format(len(scored), n_verify, max_batches, t_batch, t_val))
 
         # short verification: a few batches of training each, best val acc wins
         best_geno, best_acc = None, -1.0
@@ -253,7 +312,7 @@ class NAS:
             t_start = time.perf_counter()
             try:
                 m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno).to(device)
-                acc = self._quick_val_acc(m, device, max_batches=20, deadline=deadline)
+                acc = self._quick_val_acc(m, device, max_batches=max_batches, deadline=deadline)
             except RuntimeError as e:
                 if _is_oom(e) and torch.cuda.is_available():
                     torch.cuda.empty_cache()
@@ -262,6 +321,9 @@ class NAS:
                 best_acc, best_geno = acc, geno
             print('  [NAS] verify: val={:.2%} t={:.1f}s'.format(acc, time.perf_counter() - t_start))
 
-        if best_geno is not None:
-            print('[NAS] selected genotype (val={:.2%}): {}'.format(best_acc, best_geno))
+        if best_geno is None:
+            print('[NAS] no candidate finished verification in time, using top-ranked genotype by proxy score')
+            return top_geno
+
+        print('[NAS] selected genotype (val={:.2%}): {}'.format(best_acc, best_geno))
         return best_geno
