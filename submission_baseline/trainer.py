@@ -35,7 +35,7 @@ except Exception:
         return float((y_true == y_pred).mean()) if len(y_true) else 0.0
 
 
-MAX_EPOCHS = 50
+MAX_EPOCHS = 5000
 
 
 def _is_oom(err):

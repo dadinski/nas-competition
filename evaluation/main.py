@@ -31,7 +31,7 @@ def get_dataset_paths(data_dir):
 def load_dataset_metadata(dataset_path):
     with open(os.path.join(dataset_path, 'metadata'), "r") as f:
         metadata = json.load(f)
-    metadata['time_limit'] = 8.0
+    metadata['time_limit'] = 3.0
     return metadata
 
 # load dataset from file
