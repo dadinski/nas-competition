@@ -24,6 +24,20 @@ def _to_4d_float(x):
     return t
 
 
+class _GaussianNoise:
+    """Adds small Gaussian noise, scaled relative to the (already
+    per-channel-normalized) data. This is the one augmentation that needs
+    NO assumption about what an axis or value means - it works identically
+    whether the array is a photo, a one-hot board encoding, or something
+    we've never seen - so it's always applied, independent of any
+    'photo vs symbolic' guess. Must run AFTER Normalize."""
+    def __init__(self, std=0.03):
+        self.std = std
+
+    def __call__(self, x):
+        return x + torch.randn_like(x) * self.std
+
+
 class _ArrayDataset(torch.utils.data.Dataset):
     def __init__(self, x, y, transform=None):
         self.x = _to_4d_float(x)
@@ -99,6 +113,92 @@ class DataProcessor:
             bs = min(bs, n_train // 2)
         return max(1, bs)
 
+    # A handful of exactly-repeated values (one-hot 0/1, digit codes like
+    # 0.1..1.0, class indices...) signals a quantized/categorical encoding;
+    # many distinct values signals continuous data (pixel intensities,
+    # sensor floats...). This threshold is a rough cutoff, not a precise
+    # boundary - see _build_train_transform for why we check this at all.
+    _CARDINALITY_THRESHOLD = 32
+
+    def _estimate_value_cardinality(self, train_t, max_check=20000):
+        """Rough count of distinct values in a sample of the training
+        tensor, used as a DATA-DRIVEN (not shape-based) signal for whether
+        an axis-flip is even plausible to be safe. Sampling keeps this
+        cheap on large datasets."""
+        flat = train_t.reshape(-1)
+        if flat.numel() > max_check:
+            idx = torch.randperm(flat.numel())[:max_check]
+            flat = flat[idx]
+        rounded = torch.round(flat * 1000) / 1000  # avoid float noise inflating the count
+        return int(torch.unique(rounded).numel()), int(flat.numel())
+
+    def _build_train_transform(self, train_t):
+        """Conservative, TRAIN-ONLY augmentation - this is an UNSEEN-DATA
+        competition, so nothing here may assume a specific dataset. Earlier
+        we branched on input SHAPE (channels/spatial size) and justified a
+        flip using structural facts we happened to know about two example
+        datasets (Sudoku, Chesseract). That reasoning does not generalize:
+        another unseen grid-shaped dataset could encode something where an
+        axis-flip is meaningless or actively wrong (e.g. an axis that
+        indexes "which letter of the alphabet" rather than a spatial
+        position - flipping it just swaps letter identities). Shape alone
+        cannot tell us that.
+
+        Instead we look at what the DATA actually looks like:
+
+          * Many distinct values (continuous, e.g. pixel intensities) is
+            the closest thing to a dataset-agnostic photo signal - most
+            continuous-valued spatial data tolerates small translations
+            and a left-right mirror. We add reflect-pad + random crop +
+            horizontal flip on top of noise.
+          * Few distinct values (quantized/categorical - one-hot, digit
+            codes, class maps, ...) means we don't know what a spatial
+            transform would do to the encoding, so we skip flip/crop
+            entirely and rely only on the noise below.
+
+        This still isn't a guarantee (a continuous-valued dataset could
+        still have a directional axis, e.g. a spectrogram's time axis) -
+        it is a best-effort default, not a certainty. Set
+        metadata['use_augmentation'] = False to disable all of this if a
+        run suggests it's hurting on a particular dataset.
+
+        A small amount of Gaussian noise (see _GaussianNoise) is applied
+        regardless of the above, since it needs no assumption about axis
+        meaning at all.
+        """
+        if not self.metadata.get('use_augmentation', True):
+            self.metadata['augmentation_policy'] = 'disabled'
+            print("[DataProcessor] augmentation disabled via metadata")
+            return None, None
+
+        _n, c, h, w = train_t.shape
+        n_unique, n_checked = self._estimate_value_cardinality(train_t)
+        is_continuous = n_unique > self._CARDINALITY_THRESHOLD
+        can_crop = h >= 8 and w >= 8   # crop is meaningless on a tiny grid regardless
+
+        noise = _GaussianNoise(std=0.03)
+
+        if is_continuous and can_crop:
+            policy = 'continuous (pad+crop+flip+noise)'
+            pad = max(2, min(h, w) // 8)
+            geo = transforms.Compose([
+                transforms.Pad(pad, padding_mode='reflect'),
+                transforms.RandomCrop((h, w)),
+                transforms.RandomHorizontalFlip(p=0.5),
+            ])
+        elif is_continuous:
+            policy = 'continuous but too small to crop safely (noise only)'
+            geo = None
+        else:
+            policy = 'quantized/categorical (noise only)'
+            geo = None
+
+        self.metadata['augmentation_policy'] = policy
+        self.metadata['augmentation_stats'] = {'n_unique_sampled': n_unique, 'n_checked': n_checked}
+        print("[DataProcessor] augmentation: {} - shape {}x{}x{}, "
+              "{} unique values seen in {} sampled".format(policy, c, h, w, n_unique, n_checked))
+        return geo, noise
+
     def process(self):
         train_t = _to_4d_float(self.train_x)
         n_train, c, h, w = train_t.shape
@@ -108,7 +208,23 @@ class DataProcessor:
         std = torch.where(std > 1e-6, std, torch.ones_like(std))
         normalize = transforms.Normalize(mean.tolist(), std.tolist())
 
-        train_ds = _ArrayDataset(self.train_x, self.train_y, transform=normalize)
+        # Augmentation is TRAIN-ONLY: valid/test must stay a clean,
+        # deterministic measure of generalization, and the harness expects
+        # test predictions in a fixed 1:1 order with the (unshuffled) test
+        # loader, so test data must never be randomized.
+        # Order matters: geometric transforms run on raw values (scale-
+        # independent), noise runs AFTER Normalize so its magnitude means
+        # the same thing (~3% of one std) on every dataset.
+        geo_aug, noise_aug = self._build_train_transform(train_t)
+        steps = []
+        if geo_aug is not None:
+            steps.append(geo_aug)
+        steps.append(normalize)
+        if noise_aug is not None:
+            steps.append(noise_aug)
+        train_transform = transforms.Compose(steps) if len(steps) > 1 else normalize
+
+        train_ds = _ArrayDataset(self.train_x, self.train_y, transform=train_transform)
         valid_ds = _ArrayDataset(self.valid_x, self.valid_y, transform=normalize)
         test_ds = _ArrayDataset(self.test_x, None, transform=normalize)
 
