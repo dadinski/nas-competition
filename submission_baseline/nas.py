@@ -275,6 +275,15 @@ class NAS:
 
     def _search_cell(self, in_ch, num_classes, c0, n, d, xb, device, search_budget):
         deadline = time.perf_counter() + search_budget
+
+        # Explicit budget split: scoring gets a hard-capped share, verification
+        # gets the guaranteed rest. More scored genotypes barely improves the
+        # final pick past a few hundred (proxy ranking is noisiest exactly among
+        # the already-good candidates) - verification is the higher-fidelity
+        # signal, so it must not be squeezed out by scoring running long.
+
+        SCORING_SHARE = 0.30  #relative amount of time reserved for scoring. Started with 30% for scoring and 70% for verifying
+        scoring_deadline = time.perf_counter() + SCORING_SHARE * search_budget
         xb_s = xb[:min(32, xb.shape[0])].to(device)
 
         # zero-cost proxies are cheap, so score the whole search space instead
@@ -290,9 +299,10 @@ class NAS:
         for geno in genotypes:
             if counter % 1000 == 0:
                 print('[NAS] scored {} genotypes'.format(counter))
-            if counter == 1000:
+            if counter == 1000: #depending on time budget, maybe remove the hard capped 1000. 
+                                # Scoring_deadline is already a hard cap relative to the time budget
                 break
-            if time.perf_counter() >= deadline:
+            if time.perf_counter() >= scoring_deadline:
                 break
             if is_degenerate(geno):
                 continue
