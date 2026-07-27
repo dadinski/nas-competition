@@ -24,6 +24,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
+from torch.cuda.amp import autocast, GradScaler
 
 try:
     from sklearn.metrics import accuracy_score
@@ -54,6 +55,12 @@ class Trainer:
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=3e-4)
         self.fallback_label = int(metadata.get('fallback_label', 0))
+
+        # AMP: FP16 compute + GradScaler. GradScaler(enabled=False) and
+        # autocast(enabled=False) are documented no-ops, so this same code
+        # runs unchanged on CPU-only boxes or GPUs without AMP benefit.
+        self.use_amp = torch.cuda.is_available()
+        self.scaler = GradScaler(enabled=self.use_amp)
 
     def _remaining(self):
         try:
@@ -112,10 +119,12 @@ class Trainer:
                         data = data.to(self.device)
                         target = target.to(self.device)
                         self.optimizer.zero_grad(set_to_none=True)
-                        out = self.model(data)
-                        loss = self.criterion(out, target)
-                        loss.backward()
-                        self.optimizer.step()
+                        with autocast(enabled=self.use_amp):
+                            out = self.model(data)
+                            loss = self.criterion(out, target)
+                        self.scaler.scale(loss).backward()
+                        self.scaler.step(self.optimizer)
+                        self.scaler.update()
                     except RuntimeError as e:
                         if _is_oom(e):
                             oom_batches += 1
@@ -179,7 +188,8 @@ class Trainer:
             for data, target in self.valid_dataloader:
                 try:
                     data = data.to(self.device)
-                    out = self.model(data)
+                    with autocast(enabled=self.use_amp):
+                        out = self.model(data)
                     y_pred += torch.argmax(out, 1).cpu().tolist()
                     y_true += target.tolist()
                 except RuntimeError as e:
@@ -196,7 +206,8 @@ class Trainer:
     def _predict_batch(self, data):
         """Predict one batch; halve recursively on OOM (order is preserved)."""
         try:
-            out = self.model(data.to(self.device))
+            with autocast(enabled=self.use_amp):
+                out = self.model(data.to(self.device))
             return torch.argmax(out, 1).cpu().tolist()
         except RuntimeError as e:
             if not _is_oom(e):
