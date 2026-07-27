@@ -97,6 +97,51 @@ class NAS:
             else:
                 return c0, n, d   # already minimal
 
+    def _measure_step_time(self, model, xb, yb, device, n_iters=3):
+        """Seconds per training step (fwd+bwd+opt) for `model`, averaged over
+        n_iters.
+
+        Two things matter here and both were missing before: the FIRST step
+        pays cudnn autotuning and allocator warm-up (inflates), and without
+        torch.cuda.synchronize() we time kernel *launches* rather than
+        execution (deflates). The two errors pull in opposite directions, so
+        the old single-unsynchronised-step measurement was unreliable in an
+        unpredictable direction - measured 17x over on a small model, while
+        production logs implied ~2x under on a larger one.
+
+        CAVEAT (see CLAUDE.md 7): this times an already-materialised tensor, so
+        it measures GPU compute only and excludes the DataLoader and per-sample
+        augmentation. With num_workers=0 that omitted cost is the MAJORITY of a
+        real epoch (measured 4.5x-6.7x on AddNIST). Fine for its current use -
+        comparing candidates against each other, where the omission is a shared
+        constant - but do NOT use it to project wall-clock epoch counts.
+
+        Raises on OOM; the caller treats that as 'this size doesn't fit'."""
+        model.to(device)
+        opt = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+        crit = nn.CrossEntropyLoss()
+        model.train()
+        x, y = xb.to(device), yb.to(device)
+
+        def one_step():
+            opt.zero_grad(set_to_none=True)
+            loss = crit(model(x), y)
+            loss.backward()
+            opt.step()
+
+        one_step()                       # warm-up, not timed
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        for _ in range(n_iters):
+            one_step()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        elapsed = time.perf_counter() - t0
+
+        opt.zero_grad(set_to_none=True)
+        return max(1e-6, elapsed / n_iters)
+
     def _quick_val_acc(self, model, device, max_batches, deadline=None, batch_size=None):
         """One short training pass over at most max_batches, then val accuracy.
         If deadline (perf_counter timestamp) is given, the validation part
@@ -239,23 +284,16 @@ class NAS:
         let the caller fall back (that's a genuinely-too-heavy genotype).
         Returns (t_batch, t_val, batch_size_used)."""
         m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype).to(device)
-        opt = torch.optim.SGD(m.parameters(), lr=0.05, momentum=0.9)
-        crit = nn.CrossEntropyLoss()
 
         data, target = next(iter(self.train_loader))
         bs = data.shape[0]
-        m.train()
         while True:
             try:
-                d_try = data[:bs].to(device)
-                t_try = target[:bs].to(device)
-                t0 = time.perf_counter()
-                opt.zero_grad(set_to_none=True)
-                out = m(d_try)
-                loss = crit(out, t_try)
-                loss.backward()
-                opt.step()
-                t_batch = max(1e-4, time.perf_counter() - t0)
+                # _measure_step_time discards a warm-up step and synchronises
+                # CUDA around the timed region; n_verify and max_batches are
+                # derived straight from t_batch, so an unreliable number here
+                # silently mis-sizes the whole verification phase.
+                t_batch = self._measure_step_time(m, data[:bs], target[:bs], device)
                 break
             except RuntimeError as e:
                 if _is_oom(e) and bs > min_batch:
@@ -266,10 +304,14 @@ class NAS:
                 raise   # not OOM, or already at min_batch -> let caller handle/log it
 
         m.eval()
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
         t0 = time.perf_counter()
         with torch.no_grad():
             for vd, _ in self.valid_loader:
                 m(vd[:bs].to(device))
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
         t_val = max(1e-4, time.perf_counter() - t0)
         return t_batch, t_val, bs
 

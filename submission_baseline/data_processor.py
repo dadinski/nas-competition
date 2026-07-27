@@ -15,6 +15,12 @@ import numpy as np
 import torch
 import torchvision.transforms as transforms
 
+from helpers import safe_drop_last
+
+# Fixed seed for the validation permutation (see process()), so repeated runs
+# on the same dataset stay comparable.
+VALID_PERM_SEED = 1234
+
 
 def _to_4d_float(x):
     """numpy/array -> float32 tensor of shape [N, C, H, W]."""
@@ -39,15 +45,20 @@ class _GaussianNoise:
 
 
 class _ArrayDataset(torch.utils.data.Dataset):
-    def __init__(self, x, y, transform=None):
+    def __init__(self, x, y, transform=None, order=None):
         self.x = _to_4d_float(x)
         self.y = None if y is None else torch.as_tensor(np.asarray(y)).long()
         self.transform = transform
+        # Optional fixed index permutation (see process()). Applied lazily so
+        # we get a reordered view without copying the underlying array.
+        self.order = order
 
     def __len__(self):
         return self.x.shape[0]
 
     def __getitem__(self, idx):
+        if self.order is not None:
+            idx = int(self.order[idx])
         im = self.x[idx]
         if self.transform is not None:
             im = self.transform(im)
@@ -224,12 +235,29 @@ class DataProcessor:
             steps.append(noise_aug)
         train_transform = transforms.Compose(steps) if len(steps) > 1 else normalize
 
+        # The valid loader stays shuffle=False so epoch-to-epoch numbers remain
+        # comparable - but both Trainer._evaluate and NAS._quick_val_acc stop a
+        # validation pass on a deadline, and an unshuffled loader means they
+        # then score a fixed PREFIX of the split. If an unseen dataset ships its
+        # validation set sorted by class, that prefix is one or two classes and
+        # the accuracy is meaningless: it would pick the wrong checkpoint in the
+        # Trainer and the wrong genotype in NAS. Serving the split through one
+        # fixed random permutation makes any prefix a uniform sample instead.
+        # The TEST split is deliberately NOT permuted - the harness matches
+        # predictions to labels by position.
+        n_valid = int(np.asarray(self.valid_x).shape[0])
+        valid_order = torch.randperm(
+            n_valid, generator=torch.Generator().manual_seed(VALID_PERM_SEED))
+
         train_ds = _ArrayDataset(self.train_x, self.train_y, transform=train_transform)
-        valid_ds = _ArrayDataset(self.valid_x, self.valid_y, transform=normalize)
+        valid_ds = _ArrayDataset(self.valid_x, self.valid_y, transform=normalize,
+                                 order=valid_order)
         test_ds = _ArrayDataset(self.test_x, None, transform=normalize)
 
         bs = self._choose_batch_size(c, h, w, n_train)
-        drop_last = n_train > 2 * bs
+        # never leave a final training batch of one sample - BatchNorm would
+        # raise and silently end training for this dataset
+        drop_last = safe_drop_last(n_train, bs)
 
         try:
             labels = np.asarray(self.train_y).reshape(-1)
