@@ -19,6 +19,30 @@ predictions). Therefore:
 
 Training policy: label smoothing, and weight decay on matrix-valued
 parameters only.
+
+LOGGING: every epoch line carries train accuracy, the train-val gap and the mean
+train loss alongside validation accuracy, and train() ends with a one-line
+diagnosis (see _log_training_summary). This exists because the 2026-07-27
+13-dataset run logged ONLY validation accuracy, which made its single largest
+problem invisible: 5 of 13 datasets reached their best checkpoint in the first
+few percent of the budget and had already memorised the training split, and that
+could only be established by re-running them by hand afterwards.
+
+** The logged train accuracy is a RUNNING figure, not a clean one. ** It is
+accumulated from the forward passes the training step already performs, so it is
+measured on AUGMENTED batches, in train() mode (BatchNorm using batch statistics),
+with the weights changing underneath it across the epoch. A clean eval-mode pass
+over unaugmented training data would need a second traversal of the training set
+and roughly double the cost of an epoch; this is free (measured: 7.4s/epoch
+against a 7.2s baseline on Chesseract, i.e. inside the noise).
+
+How far apart the two are depends entirely on how strong the augmentation is:
+on Chesseract, whose policy is noise-only, the running figure hit 99.98% against
+a clean 99.99% - indistinguishable. On a `continuous` dataset getting
+pad+crop+flip the running figure will read materially lower, and it lags within
+an epoch because early batches are scored by weaker weights. So: read it as a
+trend and as a gap, do NOT read a few points of difference from a clean
+diagnostic number as a real change.
 """
 
 import copy
@@ -92,6 +116,47 @@ BASE_LR = 0.01
 WEIGHT_DECAY = 3e-4
 LABEL_SMOOTHING = 0.1
 
+# --- Ensembling on surplus budget (member lifecycle is inline in train()) -------------------
+# Some datasets reach their best checkpoint in the first few percent of the
+# budget and gain nothing from the rest: measured best-val at epoch 4 of 393
+# (Chesseract) and 9 of 341 (Language), both at ~100% train accuracy. Extra time
+# cannot help those, and extra capacity would make them worse. Training several
+# INDEPENDENT models and averaging their predictions can, and it scales with
+# whatever budget we are given - which matters because the per-dataset budget is
+# set by the organisers and not disclosed.
+#
+# Measured (ab_ensemble.py, identical 60-epoch budget for every arm, 4 members):
+#   Chesseract  single 54.27%  ->  58.62%   (benchmark 57.83, first time above)
+#   Language    single 80.10%  ->  85.47%   (benchmark 85.20, first time above)
+#
+# MEMBERS MUST BE INDEPENDENTLY RE-INITIALISED. Warm-restart snapshots - the
+# textbook SGDR/"Snapshot Ensembles" recipe - gave NOTHING on both datasets
+# (54.08% and 79.75%, i.e. slightly worse than a single model, with an ensemble
+# gain over their own best member of -0.10 and +0.01 points): a model that has
+# memorised its training split just re-memorises after a restart, so every
+# member ends up computing the same function. The individual members here are
+# no better than a single model either - the entire gain is decorrelation.
+MAX_MEMBERS = 8            # caps host RAM for snapshots and predict() cost
+MIN_PATIENCE = 8           # floor on "no improvement" epochs before declaring saturation
+PATIENCE_FRACTION = 0.2    # ...and it also scales with how long the member has run
+
+
+def _saturation_patience(epochs_in_member):
+    """Epochs without a validation improvement before a member counts as done.
+
+    Deliberately RELATIVE to how long the member has already trained. A flat
+    constant would cut off datasets that are still genuinely improving, just
+    slowly: AddNIST's best checkpoint is at epoch 166 of 197, i.e. it ends on a
+    31-epoch dry spell that a constant patience of 8 or 10 would have
+    misread as saturation. Checked against all 13 datasets of the 2026-07-27
+    run: this rule fires on exactly the five that saturate (Chesseract at 3% of
+    the run, Language 5%, Windspeed 14%, Voxel 15%, Gutenberg 46%) and NEVER on
+    the five that use their budget productively (GameOfLife, GeoClassing,
+    AddNIST, CIFARTile, MultNIST) nor on the three that run out of time. Those
+    eight therefore behave exactly as they do today.
+    """
+    return max(MIN_PATIENCE, int(PATIENCE_FRACTION * max(0, epochs_in_member)))
+
 
 def _is_oom(err):
     return isinstance(err, RuntimeError) and 'out of memory' in str(err).lower()
@@ -109,6 +174,13 @@ class Trainer:
         self.criterion = self._build_criterion()
         self.optimizer = self._build_optimizer(model)
         self.fallback_label = int(metadata.get('fallback_label', 0))
+
+        # Ensembling state. Empty/one-element means predict() takes exactly the
+        # single-model path it always has - which is what happens on every
+        # dataset that does not saturate (see _saturation_patience).
+        self.ensemble_states = []
+        self._last_eval_time = 0.0            # cost of one validation pass
+        self._best_state_for_fallback = None  # single best weights, for fallback
 
         # AMP: FP16 compute + GradScaler. GradScaler(enabled=False) and
         # autocast(enabled=False) are documented no-ops, so this same code
@@ -136,7 +208,7 @@ class Trainer:
                   'falling back to plain CrossEntropyLoss')
             return nn.CrossEntropyLoss()
 
-    def _build_optimizer(self, model):
+    def _build_optimizer(self, model, quiet=False):
         """SGD with weight decay applied to matrix-valued parameters only.
         BatchNorm affine terms and biases are 1-D; decaying them pulls the
         normalisation's learned scale and shift toward zero, which costs
@@ -150,8 +222,9 @@ class Trainer:
             (decay if p.dim() > 1 else no_decay).append(p)
         groups = [{'params': decay, 'weight_decay': WEIGHT_DECAY},
                   {'params': no_decay, 'weight_decay': 0.0}]
-        print('[Trainer] weight decay on {} tensors, none on {} (BN/bias)'.format(
-            len(decay), len(no_decay)))
+        if not quiet:
+            print('[Trainer] weight decay on {} tensors, none on {} (BN/bias)'.format(
+                len(decay), len(no_decay)))
         return optim.SGD(groups, lr=BASE_LR, momentum=0.9)
 
     def _apply_nas_batch_size_hint(self):
@@ -176,6 +249,41 @@ class Trainer:
         except Exception:
             return 1e9   # clock unavailable -> don't abort artificially
 
+    def _snapshot(self):
+        """Copy the current weights to HOST memory. Snapshots must not sit on the
+        GPU: several of them plus the live model is exactly the resident-memory
+        pattern that made the reverted SWA attempt a plausible -10 (CLAUDE.md 7d).
+        A 9.5M-parameter model is ~38 MB here, so MAX_MEMBERS of them is ~300 MB
+        of ordinary RAM."""
+        return {k: v.detach().to('cpu', copy=True)
+                for k, v in self.model.state_dict().items()}
+
+    def _reinit_model(self):
+        """Fresh random weights for the SAME architecture, in place.
+
+        Independent initialisation is the whole mechanism (see MAX_MEMBERS
+        above) - re-loading the member's own starting weights, or carrying
+        weights over across a restart, both produce members that agree with each
+        other and gain nothing when averaged.
+
+        Walks the module tree calling reset_parameters() wherever torch provides
+        it (Conv2d, Linear, BatchNorm2d - which is everything parameterised in
+        the search space). A custom block without it would simply keep its
+        weights, which costs diversity but cannot break anything. The optimizer
+        is rebuilt too, so momentum does not leak across members.
+        """
+        n = 0
+        for m in self.model.modules():
+            if hasattr(m, 'reset_parameters'):
+                try:
+                    m.reset_parameters()
+                    n += 1
+                except Exception:
+                    pass
+        self.optimizer = self._build_optimizer(self.model, quiet=True)
+        self.scaler = GradScaler(enabled=self.use_amp)
+        return n
+
     def _rebuild_train_loader(self, bs):
         """Rebuild the train loader at batch size `bs`, keeping the
         shuffle/drop_last semantics the DataProcessor used."""
@@ -195,6 +303,25 @@ class Trainer:
         return self._rebuild_train_loader(self.train_dataloader.batch_size // 2)
 
     def train(self):
+        """Train within the clock budget and return the best model found.
+
+        Structure, in one place because it is spread over a long loop below:
+
+        * The LR is a cosine driven by the CLOCK, never by an epoch estimate.
+        * Every epoch logs train accuracy and the train-val gap (see the module
+          docstring), and the run ends with an automatic diagnosis.
+        * ONE model is trained unless the dataset saturates. If a member stops
+          improving for `_saturation_patience()` epochs while a whole further
+          member still fits, its best weights are snapshotted, the network is
+          re-initialised, and another is trained; `predict()` then averages them.
+          Member 1 uses the global cosine; later members get their own cosine
+          across their own slice, sized by how long member 1 took to converge.
+        * Nothing here may raise: the loop is wrapped, and `best_state` is
+          restored at the end whatever happened.
+
+        Returns the model loaded with the single best validation checkpoint.
+        The ensemble, if any, lives in `self.ensemble_states` for `predict()`.
+        """
         try:
             self.model.to(self.device)
         except Exception:
@@ -230,15 +357,52 @@ class Trainer:
 
         epoch_time = 0.0     # duration of the last COMPLETED epoch (see below)
         lr = BASE_LR
+        best_epoch, epochs_run = 0, 0
+        train_acc = float('nan')
+
+        # --- ensemble member bookkeeping (see MAX_MEMBERS) -------------------
+        # Member 1 trains exactly as it always has, against the global
+        # clock-driven cosine, and is watched for saturation. Only if it
+        # saturates with enough budget left do further members happen, and how
+        # long member 1 took to CONVERGE is what calibrates theirs. On a dataset
+        # that keeps improving none of this fires and the run is byte-for-byte
+        # today's.
+        self.ensemble_states = []
+
+        def stop_margin():
+            """Time that must remain unspent when training stops.
+
+            `margin` alone covers ONE pass over the test set. Each extra
+            ensemble member costs roughly one more, so once members exist the
+            training loop has to stop correspondingly earlier - otherwise the
+            last member trains right up to `margin` and predict() then has to
+            drop members it already paid to train. (Dropping them is safe, which
+            is why this is a waste rather than a -10, but it is still waste.)
+            Returns exactly `margin` while no ensemble exists, so the
+            single-model path is unaffected."""
+            return margin + self._ensemble_predict_reserve()
+        member_start = time.time()
+        member_budget = None        # set once member 1 has shown how long it needs
+        member_best_val, member_best_state = -1.0, None
+        member_best_time = 0.0      # how long this member took to reach its best
+        epochs_in_member, since_improve = 0, 0
 
         try:
             for epoch in range(MAX_EPOCHS):
                 # only start if the estimated epoch + reserve still fits
-                if self._remaining() - epoch_time < margin:
+                if self._remaining() - epoch_time < stop_margin():
                     break
 
                 if clock_ok:
-                    progress = 1.0 - (self._remaining() - margin) / usable
+                    if member_budget is None:
+                        # member 1 (or the no-ensemble case): anneal across the
+                        # whole remaining budget, exactly as before
+                        progress = 1.0 - (self._remaining() - margin) / usable
+                    else:
+                        # later members get their OWN cosine across their own
+                        # slice, so each one is properly annealed rather than
+                        # inheriting whatever LR the previous member ended on
+                        progress = (time.time() - member_start) / member_budget
                     progress = min(1.0, max(0.0, progress))
                     lr = 0.5 * BASE_LR * (1.0 + math.cos(math.pi * progress))
                     for g in self.optimizer.param_groups:
@@ -248,6 +412,14 @@ class Trainer:
                 self.model.train()
                 oom_batches = 0
                 epoch_complete = True    # cleared if this epoch is cut short
+                # Running TRAIN accuracy/loss, accumulated from the forward
+                # passes the training step already does - see the module docstring
+                # for what this number does and does not mean.
+                # Kept as GPU tensors and read ONCE per epoch: calling .item()
+                # per batch would force a host sync every step.
+                tr_correct = torch.zeros((), device=self.device)
+                tr_loss = torch.zeros((), device=self.device)
+                tr_seen, tr_batches = 0, 0
                 for data, target in self.train_dataloader:
                     # Belt-and-braces against a single-sample batch: BatchNorm
                     # raises on one sample in train mode, and that is not an
@@ -264,6 +436,12 @@ class Trainer:
                         self.scaler.scale(loss).backward()
                         self.scaler.step(self.optimizer)
                         self.scaler.update()
+                        # free: reuses `out`, which we already computed
+                        with torch.no_grad():
+                            tr_correct += (out.argmax(1) == target).sum()
+                            tr_loss += loss.detach()
+                        tr_seen += int(target.shape[0])
+                        tr_batches += 1
                     except RuntimeError as e:
                         if _is_oom(e):
                             oom_batches += 1
@@ -277,7 +455,7 @@ class Trainer:
                                 break   # abort this epoch, next one uses the smaller loader
                             continue
                         raise
-                    if self._remaining() < margin:  # avoid a hard timeout
+                    if self._remaining() < stop_margin():  # avoid a hard timeout
                         epoch_complete = False
                         break
 
@@ -294,29 +472,165 @@ class Trainer:
                 # would otherwise risk pushing the whole dataset past its
                 # time limit (-> instant -10 for this dataset).
                 remaining = self._remaining()
-                if remaining <= margin:
-                    print("  [Trainer] Epoch {:>2} | skipping validation - "
-                          "no time left beyond the {:.0f}s margin".format(epoch + 1, margin))
+                if remaining <= stop_margin():
+                    print("  [Trainer] Epoch {:>3} | skipping validation - "
+                          "no time left beyond the {:.0f}s margin".format(epoch + 1, stop_margin()))
                     break
 
-                eval_budget = remaining - margin
+                eval_budget = remaining - stop_margin()
                 t_eval = time.time()
                 val = self._evaluate(time_budget=eval_budget)
+                self._last_eval_time = time.time() - t_eval
                 if val >= best_val:
                     best_val = val
+                    best_epoch = epoch + 1
                     best_state = copy.deepcopy(self.model.state_dict())
 
-                print("  [Trainer] Epoch {:>2} | val={:5.2f}% | lr={:.5f} | t/ep={:5.1f}s | t/eval={:5.1f}s | rem={:6.0f}s".format(
-                    epoch + 1, val * 100, lr, this_epoch_time, time.time() - t_eval, self._remaining()))
+                # per-member tracking, independent of the global best above:
+                # each member contributes ITS OWN best checkpoint to the ensemble
+                epochs_in_member += 1
+                if val > member_best_val:
+                    member_best_val = val
+                    member_best_state = self._snapshot()
+                    member_best_time = time.time() - member_start
+                    since_improve = 0
+                else:
+                    since_improve += 1
+
+                # one host sync per epoch, not per batch
+                train_acc = float(tr_correct.item()) / tr_seen if tr_seen else float('nan')
+                train_loss = float(tr_loss.item()) / tr_batches if tr_batches else float('nan')
+                epochs_run = epoch + 1
+
+                print("  [Trainer] Epoch {:>3}{} | train={:5.2f}% val={:5.2f}% gap={:+6.2f} | loss={:.4f} | "
+                      "lr={:.5f} | t/ep={:5.1f}s t/eval={:4.1f}s | rem={:6.0f}s".format(
+                          epochs_run,
+                          '' if not self.ensemble_states else ' m%d' % (len(self.ensemble_states) + 1),
+                          train_acc * 100, val * 100, (train_acc - val) * 100,
+                          train_loss, lr, this_epoch_time, time.time() - t_eval, self._remaining()))
+
+                # --- should this member be closed and a fresh one started? ---
+                elapsed_member = time.time() - member_start
+                if member_budget is None:
+                    # member 1: watch for saturation
+                    done = since_improve >= _saturation_patience(epochs_in_member)
+                    next_cost = elapsed_member
+                else:
+                    # later members run their calibrated slice to completion; the
+                    # cosine has annealed by then, so there is nothing to detect
+                    done = elapsed_member >= member_budget
+                    next_cost = member_budget
+                if done and member_best_state is not None:
+                    # Only start another member if a WHOLE one still fits, plus the
+                    # reserve. A half-trained member is worse than no member, and
+                    # every extra member also costs a full pass in predict().
+                    room = self._remaining() - margin - self._ensemble_predict_reserve()
+                    have_room = (len(self.ensemble_states) + 1 < MAX_MEMBERS
+                                 and room >= next_cost)
+                    if not have_room and member_budget is not None:
+                        # A later member has finished its slice and fully annealed,
+                        # and another does not fit. Continuing would train at the
+                        # cosine's lr=0 floor for the rest of the budget, learning
+                        # nothing - stop and let the final append collect it.
+                        # (Member 1 is deliberately excluded: with no ensemble this
+                        # must behave exactly as it always has and keep training.)
+                        break
+                    if have_room:
+                        self.ensemble_states.append(member_best_state)
+                        if member_budget is None:
+                            # Size the remaining members by how long member 1 took to
+                            # CONVERGE, not by how long it took to prove it had
+                            # converged - the patience tail is detection cost and a
+                            # fresh member does not have to repeat it. Then stretch
+                            # them to fill the budget exactly, so nothing is left on
+                            # the table. Sizing by elapsed_member instead left 25% of
+                            # a 600s Chesseract budget unused and bought only 2
+                            # members where the budget supported 7.
+                            # KNOWN WEAKNESS (CLAUDE.md 7f.2b): member_best_time is
+                            # the time to the ARGMAX epoch, which is noisy when the
+                            # validation curve is flat - Chesseract at a fixed 600s
+                            # budget produced 7, 2 and 7 members across three runs
+                            # (gains +4.03, +1.95, +4.45). Every run still beats the
+                            # single model, so this is magnitude, not correctness,
+                            # but a robust convergence estimate belongs here.
+                            t_conv = max(member_best_time, 0.34 * elapsed_member, 1.0)
+                            avail = max(0.0, self._remaining() - margin
+                                        - self._ensemble_predict_reserve())
+                            k_more = int(avail // t_conv)
+                            k_more = max(1, min(k_more, MAX_MEMBERS - 1))
+                            member_budget = max(1.0, avail / k_more)
+                            print("[Trainer] saturated after {} epochs ({:.0f}s, best at {:.0f}s) with "
+                                  "{:.0f}s left -> up to {} more independent members of {:.0f}s each"
+                                  .format(epochs_in_member, elapsed_member, member_best_time,
+                                          self._remaining(), k_more, member_budget))
+                        n_reset = self._reinit_model()
+                        print("[Trainer] member {} done (best val {:.2f}%); re-initialised {} modules "
+                              "for member {}".format(len(self.ensemble_states), member_best_val * 100,
+                                                     n_reset, len(self.ensemble_states) + 1))
+                        member_start = time.time()
+                        member_best_val, member_best_state = -1.0, None
+                        member_best_time = 0.0
+                        epochs_in_member, since_improve = 0, 0
         except Exception as e:
             print("[Trainer] training ended early:", repr(e))
 
-        # restore the best model seen so far
+        # the member in progress when the clock ran out still counts
+        try:
+            if self.ensemble_states and member_best_state is not None:
+                self.ensemble_states.append(member_best_state)
+        except Exception:
+            pass
+
+        self._log_training_summary(epochs_run, best_epoch, best_val, train_acc)
+        if len(self.ensemble_states) > 1:
+            print("[Trainer]   -> ensembling {} independently initialised members "
+                  "in predict()".format(len(self.ensemble_states)))
+
+        # restore the best model seen so far. This is what predict() uses when
+        # there is no ensemble, and what it falls back to if ensembling fails.
         try:
             self.model.load_state_dict(best_state)
+            self._best_state_for_fallback = best_state
         except Exception:
             pass
         return self.model
+
+    def _log_training_summary(self, epochs_run, best_epoch, best_val, train_acc):
+        """One line stating the diagnosis, so it does not have to be re-derived
+        by hand from hundreds of epoch lines (or by re-running the dataset).
+
+        The two questions worth answering per dataset are 'did we run out of
+        time or out of ideas?' and 'are we over- or under-fitting?'. Both are
+        answerable from numbers already in hand:
+          * best_epoch / epochs_run - if the best checkpoint arrives in the
+            first few percent of the run, every remaining epoch was wasted and
+            a longer budget would not have helped. In the 2026-07-27 run this
+            was true of 5 of 13 datasets (Chesseract peaked at epoch 4 of 393)
+            and it was invisible because only val accuracy was logged.
+          * train - val - a large positive gap with high train accuracy means
+            memorisation, so the answer is regularisation, NOT more capacity
+            or more time. Measured 99.99%/53% on Chesseract, 100%/79% on
+            Language.
+        """
+        if not epochs_run:
+            print("[Trainer] summary: no epoch completed")
+            return
+        frac = 100.0 * best_epoch / epochs_run
+        gap = (train_acc - best_val) * 100
+        notes = []
+        if frac <= 25.0:
+            notes.append("SATURATED - best checkpoint in the first {:.0f}% of the run, "
+                         "the remaining {} epochs gained nothing".format(frac, epochs_run - best_epoch))
+        if train_acc == train_acc and gap >= 15.0 and train_acc >= 0.95:
+            notes.append("MEMORISING - train {:.1f}% vs val {:.1f}%, gap {:+.1f}pts "
+                         "(needs regularisation, not capacity/time)".format(
+                             train_acc * 100, best_val * 100, gap))
+        print("[Trainer] summary: {} epochs, best val {:.2f}% at epoch {} ({:.0f}% in), "
+              "final train {:.2f}%".format(
+                  epochs_run, best_val * 100, best_epoch, frac,
+                  train_acc * 100 if train_acc == train_acc else float('nan')))
+        for n in notes:
+            print("[Trainer]   -> {}".format(n))
 
     def _evaluate(self, time_budget=None):
         """Validation pass. If time_budget (seconds) is given, the pass
@@ -361,15 +675,94 @@ class Trainer:
                 return self._predict_batch(data[:mid]) + self._predict_batch(data[mid:])
             return [self.fallback_label]   # a single sample still doesn't fit -> fallback
 
+    def _ensemble_predict_reserve(self):
+        """Seconds to hold back in train() for the EXTRA test passes ensembling
+        will need. One pass is already covered by `margin`; each additional
+        member costs roughly one more.
+
+        train() never sees the test loader, so the validation pass is the only
+        measurement available. Test and validation splits are usually similar in
+        size but need not be, so this is an estimate - the guarantee comes from
+        predict() re-checking the clock before every member and simply stopping
+        with fewer, which is always safe."""
+        if len(self.ensemble_states) < 1 or not self._last_eval_time:
+            return 0.0
+        return len(self.ensemble_states) * self._last_eval_time * 1.5
+
+    def _predict_probs(self, test_loader, n_test):
+        """Class probabilities for the whole test split, [n_test, C] on CPU.
+        Returns None if this member could not be scored at all."""
+        self.model.eval()
+        chunks = []
+        try:
+            with torch.no_grad():
+                for data in test_loader:
+                    chunks.append(self._predict_probs_batch(data))
+        except Exception as e:
+            print("[Trainer] member scoring failed:", repr(e))
+            return None
+        if not chunks:
+            return None
+        p = torch.cat(chunks, dim=0)
+        return p if p.shape[0] == n_test else None
+
+    def _predict_probs_batch(self, data):
+        """Softmax probabilities for one batch; halves recursively on OOM so the
+        row order is preserved (same contract as _predict_batch)."""
+        try:
+            with autocast(enabled=self.use_amp):
+                out = self.model(data.to(self.device))
+            return torch.softmax(out.float(), dim=1).cpu()
+        except RuntimeError as e:
+            if not _is_oom(e):
+                raise
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            if data.shape[0] > 1:
+                mid = data.shape[0] // 2
+                return torch.cat([self._predict_probs_batch(data[:mid]),
+                                  self._predict_probs_batch(data[mid:])], dim=0)
+            raise
+
     def predict(self, test_loader):
+        """Predicted class labels for the test split.
+
+        CONTRACT (the harness depends on all three): exactly `n_test` labels, in
+        the loader's order, and this function must never raise. Everything below
+        is arranged around that - OOM halves the batch rather than failing, a
+        short result is padded with the majority training class, and a long one
+        is truncated.
+
+        With more than one ensemble member the members' softmax outputs are
+        averaged; any problem at all in that path falls through to the
+        single-model path, which is what has always run.
+        """
         n_test = len(test_loader.dataset)
-        preds = []
         try:
             self.model.to(self.device)
         except Exception:
             pass
-        self.model.eval()
 
+        # More than one member -> average their probabilities. Anything at all
+        # wrong here falls through to the single-model path below, which is
+        # unchanged and is what has always run.
+        if len(getattr(self, 'ensemble_states', [])) > 1:
+            try:
+                preds = self._predict_ensemble(test_loader, n_test)
+                if preds is not None:
+                    return preds
+            except Exception as e:
+                print("[Trainer] ensemble predict failed, using single model:", repr(e))
+            # restore the single best weights before the fallback path runs -
+            # self.model currently holds whichever member was scored last
+            if self._best_state_for_fallback is not None:
+                try:
+                    self.model.load_state_dict(self._best_state_for_fallback)
+                except Exception as e:
+                    print('[Trainer] could not restore best weights:', repr(e))
+
+        preds = []
+        self.model.eval()
         try:
             with torch.no_grad():
                 for data in test_loader:
@@ -382,4 +775,43 @@ class Trainer:
             preds += [self.fallback_label] * (n_test - len(preds))
         elif len(preds) > n_test:
             preds = preds[:n_test]
+        return preds
+
+    def _predict_ensemble(self, test_loader, n_test):
+        """Average the members' probabilities. Returns None to fall back.
+
+        Members are scored ONE AT A TIME with a clock check in between, and the
+        first pass is timed so the check is based on a measurement rather than a
+        guess. Running out of time therefore costs members, not the dataset:
+        whatever has been accumulated is used. That is the property that keeps
+        this off the -10 path, since a full pass per member is the one cost here
+        that scales."""
+        prob_sum, used, t_pass = None, 0, None
+        for i, state in enumerate(self.ensemble_states):
+            if used >= 1:
+                # need room for another full pass plus a safety factor
+                if t_pass is not None and self._remaining() < t_pass * 1.5:
+                    print("[Trainer] stopping ensemble at {}/{} members - {:.0f}s left, "
+                          "a pass costs ~{:.0f}s".format(used, len(self.ensemble_states),
+                                                         self._remaining(), t_pass))
+                    break
+            try:
+                self.model.load_state_dict(state)
+            except Exception as e:
+                print("[Trainer] could not load member {}: {}".format(i + 1, repr(e)))
+                continue
+            t0 = time.time()
+            p = self._predict_probs(test_loader, n_test)
+            if p is None:
+                continue
+            t_pass = time.time() - t0 if t_pass is None else t_pass
+            prob_sum = p if prob_sum is None else prob_sum + p
+            used += 1
+        if prob_sum is None or used < 2:
+            return None       # nothing gained - let the single-model path run
+        print("[Trainer] ensembled {}/{} members over {} test samples".format(
+            used, len(self.ensemble_states), n_test))
+        preds = prob_sum.argmax(dim=1).tolist()
+        if len(preds) != n_test:
+            return None
         return preds

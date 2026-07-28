@@ -3,6 +3,8 @@ datasets
 datasets/*
 package
 package/*
+smoke_pkg
+smoke_pkg/*
 scoring
 scoring/*
 .DS_Store

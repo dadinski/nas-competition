@@ -24,13 +24,37 @@ import torch.nn as nn
 def derive_macro(h, w, s_min=4, d_max=3, c0=32, n=2):
     """
     Derive the macro structure from the input size.
-      D = clamp(floor(log2(min(H,W)/s_min)), 0, d_max)
-    Returns (c0, n, d) = start channels, blocks per stage, downsample steps.
+      D_full = floor(log2(min(H,W)/s_min))        # reduction needed to reach s_min
+      D      = clamp(D_full, 0, d_max)            # how much the STAGES provide
+      stem   = 2 ** (D_full - D)                  # the rest, taken in the stem
+
+    Returns (c0, n, d, stem_stride).
+
+    Why the stem stride exists: d alone is capped at d_max, so the total
+    downsampling used to be at most 8x no matter how large the input was. A
+    128x128 dataset therefore ran its entire network at 128/64/32/16
+    resolution and cost ~28x as much per sample as a 28x28 one (analytic
+    conv FLOPs: 7287 vs 262 MFLOPs/sample for the heaviest cell). In the
+    2026-07-27 run that showed up exactly as predicted - Myofibre took 525s
+    per epoch versus AddNIST's 14.6s, completed FIVE epochs in its hour, was
+    still improving steeply when the clock ran out, and scored -3.96.
+
+    Taking the surplus reduction in the stem instead makes per-sample cost
+    roughly independent of input resolution (all inputs land at ~1.7-1.8x
+    the 28x28 cost) and is simply what standard CNNs already do - ResNet
+    drops 224x224 to 56x56 before its first stage. Note this makes us *more*
+    conventional, not less: total reduction is now 32x, the ImageNet norm,
+    where before it was 8x.
+
+    Inputs at or below 32x32 get stem_stride == 1, i.e. they are completely
+    unaffected by this - which covers most of the local datasets and is why
+    this change cannot regress them.
     """
     m = max(1, min(int(h), int(w)))
-    d = int(math.floor(math.log2(m / s_min))) if m > s_min else 0
-    d = max(0, min(d_max, d))
-    return c0, n, d
+    d_full = int(math.floor(math.log2(m / s_min))) if m > s_min else 0
+    d = max(0, min(d_max, d_full))
+    stem_stride = 2 ** max(0, d_full - d)
+    return c0, n, d, stem_stride
 
 
 # ---------------------------------------------------------------------------
@@ -149,11 +173,25 @@ class Skeleton(nn.Module):
     same skeleton be built either with the fixed ResidualBlock or with a
     searched Cell genotype (see nas.py).
     """
-    def __init__(self, in_ch, num_classes, c0, n, d, block_fn):
+    def __init__(self, in_ch, num_classes, c0, n, d, block_fn, stem_stride=1):
         super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv2d(in_ch, c0, 3, stride=1, padding=1, bias=False),
-            nn.BatchNorm2d(c0), nn.ReLU(inplace=True))
+        # The stem carries whatever downsampling the d stages cannot (see
+        # derive_macro). It is built as a stack of stride-2 3x3 convs rather
+        # than one big-stride conv: a 3x3 kernel at stride 4 only looks at 9
+        # of every 16 input pixels, which is aliasing - it throws information
+        # away rather than pooling it. Successive stride-2 convs see every
+        # pixel. The cost is negligible because the channel count is still
+        # small here (for 128x128: ~13 MFLOPs against the ~455 of the body).
+        stem_layers = []
+        cin = in_ch
+        n_halvings = max(0, int(math.log2(max(1, int(stem_stride)))))
+        for _ in range(n_halvings):
+            stem_layers += [nn.Conv2d(cin, c0, 3, stride=2, padding=1, bias=False),
+                            nn.BatchNorm2d(c0), nn.ReLU(inplace=True)]
+            cin = c0
+        stem_layers += [nn.Conv2d(cin, c0, 3, stride=1, padding=1, bias=False),
+                        nn.BatchNorm2d(c0), nn.ReLU(inplace=True)]
+        self.stem = nn.Sequential(*stem_layers)
 
         blocks = []
         cin = c0
@@ -174,14 +212,18 @@ class Skeleton(nn.Module):
         return self.fc(x)
 
 
-def build_skeleton(in_ch, num_classes, c0, n, d, genotype=None):
+def build_skeleton(in_ch, num_classes, c0, n, d, genotype=None, stem_stride=1):
     """Convenience factory: fixed ResidualBlock if genotype is None,
-    else a Skeleton made of searched Cells sharing that genotype."""
+    else a Skeleton made of searched Cells sharing that genotype.
+
+    stem_stride must be the value derive_macro returned for this input size -
+    passing the default 1 for a large input silently restores the old
+    resolution-blind cost profile."""
     if genotype is None:
         block_fn = lambda cin, cout, stride: ResidualBlock(cin, cout, stride)
     else:
         block_fn = lambda cin, cout, stride: Cell(cin, cout, stride, genotype)
-    return Skeleton(in_ch, num_classes, c0, n, d, block_fn)
+    return Skeleton(in_ch, num_classes, c0, n, d, block_fn, stem_stride=stem_stride)
 
 
 class TinyNet(nn.Module):

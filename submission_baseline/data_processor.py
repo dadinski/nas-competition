@@ -23,10 +23,29 @@ VALID_PERM_SEED = 1234
 
 
 def _to_4d_float(x):
-    """numpy/array -> float32 tensor of shape [N, C, H, W]."""
-    t = torch.as_tensor(np.asarray(x)).float()
+    """numpy/array -> float32 tensor of shape [N, C, H, W].
+
+    `torch.as_tensor` refuses several array layouts that are perfectly normal
+    on disk and would otherwise propagate straight out of process() to
+    main.py, failing the dataset for a score of -10:
+      * negative strides - any array saved from a flipped or transposed view
+        without .copy() (`ValueError: at least one stride is negative`)
+      * non-native byte order, or a dtype torch has no equivalent for
+    Going through np.ascontiguousarray + astype(float32) normalises all of
+    those in one step, and costs nothing when the input is already a
+    contiguous float32 array (both are no-ops then). The local datasets are
+    all contiguous float32, so this path is invisible here - it exists purely
+    for the unseen ones.
+    """
+    a = np.asarray(x)
+    try:
+        t = torch.as_tensor(a).float()
+    except (ValueError, TypeError):
+        t = torch.as_tensor(np.ascontiguousarray(a).astype(np.float32))
     if t.dim() == 3:                       # [N, H, W] -> [N, 1, H, W]
         t = t.unsqueeze(1)
+    elif t.dim() == 2:                     # [N, F] -> [N, 1, 1, F]
+        t = t.unsqueeze(1).unsqueeze(1)
     return t
 
 
@@ -45,6 +64,14 @@ class _GaussianNoise:
 
 
 class _ArrayDataset(torch.utils.data.Dataset):
+    """Dataset over an in-memory array, with an optional fixed index order.
+
+    `order` exists so the validation split can be served through one fixed
+    seeded permutation without copying the array - see process() for why a
+    truncated validation pass over an unpermuted split is actively misleading.
+    `y=None` marks the test split, where __getitem__ yields the image alone.
+    """
+
     def __init__(self, x, y, transform=None, order=None):
         self.x = _to_4d_float(x)
         self.y = None if y is None else torch.as_tensor(np.asarray(y)).long()
@@ -78,14 +105,34 @@ class DataProcessor:
         self.clock = clock
 
     def _query_free_gpu_mem_mb(self):
-        """Best-effort query of currently-free GPU memory in MB.
+        """Best-effort query of GPU memory this dataset can actually use, in MB.
         Returns None if there is no GPU or the query fails for any reason
-        (e.g. older CUDA driver) - callers must treat None as 'unknown'."""
+        (e.g. older CUDA driver) - callers must treat None as 'unknown'.
+
+        The harness runs EVERY dataset inside one process (main.py loops over
+        them), so when dataset 2 or 3 is sized, dataset 1's model, optimizer
+        state and activations are long dead in Python but still held by
+        PyTorch's caching allocator. `torch.cuda.mem_get_info()` reports
+        DRIVER-free memory, which does not count that pool as free - measured
+        on this box: 0 MB "free" with 7878 MB reserved and only 16 MB actually
+        live. The batch size then collapsed to the `max(4, ...)` floor.
+
+        That is not hypothetical: in the 2026-07-27 13-dataset run it hit both
+        datasets that followed a memory-heavy one (Cryptic after Caitie,
+        Sokoto after Myopia), which got batch_size=4 and therefore 20 and 17
+        epochs instead of several hundred. Phase 2/3 run three datasets in one
+        process, so two of the three are exposed.
+
+        So: release the cache first, and count anything still reserved-but-
+        unallocated as available, since the allocator will reuse it."""
         if not torch.cuda.is_available():
             return None
         try:
+            torch.cuda.empty_cache()
             free_bytes, _total_bytes = torch.cuda.mem_get_info()
-            return free_bytes / (1024 ** 2)
+            reserved_unused = (torch.cuda.memory_reserved()
+                               - torch.cuda.memory_allocated())
+            return (free_bytes + max(0, reserved_unused)) / (1024 ** 2)
         except Exception:
             return None
 
@@ -122,7 +169,12 @@ class DataProcessor:
 
         if n_train >= 2:
             bs = min(bs, n_train // 2)
-        return max(1, bs)
+        # Floor of 2, never 1: BatchNorm raises on a single sample in train
+        # mode, so the Trainer skips every batch shorter than 2 - a loader of
+        # 1-sample batches would therefore take ZERO gradient steps and train
+        # nothing, silently. Reachable via n_train // 2 for n_train in {2, 3}.
+        # (Trainer._rebuild_train_loader already applies the same floor.)
+        return max(2, bs)
 
     # A handful of exactly-repeated values (one-hot 0/1, digit codes like
     # 0.1..1.0, class indices...) signals a quantized/categorical encoding;
@@ -138,7 +190,12 @@ class DataProcessor:
         cheap on large datasets."""
         flat = train_t.reshape(-1)
         if flat.numel() > max_check:
-            idx = torch.randperm(flat.numel())[:max_check]
+            # randint, not randperm: randperm materialises a permutation of the
+            # WHOLE tensor to draw max_check samples from it - measured 3.1s and
+            # ~847 MB on AddNIST (about 84% of process() runtime), scaling
+            # linearly with dataset size. Sampling with replacement gives the
+            # same cardinality signal at essentially zero cost.
+            idx = torch.randint(0, flat.numel(), (max_check,))
             flat = flat[idx]
         rounded = torch.round(flat * 1000) / 1000  # avoid float noise inflating the count
         return int(torch.unique(rounded).numel()), int(flat.numel())
@@ -211,6 +268,75 @@ class DataProcessor:
         return geo, noise
 
     def process(self):
+        """Build the three dataloaders.
+
+        Wrapped so that NOTHING here can propagate to main.py: process() is the
+        only pipeline stage with no harness-side protection, and any exception
+        it raises fails the dataset outright for -10. _process() holds the real
+        logic; _minimal_process() is a no-augmentation, no-normalisation last
+        resort that only needs the arrays to be convertible at all."""
+        try:
+            return self._process()
+        except Exception as e:
+            print('[DataProcessor] process() failed ({}) - falling back to '
+                  'minimal loaders'.format(repr(e)))
+            return self._minimal_process()
+
+    def _minimal_process(self):
+        """Last-resort loaders: no normalisation stats, no augmentation, no
+        cardinality probe, no memory query, fixed small batch. Those are the
+        steps this rung actually removes, and any failure in them is what it
+        rescues.
+
+        HONEST LIMIT: it still calls _to_4d_float, so a genuinely
+        unconvertible array fails here too - exactly the flaw that sank the
+        reverted DataProcessor fallback ladder (CLAUDE.md 7b), where every
+        rung called the same conversion. That case is addressed at the
+        conversion site instead (see _to_4d_float); this wrapper is not a
+        second line of defence for it and must not be mistaken for one. If an
+        array cannot become a tensor at all, no loader can be built from it."""
+        train_ds = _ArrayDataset(self.train_x, self.train_y)
+        # The validation permutation is NOT an optimisation, it is a
+        # correctness property (see _process): a deadline-truncated validation
+        # pass otherwise scores a fixed PREFIX, which is meaningless on a split
+        # that happens to be ordered by class. It applies on this rung too - the
+        # Trainer and NAS truncate validation regardless of how the loaders were
+        # built. Guarded because this rung must not fail.
+        valid_order = None
+        try:
+            # shape[0] only - do NOT build an _ArrayDataset just to read a
+            # length, that materialises the whole split as float32
+            valid_order = torch.randperm(
+                int(np.asarray(self.valid_x).shape[0]),
+                generator=torch.Generator().manual_seed(VALID_PERM_SEED))
+        except Exception:
+            pass
+        valid_ds = _ArrayDataset(self.valid_x, self.valid_y, order=valid_order)
+        test_ds = _ArrayDataset(self.test_x, None)
+        bs = 32
+        # Best-effort majority label; predict() pads with it as a last resort.
+        try:
+            labels = np.asarray(self.train_y).reshape(-1)
+            self.metadata['fallback_label'] = int(np.bincount(labels).argmax())
+        except Exception:
+            pass
+        self.metadata.setdefault('fallback_label', 0)
+        self.metadata['batch_size'] = bs
+        mk = torch.utils.data.DataLoader
+        return (mk(train_ds, batch_size=bs, shuffle=True,
+                   drop_last=safe_drop_last(len(train_ds), bs)),
+                mk(valid_ds, batch_size=bs, shuffle=False, drop_last=False),
+                mk(test_ds, batch_size=bs, shuffle=False, drop_last=False))
+
+    def _process(self):
+        """The real loader construction; process() wraps this so nothing escapes.
+
+        Order matters here: normalisation statistics come from the TRAINING split
+        only, geometric augmentation runs on raw values (scale-independent) while
+        Gaussian noise runs after Normalize (so its magnitude means the same thing
+        on every dataset), and augmentation is applied to the train split alone -
+        valid and test must stay a clean, deterministic measure.
+        """
         train_t = _to_4d_float(self.train_x)
         n_train, c, h, w = train_t.shape
 
@@ -248,6 +374,13 @@ class DataProcessor:
         n_valid = int(np.asarray(self.valid_x).shape[0])
         valid_order = torch.randperm(
             n_valid, generator=torch.Generator().manual_seed(VALID_PERM_SEED))
+
+        # train_t is a full float32 copy of the training split and is no longer
+        # needed once the stats and the transform are decided. _ArrayDataset
+        # below builds its own copy, so leaving this one alive means holding
+        # two concurrently: free for float32 input, but a 4x double-copy for
+        # uint8, which is the normal on-disk format for images.
+        del train_t
 
         train_ds = _ArrayDataset(self.train_x, self.train_y, transform=train_transform)
         valid_ds = _ArrayDataset(self.valid_x, self.valid_y, transform=normalize,

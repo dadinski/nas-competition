@@ -81,12 +81,17 @@ class NAS:
             bs = max(min_batch, bs // 2)
 
     def _find_macro(self, in_ch, num_classes, h, w, xb, yb, device):
-        """OOM-safe macro sizing, using the fixed ResidualBlock as a stand-in."""
-        c0, n, d = derive_macro(h, w)
+        """OOM-safe macro sizing, using the fixed ResidualBlock as a stand-in.
+
+        stem_stride comes from derive_macro and is NOT shrunk: it is what
+        keeps per-sample cost independent of input resolution, and reducing
+        it would make the model both slower and larger."""
+        c0, n, d, stem = derive_macro(h, w)
         while True:
-            model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=None)
+            model = build_skeleton(in_ch, num_classes, c0, n, d,
+                                   genotype=None, stem_stride=stem)
             if self._fits(model, xb, yb, device):
-                return c0, n, d
+                return c0, n, d, stem
             # too little memory -> shrink in order: C0, then N, then D
             if c0 > 8:
                 c0 = max(8, c0 // 2)
@@ -95,7 +100,7 @@ class NAS:
             elif d > 0:
                 d -= 1
             else:
-                return c0, n, d   # already minimal
+                return c0, n, d, stem   # already minimal
 
     def _measure_step_time(self, model, xb, yb, device, n_iters=3):
         """Seconds per training step (fwd+bwd+opt) for `model`, averaged over
@@ -202,17 +207,33 @@ class NAS:
             in_ch, h, w = int(xb.shape[1]), int(xb.shape[2]), int(xb.shape[3])
         except Exception as e:
             print('[NAS] no batch available, using TinyNet:', repr(e))
-            s = self.metadata['input_shape']
-            # no batch/device to fit-check against here - this is the one
-            # path where we truly have nothing to probe with, so we just
-            # return our best (size-adaptive) guess
-            return TinyNet(int(s[1]), num_classes, h=int(s[2]), w=int(s[3]))
+            # No batch/device to fit-check against - the one path where we
+            # truly have nothing to probe with, so return a size-adaptive
+            # guess. metadata['input_shape'] is the ONLY source left, and it is
+            # demonstrably unreliable in this competition's own data (CLAUDE.md
+            # 7c: Sudoku ships a 4-element input_shape for a 3-D array, AddNIST
+            # states 50000 samples for 45000). Indexing it blindly raised
+            # IndexError *inside the handler whose job is to prevent a crash*,
+            # turning a recoverable situation into a -10.
+            try:
+                s = list(self.metadata.get('input_shape') or [])
+                in_ch = int(s[1]) if len(s) >= 2 else 1
+                hh = int(s[2]) if len(s) >= 3 else None
+                ww = int(s[3]) if len(s) >= 4 else hh
+            except Exception:
+                in_ch, hh, ww = 1, None, None
+            try:
+                return TinyNet(in_ch, num_classes, h=hh, w=ww)
+            except Exception as e2:
+                print('[NAS] TinyNet build failed, using MinimalNet:', repr(e2))
+                return MinimalNet(in_ch, num_classes)
 
         # --- Phase 1: memory-safe macro sizing ---
         try:
-            c0, n, d = self._find_macro(in_ch, num_classes, h, w, xb, yb, device)
-            self.metadata['macro'] = {'c0': c0, 'n': n, 'd': d}
-            print('[NAS] macro: c0={} n={} d={} (H={}, W={})'.format(c0, n, d, h, w))
+            c0, n, d, stem = self._find_macro(in_ch, num_classes, h, w, xb, yb, device)
+            self.metadata['macro'] = {'c0': c0, 'n': n, 'd': d, 'stem_stride': stem}
+            print('[NAS] macro: c0={} n={} d={} stem_stride={} (H={}, W={} -> {}x{})'.format(
+                c0, n, d, stem, h, w, h // (stem * 2 ** d), w // (stem * 2 ** d)))
         except Exception as e:
             print('[NAS] macro sizing failed, using TinyNet:', repr(e))
             return self._safe_fallback(in_ch, num_classes, h, w, xb, yb, device)
@@ -225,7 +246,7 @@ class NAS:
 
         if search_budget >= min_search_budget:
             try:
-                genotype = self._search_cell(in_ch, num_classes, c0, n, d, xb, device, search_budget)
+                genotype = self._search_cell(in_ch, num_classes, c0, n, d, stem, xb, device, search_budget)
             except Exception as e:
                 print('[NAS] cell search failed, using fixed block:', repr(e))
                 genotype = None
@@ -234,7 +255,7 @@ class NAS:
 
         # --- Phase 3: build the final model ---
         try:
-            model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype)
+            model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype, stem_stride=stem)
             # sanity check: a searched cell can be heavier/lighter than the
             # ResidualBlock used for sizing, so re-verify it still fits.
             # Try shrinking the batch first instead of discarding the
@@ -242,7 +263,7 @@ class NAS:
             fits, working_bs = self._fits_with_shrink(model, xb, yb, device)
             if not fits:
                 print('[NAS] searched cell does not fit even at reduced batch size, falling back to fixed block')
-                model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=None)
+                model = build_skeleton(in_ch, num_classes, c0, n, d, genotype=None, stem_stride=stem)
                 if not self._fits(model, xb, yb, device):
                     print('[NAS] even the minimal fixed-block skeleton does not fit')
                     return self._safe_fallback(in_ch, num_classes, h, w, xb, yb, device)
@@ -270,10 +291,12 @@ class NAS:
             print('[NAS] TinyNet build/fit-check failed, falling back to MinimalNet:', repr(e))
         return MinimalNet(in_ch, num_classes)
 
-    def _calibrate_verify_cost(self, genotype, in_ch, num_classes, c0, n, d, device, min_batch=8):
-        """Time one training batch and one full validation pass for `genotype`.
-        Used to size the verify phase (how many candidates, how many batches
-        each) to the time actually left, instead of hardcoded constants.
+    def _calibrate_verify_cost(self, genotype, in_ch, num_classes, c0, n, d, stem, device, min_batch=8):
+        """Estimate the cost of one training batch and of a full validation pass
+        for `genotype`. Used to size the verify phase (how many candidates, how
+        many batches each) to the time actually left, instead of hardcoded
+        constants. The validation figure is EXTRAPOLATED from a bounded probe,
+        not measured over the whole split - see below for why.
 
         The genotype can be heavier than the fixed ResidualBlock used for
         macro-sizing, so this can OOM at the loader's natural batch size
@@ -283,7 +306,7 @@ class NAS:
         at a consistent (safe) size. If even min_batch OOMs, we give up and
         let the caller fall back (that's a genuinely-too-heavy genotype).
         Returns (t_batch, t_val, batch_size_used)."""
-        m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype).to(device)
+        m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=genotype, stem_stride=stem).to(device)
 
         data, target = next(iter(self.train_loader))
         bs = data.shape[0]
@@ -303,7 +326,51 @@ class NAS:
                     continue
                 raise   # not OOM, or already at min_batch -> let caller handle/log it
 
+        # Time a BOUNDED number of validation batches and extrapolate, rather
+        # than running the whole split. This measurement exists only to size
+        # the verify phase, but running it in full made it a real cost in its
+        # own right: on Myofibre it was 131.7s of a 360s search budget, on a
+        # dataset where verification was then found unaffordable anyway. A
+        # dozen batches give the same per-batch rate.
+        # The first eval-mode batch pays cudnn autotuning for a new set of
+        # shapes, so it is run untimed as a warm-up and the rate is taken from
+        # the ones after it - the same discipline _measure_step_time uses, and
+        # for the same reason (see CLAUDE.md 4).
+        n_val_batches = len(self.valid_loader)
+        probe_batches = max(1, min(12, n_val_batches - 1))
         m.eval()
+        warmed = False
+        timed = 0
+        probe_elapsed = 0.0
+        with torch.no_grad():
+            for vd, _ in self.valid_loader:
+                if not warmed:
+                    m(vd[:bs].to(device))
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                    warmed = True
+                    t0 = time.perf_counter()
+                    continue
+                m(vd[:bs].to(device))
+                timed += 1
+                if timed >= probe_batches:
+                    break
+            if timed:
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                probe_elapsed = time.perf_counter() - t0
+        # scale the measured per-batch rate up to a full pass; if the split was
+        # a single batch there is nothing to extrapolate from, so fall back to
+        # timing that one batch as the whole pass
+        if timed:
+            t_val = probe_elapsed * (n_val_batches / float(timed))
+        else:
+            t_val = self._measure_full_val_fallback(m, bs, device)
+        return t_batch, max(1e-4, t_val), bs
+
+    def _measure_full_val_fallback(self, m, bs, device):
+        """Time the whole validation pass. Only used when the split is a
+        single batch, so 'the whole pass' is one batch anyway."""
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         t0 = time.perf_counter()
@@ -312,10 +379,24 @@ class NAS:
                 m(vd[:bs].to(device))
         if torch.cuda.is_available():
             torch.cuda.synchronize()
-        t_val = max(1e-4, time.perf_counter() - t0)
-        return t_batch, t_val, bs
+        return time.perf_counter() - t0
 
-    def _search_cell(self, in_ch, num_classes, c0, n, d, xb, device, search_budget):
+    def _search_cell(self, in_ch, num_classes, c0, n, d, stem, xb, device, search_budget):
+        """Pick a cell genotype within `search_budget` seconds. Returns None to
+        mean "use the fixed ResidualBlock".
+
+        Two stages, with an explicit budget split so one cannot starve the other:
+          1. SCORE the shuffled search space with NASWOT + SynFlow and combine by
+             RANK (scale-invariant, outlier-robust). Bounded by SCORING_SHARE of
+             the budget and a hard cap of 1000 candidates - proxy ranking stops
+             improving well before that, and the deadline is checked before any
+             expensive work so this cannot overrun.
+          2. VERIFY the top few by training each briefly and comparing validation
+             accuracy, sized from measured per-batch and per-validation-pass
+             costs rather than constants.
+
+        Every failure path returns the proxy-ranked leader rather than raising.
+        """
         deadline = time.perf_counter() + search_budget
 
         # Explicit budget split: scoring gets a hard-capped share, verification
@@ -349,7 +430,7 @@ class NAS:
             if is_degenerate(geno):
                 continue
             try:
-                m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno).to(device)
+                m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno, stem_stride=stem).to(device)
                 nw = naswot_score(m, xb_s)
                 sf = synflow_score(m, in_ch, xb.shape[2], xb.shape[3], device)
                 scored.append((nw, sf, geno))
@@ -380,7 +461,7 @@ class NAS:
         # and max_batches can be sized to the time actually remaining, rather
         # than being fixed constants.
         try:
-            t_batch, t_val, verify_bs = self._calibrate_verify_cost(top_geno, in_ch, num_classes, c0, n, d, device)
+            t_batch, t_val, verify_bs = self._calibrate_verify_cost(top_geno, in_ch, num_classes, c0, n, d, stem, device)
         except RuntimeError as e:
             if _is_oom(e) and torch.cuda.is_available():
                 torch.cuda.empty_cache()
@@ -403,6 +484,20 @@ class NAS:
             return top_geno
 
         n_verify = max(1, min(len(order), breadth_cap, int(verify_budget / cost_per_candidate)))
+
+        # Verification COMPARES candidates. With only one affordable candidate
+        # there is nothing to compare it against: the "winner" is top_geno,
+        # which we already have for free. In the 2026-07-27 run this fired on
+        # all three large-image datasets (Caitie, Sadie, Myopia, all
+        # "verifying top 1") and on Myofibre it burned ~270s - calibration plus
+        # one 69s verification pass - out of a budget in which a whole epoch
+        # cost 525s, to re-derive the genotype it started with. Same failure
+        # the successive-halving attempt had with rungs==[1] (CLAUDE.md 7d).
+        if n_verify <= 1:
+            print('[NAS] only {} candidate affordable for verification - nothing to '
+                  'compare against, using top-ranked genotype by proxy score'.format(n_verify))
+            return top_geno
+
         leftover = verify_budget - n_verify * t_val
         max_batches = max(min_batches, min(max_batches_cap, int(leftover / (n_verify * t_batch))))
 
@@ -417,7 +512,7 @@ class NAS:
                 break
             t_start = time.perf_counter()
             try:
-                m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno).to(device)
+                m = build_skeleton(in_ch, num_classes, c0, n, d, genotype=geno, stem_stride=stem).to(device)
                 # use the batch size calibration found safe for this genotype family,
                 # not the loader's default, so we don't just OOM again per-candidate
                 acc = self._quick_val_acc(m, device, max_batches=max_batches, deadline=deadline, batch_size=verify_bs)
