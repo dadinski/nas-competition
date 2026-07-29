@@ -104,6 +104,57 @@ class DataProcessor:
         self.metadata = metadata
         self.clock = clock
 
+    def _record_label_facts(self):
+        """Derive `fallback_label` and `n_outputs` from the ACTUAL training labels.
+
+        `n_outputs` is the width the classifier head needs, which is not the same
+        thing as the number of classes: the model's output index IS the label
+        value, so the head must span the largest label value, not merely count
+        the distinct ones. For the usual 0..K-1 labels the two coincide and this
+        is exactly `num_classes` - it is a no-op on all 13 local datasets.
+
+        It matters when a dataset does not use 0-based labels. Labels 1..K with a
+        perfectly correct `num_classes = K` give a head of width K (indices
+        0..K-1), and target K then raises `IndexError: Target K is out of
+        bounds`. That is NOT a RuntimeError, so it escapes NAS._fits and the
+        Trainer's OOM guard: NAS falls all the way down to MinimalNet, training
+        dies on its first batch, and predict() returns an untrained model's
+        guesses - the right LENGTH, so the harness does not flag a failure, but
+        the score is noise. Widening the head costs one unused output row and
+        keeps label values usable directly as indices, which is what the rest of
+        the pipeline already assumes (`fallback_label` below is a label value,
+        and predict() pads with it).
+
+        Deliberately NOT a remap to 0..K-1: that would require applying the
+        inverse mapping in predict(), and forgetting it would silently return
+        0..K-1 against labels 1..K - a total loss on a model that trained fine.
+        """
+        try:
+            labels = np.asarray(self.train_y).reshape(-1)
+            # Labels are not necessarily stored as an integer dtype: Voxel ships
+            # train_y as float64, which np.bincount REFUSES ("Cannot cast array
+            # data from dtype('float64')..."). That threw the whole block into
+            # its except branch, so Voxel silently fell back to
+            # fallback_label = 0 rather than its true majority class - a
+            # pre-existing defect, harmless only because predict() never had to
+            # pad on it. np.unique also tolerates negative values, which
+            # np.bincount does not.
+            if not np.issubdtype(labels.dtype, np.integer):
+                labels = np.rint(labels).astype(np.int64)
+            values, counts = np.unique(labels, return_counts=True)
+            self.metadata['fallback_label'] = int(values[counts.argmax()])
+            declared = int(self.metadata.get('num_classes') or 0)
+            needed = int(values.max()) + 1
+            self.metadata['n_outputs'] = max(declared, needed)
+            if needed > declared:
+                print('[DataProcessor] labels reach {} but metadata declares {} classes '
+                      '- widening the classifier head to {} outputs (non-0-based labels?)'
+                      .format(needed - 1, declared, self.metadata['n_outputs']))
+        except Exception as e:
+            print('[DataProcessor] could not inspect labels ({!r}) - '
+                  'falling back to metadata num_classes'.format(e))
+        self.metadata.setdefault('fallback_label', 0)
+
     def _query_free_gpu_mem_mb(self):
         """Best-effort query of GPU memory this dataset can actually use, in MB.
         Returns None if there is no GPU or the query fails for any reason
@@ -314,13 +365,7 @@ class DataProcessor:
         valid_ds = _ArrayDataset(self.valid_x, self.valid_y, order=valid_order)
         test_ds = _ArrayDataset(self.test_x, None)
         bs = 32
-        # Best-effort majority label; predict() pads with it as a last resort.
-        try:
-            labels = np.asarray(self.train_y).reshape(-1)
-            self.metadata['fallback_label'] = int(np.bincount(labels).argmax())
-        except Exception:
-            pass
-        self.metadata.setdefault('fallback_label', 0)
+        self._record_label_facts()
         self.metadata['batch_size'] = bs
         mk = torch.utils.data.DataLoader
         return (mk(train_ds, batch_size=bs, shuffle=True,
@@ -392,11 +437,7 @@ class DataProcessor:
         # raise and silently end training for this dataset
         drop_last = safe_drop_last(n_train, bs)
 
-        try:
-            labels = np.asarray(self.train_y).reshape(-1)
-            self.metadata['fallback_label'] = int(np.bincount(labels).argmax())
-        except Exception:
-            self.metadata['fallback_label'] = 0
+        self._record_label_facts()
         self.metadata['batch_size'] = int(bs)
 
         train_loader = torch.utils.data.DataLoader(

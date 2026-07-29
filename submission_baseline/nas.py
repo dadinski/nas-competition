@@ -199,7 +199,13 @@ class NAS:
         return correct / total if total else 0.0
 
     def search(self):
-        num_classes = int(self.metadata['num_classes'])
+        # Head width, not class count: DataProcessor derives `n_outputs` from the
+        # actual training labels so a dataset whose labels are not 0-based still
+        # trains (see DataProcessor._record_label_facts). Identical to
+        # num_classes for ordinary 0..K-1 labels. Falls back to the metadata
+        # value if the label scan could not run.
+        num_classes = int(self.metadata.get('n_outputs')
+                          or self.metadata['num_classes'])
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
         try:

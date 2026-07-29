@@ -48,13 +48,16 @@ positive on them. They contributed **+17.57 of the 32.08**. Over the 10 datasets
 benchmark the total is **+14.50, mean +1.45/dataset**, with 5 of 10 *below* benchmark. Always quote
 the 10-dataset number; the three placeholders tell us nothing.
 
-**Where to pick up (as of end of 2026-07-28): run the benchmark. See §7f.1 for the command, what to
-compare against, and the written-down predictions.** Everything landed that day is verified by tests
-and by end-to-end smoke runs but has **no score attached**. Landed: the cross-dataset batch-size
-collapse, `stem_stride` macro sizing, two `-10` paths, NAS verification fixes, train-accuracy logging
-with an automatic saturation/overfitting diagnosis, and **ensembling on surplus budget gated on the
-saturation signal** (§4a, §7f.2 — the largest measured effect so far). A full code review of all four
-pipeline files was done in the same pass (§7i).
+**The 2026-07-28 changes are MEASURED and they worked: the 10-dataset real subtotal went
++14.50 → +24.61, and every one of the 10 is now at or above its benchmark.** Full analysis of that run
+and of Daniel's 3.5h run in **§7j**. The pipeline is also confirmed clean on torch 1.10.1 with a 3 GB
+card, which is the closest proxy we have for the evaluation server.
+
+**Where to pick up (as of 2026-07-29): §7f.1 — fix the saturation gate's false positives.** It fired
+on 9 of 13 datasets rather than 5; on AddNIST that cost **−3.53** and left 32% of the budget unused.
+The fix is two constants, already validated against real per-epoch curves (§7j, issue 1). Second
+priority is member sizing (§7f.2b), which is now measured to waste ~90% of each member's time and
+13–32% of every ensembling dataset's budget.
 
 A larger batch of changes was implemented on 2026-07-27, reviewed, and **reverted** — the pipeline
 deliberately sits at a small, individually verified set of fixes so that the next benchmark measures
@@ -238,22 +241,27 @@ Each of these fixed a diagnosed bug. Changing them needs a reason.
   walk into the persistent-OOM guard *by construction* — which is what produced the partial epoch 1
   above. The runtime OOM guard remains a safety net, not the primary mechanism.
 - **Surplus budget is spent on an ensemble of INDEPENDENTLY RE-INITIALISED models, gated on the
-  saturation signal.** When a member goes `max(8, 0.2 × epochs_run_in_member)` epochs without a
+  saturation signal.** When a member goes `max(10, 0.75 × epochs_run_in_member)` epochs without a
   validation improvement *and* a whole further member still fits, `train()` snapshots that member's
   best weights to host RAM, calls `reset_parameters()` across the module tree, and trains another;
   `predict()` averages their softmax outputs. Three details are load-bearing:
   - **Re-initialisation, not warm restarts.** The textbook SGDR/"Snapshot Ensembles" recipe was
     measured and gives **nothing** here (§7f.2) — a memorised model re-memorises after a restart and
     every member computes the same function. Do not "simplify" this back to carrying weights over.
-  - **The patience is RELATIVE.** A constant would fire on datasets that are still improving slowly:
-    AddNIST's best checkpoint is at epoch 166 of 197, i.e. a 31-epoch dry spell. Verified against all
-    13 datasets — fires on exactly the 5 that saturate, never on the 5 that use their budget nor the
-    3 that run out of time. Confirmed live: AddNIST at a 600s budget produces **0 members** and is
-    behaviourally unchanged.
-  - **Later members are sized by CONVERGENCE time, not saturation-detection time.** The patience tail
-    is detection cost a fresh member need not repeat, and the members are then stretched to fill the
-    budget. Sizing by elapsed time instead left 25% of a 600s Chesseract budget unused and bought 2
-    members where the budget supported 7 (measured: 2 members +1.95pt vs 7 members +3.43pt).
+  - **The patience is RELATIVE, and the fraction is 0.75** — i.e. fire only once the best checkpoint
+    sits in the first 25% of what has run, the same definition as the `SATURATED` log note. It was
+    0.2 and that was too eager: it cost **−3.53 on AddNIST** in the 2026-07-28 run (§7j). Validated by
+    replaying the shipped `_saturation_patience` against the clean per-epoch curves of all 13
+    datasets — **0 misclassified**, versus 5 with the old constants. Do not re-tune this against
+    summary statistics; see §7j for why that validation is invalid.
+  - **Later members are sized by CONVERGENCE time, not saturation-detection time**, and their length
+    is capped at `MEMBER_LENGTH_FACTOR × t_conv` so that surplus budget buys MORE members rather than
+    longer ones. Sizing them as `avail / MAX_MEMBERS` made members ~10× longer than needed as soon as
+    the member cap bound — which it did even at 1h (Chesseract 7 × 440s while converging in 33s;
+    Sudoku at 3.5h 7 × 1678s while converging in 178s) and left 13–32% of every ensembling dataset's
+    budget unused. `MAX_MEMBERS` is 24; host RAM is ~38 MB per snapshot and the binding cost is one
+    test pass per member in `predict()`, for which `_ensemble_predict_reserve()` is estimated at the
+    planned member count up front rather than the current one.
   `predict()` scores members one at a time, timing the first pass and re-checking the clock before
   each subsequent one, so running short costs *members*, not the dataset — and it still returns
   exactly `n_test` labels in order. Snapshots live on the **CPU**; several models resident on the GPU
@@ -349,15 +357,30 @@ Each of these fixed a diagnosed bug. Changing them needs a reason.
 
 ## 6. Before the final submission is zipped
 
-- **Remove the `metadata['time_limit']` testing override in `main.py`'s `load_dataset_metadata()`**
-  (§3) so real per-dataset limits apply again. Deliberate local-testing shortcut — easy to forget
-  precisely because it's intentional rather than a bug someone trips over.
-- **⚠ Do that and reset the dataset metadata in the same change.** The `metadata` files currently
-  carry smoke-test budgets (`"time_limit": 0.016` ≈ 58s for AddNIST/Chesseract, `0.013` ≈ 47s for
-  Sudoku). They're inert *only* while the override is in place. Removing the override on its own
-  silently gives every dataset ~1 minute.
-- **Strip `main.py` and `score.py` from the submission directory** (§3) — the harness overwrites
-  files with those names.
+**What is actually IN the zip** (verified 2026-07-29 by building it and running the harness against
+the extracted contents): `cd $(submission); zip -r ../submission.zip *` bundles **only
+`submission_baseline/`**. So `evaluation/main.py`, `evaluation/score.py`, the `datasets/` metadata and
+`requirements.txt` are **not** part of the submission and cannot affect it — the organisers supply
+their own `main.py`/`score.py`. Several items below are therefore about *local testing fidelity*, not
+submission validity; they are marked accordingly so nobody blocks a submission on them.
+
+- **⚠ SHIPS IN THE ZIP: delete `submission_baseline/__pycache__/` before zipping.** `zip -r *` globs
+  it in — measured ~165 KB of `.pyc` across two Python versions. Not dangerous (Python revalidates a
+  `.pyc` against its source's mtime and size, so a stale one is ignored, and a mismatched magic number
+  is simply skipped), but it is junk in the deliverable and leaks the interpreter version.
+  `rm -rf submission_baseline/__pycache__` immediately before `make zip`.
+- **Multi-file submissions are fine — no need to fold `model.py`/`proxies.py` into `helpers.py`.**
+  The template README specifies only the three *classes* and their methods, never a file layout, and
+  the template's own `helpers.py` is literally `# use this however you need`. The build step is
+  `cp -R $(submission)/* package`, so every module lands beside `main.py` and the flat same-directory
+  imports resolve. Proven end-to-end: the extracted zip plus `main.py` ran GameOfLife to completion.
+  Keep the modules split — it is easier to review than one large file.
+- **Confirm `main.py` and `score.py` are absent from the submission directory** (§3) — the harness
+  overwrites files with those names. Currently neither is present.
+- *(local testing only — does NOT ship)* The `metadata['time_limit'] = 1` override in
+  `evaluation/main.py` and the smoke budgets in the dataset `metadata` files (`0.016` ≈ 58s, `0.013`
+  ≈ 47s). These only distort **local** runs. Reset them before any benchmark you intend to trust, but
+  they are not a submission blocker.
 - **Fix `requirements.txt` locally** (it never ships — see §3): `sklearn` is the deprecated stub
   package that now refuses to install and is what broke the last local scoring run; it should be
   `scikit-learn`. Also the `-f .../cu113/...` index line sits above a `+cu132` torch pin, which
@@ -500,125 +523,91 @@ Do not simply re-apply the patch; the premise below has to be fixed first.
 
 ### 7f. Planned work — START HERE
 
-**1. Re-benchmark and score the 2026-07-28 changes. NOTHING ELSE SHOULD LAND FIRST.** Six substantive
-changes are in across four files and none has a score attached — precisely the situation §7a is about.
+**0. RE-BENCHMARK FIRST — the 2026-07-29 gate and member-sizing fixes are unmeasured.**
+`make submission=submission_baseline all`, 13 × 1h. Predictions, written down so the run can falsify
+them:
 
-```bash
-make submission=submission_baseline all
-```
-
-13 datasets × 1h ≈ 13h; `main.py` already forces `time_limit = 1`, so no edits are needed. Keep
-Cryptic/Sudoku/Voxel in for robustness coverage (odd shapes: 1×6×768, 20×20×20, 12-channel) but
-**ignore their scores** — their benchmarks are 0.0. Compare the **10-dataset subtotal (+14.50)**,
-not the 32.078 headline.
-
-The changes target *disjoint* dataset groups, which is what makes one run still attributable.
-Predictions, written down in advance so the run can falsify them:
-
-| dataset | prediction | if wrong, suspect |
+| check | expectation | if wrong, suspect |
 |---|---|---|
-| Myofibre | large gain, −3.96 → positive | `stem_stride` |
-| CIFARTile, GeoClassing | moderate gain | `stem_stride` |
-| Chesseract, Language, Windspeed, Voxel, Gutenberg | ensembling fires; Chesseract/Language cross benchmark | val→test gap on the ensemble |
-| AddNIST, MultNIST, GameOfLife | **unchanged, 0 members** | the saturation gate |
-| Sudoku, Cryptic | may *drop* | batch 4→512 against a fixed `BASE_LR` |
+| `grep -c 'saturated after'` | **5**, not 9 | the 0.75 fraction |
+| AddNIST | 0 members, back to ~+3.7 | the gate fix failed |
+| GameOfLife | 0 members, ~+9.9 | the gate fix failed |
+| Chesseract, Language, Gutenberg, Windspeed, Voxel | 15–24 members; unused budget <10% (was 13–32%) | `MEMBER_LENGTH_FACTOR` / `MAX_MEMBERS` |
+| real-10 subtotal | ~+28 (from +24.61) | — |
 
-The logs now self-diagnose — the `[Trainer] summary:` line per dataset says which group it landed in,
-so grepping `summary:` and `ensembl` is the fastest read of the result.
+⚠ **`MAX_MEMBERS = 24` is the least-validated thing in this change.** It rests on "more members is
+better", which is true from 1 → 4 (measured, §7f.2) but **not** measured from 7 → 24, and shorter
+members are individually weaker. The 1800s Chesseract check gave best val 55.95% with 22 members
+against ~55.5–55.9 with 7 — not a clear win. If the saturating datasets do not improve in this
+benchmark, `MAX_MEMBERS` is the first thing to put back down.
 
-**1b. Known gap to check in that output:** the ensemble gain is so far measured only on *validation*
-data. Chesseract and Language are exactly where a val→test gap would hurt most, and MultNIST showed a
-4.8-point val→test drop in the previous run. This benchmark is what settles it.
+**1. LANDED 2026-07-29 — the saturation gate and member sizing are both fixed.** Constants now
+`PATIENCE_FRACTION = 0.75`, `MIN_PATIENCE = 10`, `MAX_MEMBERS = 24`, `MEMBER_LENGTH_FACTOR = 1.5`
+(§4a). Replaying the shipped `_saturation_patience` against the clean per-epoch curves of all 13
+datasets misclassifies **0**, versus 5 before. Member sizing replayed on the production numbers:
 
-**2. Attack the saturation group — this is where the remaining score is.** Five datasets waste 88–99%
-of their hour after fully memorising the training split (§7h(i)), and four of them score below
-benchmark. Two independent levers, in order of confidence:
-   - **Regularisation, specifically mixup.** It is the one strong augmentation that assumes *nothing*
-     about what an axis means — it only convex-combines whole samples and their labels — which is
-     exactly the property this competition demands, and unlike flip/crop it is safe on a one-hot
-     board. Applies to the `quantized/categorical` datasets that currently receive **no effective
-     augmentation at all**. A/B harness: `<scratchpad>/ab_mixup.py`.
-     **First measurement (Chesseract, seed 0, 60 epochs, same init per arm):** baseline best val
-     **53.67%**, mixup α=0.2 **55.99%**, mixup α=0.4 **55.54%** — i.e. **+2.3 / +1.9 points**, both
-     alphas agreeing in direction. **NOT LANDED**, deliberately: one seed only, and α=0.2's best came
-     at epoch 3, which looks like it could be the top of a noise distribution rather than a trend.
-     Final train accuracy stayed at 99.99% in every arm, so mixup at these strengths *reduces* the
-     generalisation gap without actually preventing memorisation — larger α is worth testing too.
-     **Next step: repeat over ≥3 seeds and on Language/Gutenberg before landing** (the flip A/B in
-     7e used 3 seeds for exactly this reason, and §7g's "a suite that passes once is not a suite that
-     passes" applies here).
-   - **Spend the surplus on an ensemble — MEASURED, and it is the largest effect found so far.**
-     Harness: `<scratchpad>/ab_ensemble.py`. Every arm gets an *identical* 60-epoch budget, so this
-     measures how the budget is spent, not how much of it there is. Seed 0, 4 members:
+| dataset | before | after |
+|---|---|---|
+| Chesseract 1h | 7 × 440s (13.3× convergence) | 24 × 133s (4.0×) |
+| Windspeed 1h | 7 × 440s (5.9×) | 24 × 132s (1.8×) |
+| Sudoku 3.5h | 7 × 1686s (9.5×) | 24 × 512s (2.9×) |
+| Voxel 3.5h | 7 × 1513s (2.5×) | 12 × 960s (1.6×) |
 
-     | dataset | benchmark | single | snapshot (warm restart) | **independent re-init** |
-     |---|---:|---:|---:|---:|
-     | Chesseract | 57.83 | 54.27 | 54.08 | **58.62** (+4.35) |
-     | Language | 85.20 | 80.10 | 79.75 | **85.47** (+5.37) |
+**UNMEASURED on score.** Expected: AddNIST and GameOfLife return to single-model (recovering ~+3.6),
+the five genuine saturators keep ensembling with more members, and the 13–32% of budget those
+datasets were leaving unused mostly disappears. The next benchmark should check exactly that — grep
+`saturated after` and confirm it appears on five datasets, not nine.
 
-     **Both cross their benchmark for the first time**, from −0.64 and −3.63 adj respectively. The
-     members are individually *no better* than the single baseline (Chesseract `[.534 .536 .544 .540]`
-     vs .543; Language `[.791 .803 .806 .807]` vs .801) — the entire gain is decorrelation, +4.26 and
-     +4.79 over the best member.
+**1b. Detection now costs more, and WHEN it fires still varies run to run.** Two live Chesseract runs
+with the shipped constants: one fired at **epoch 41** (~332s in), the other at **epoch 12** (~92s in).
+Same cause as item 2 — the drought is measured from the argmax, so whether an early epoch happens to
+set a high running max shifts detection by 3×. Consequences measured:
 
-     **The critical detail, and the reason this had to be measured rather than assumed: members must
-     be INDEPENDENTLY RE-INITIALISED.** Warm-restart snapshots — i.e. the textbook "Snapshot
-     Ensembles"/SGDR recipe, cosine restarts carrying the weights over — produced **nothing** on both
-     datasets (−0.19 and −0.35 vs single; ensemble gain over own best member −0.10 and +0.01), because
-     a model that has memorised its training split just re-memorises after the restart and every
-     member lands on the same function. Note this is a *different* mechanism from the SWA attempt
-     rejected in §7d: that averaged weights, this averages predictions.
+- 600s budget, fired late (ep 41): only ~250s left, so **0 members** — the gate correctly declined.
+- 1800s budget, fired early (ep 12): **22 members of 70s each** (before the fix: 7 × 440s), best val
+  55.95%, i.e. the member-sizing fix does what it was meant to.
 
-     **LANDED 2026-07-28**, gated on saturation — see §4a for the invariants. End-to-end through the
-     real `Trainer` on Chesseract at a 600s budget: **7 members, 59.22% vs 55.79%** for the best single
-     member (+3.43), **above the 57.83 benchmark**; against production's actual single-model 54.43% the
-     gain is ~+4.8. Non-regression verified live: AddNIST at the same budget produces **0 members**, no
-     saturation message, unchanged behaviour. Suite: `<scratchpad>/test_ensemble.py`.
+At a 1h budget there is ample runway either way, so this is not expected to matter for Phase 2 — but
+it does mean **short-budget runs may no longer ensemble at all**, and `test_ensemble.py` now needs
+**1800s+** on Chesseract rather than 600s.
 
-     **Still open:** single seed on both the A/B and the end-to-end check, and the gain has only been
-     measured on validation data — Chesseract and Language are exactly the datasets where a val→test
-     gap would matter most. The scored re-benchmark (item 1) is what settles it.
+**2. `t_conv` is still derived from the argmax epoch and is noisy.** Three runs of `test_ensemble.py`
+on Chesseract at a fixed 600s gave **7, 2 and 7 members** (gains +4.03, +1.95, +4.45). Every run beat
+the single model — magnitude, not correctness — and `MEMBER_LENGTH_FACTOR` damps it, but a robust
+estimate (e.g. the first epoch within ~1 point of the eventual best) would remove it.
 
-**2b. HOW MEMBERS ARE SIZED IS THE WEAKEST PART OF THE ENSEMBLING WORK — fix this first after the
-benchmark.** Two distinct symptoms, one root cause: `member_budget` is derived from `t_conv =
-max(member_best_time, 0.34 × elapsed_member)`, and that is a **noisy** statistic.
+**3. Mixup — the remaining lever for the memorisers.** Ensembling raised the saturating datasets to
+about par but did NOT stop them memorising: Gutenberg still ends at 100.00% train vs 40.4% val
+(+59.6), Sudoku at 3.5h at 100.00% vs 24.3% (+75.7), Chesseract 100.0% vs 54.4% (+45.5). Mixup is the
+one strong augmentation that assumes nothing about what an axis means, so it is safe on a one-hot
+board, and these datasets currently receive **no effective augmentation at all** (noise-only).
+First measurement (Chesseract, seed 0, 60 epochs, same init per arm): baseline **53.67%**,
+α=0.2 **55.99%**, α=0.4 **55.54%** — both alphas agree in direction. **Not landed:** one seed, and
+α=0.2's best came at epoch 3, which could be the top of a noise distribution. Test over ≥3 seeds AND
+**jointly with ensembling** — both attack overfitting, so measuring mixup alone would over-state what
+it adds. Harness: `<scratchpad>/ab_mixup.py`. Note windspeed is the opposite case (38.6% train) and
+must not be regularised further.
 
-- **Run-to-run variance at a fixed budget.** Three runs of `test_ensemble.py` on Chesseract at 600s
-  gave **7, 2, and 7 members** (gains +4.03, +1.95, +4.45; the 2-member run also left 235s of 600s
-  unused). Chesseract's validation curve is essentially flat (51–55%), so *which* epoch happens to be
-  the best is close to random within the plateau — when it lands late, `member_best_time` is large,
-  which buys few long members instead of many short ones. Since 4–7 members are worth roughly twice
-  what 2 are, this is losing about half the available gain half the time. **Everything still passes
-  and every run beats the single model** — this is magnitude, not correctness.
-- **It stops absorbing surplus at long budgets.** `k_more` is capped at `MAX_MEMBERS − 1 = 7`, so at
-  8h with `t_conv ≈ 40s` and `avail ≈ 28000s` **each member gets 4000s while converging in 40** — back
-  to wasting the surplus, the exact problem ensembling was built to solve. Matters for Phase 3, which
-  reuses the Phase 2 submission unchanged.
+**4. Couple the learning rate to the batch size — and note this is a PORTABILITY issue, not just a
+Sudoku curiosity.** `BASE_LR` is a fixed 0.01 whether the loader batch is 4 or 512, so the number of
+optimizer steps varies by orders of magnitude with no compensation. Sudoku demonstrated the cost
+directly (raw 34.33 → 23.13 when its batch went 4 → 512, §7g0). **The reason to raise its priority:
+`_choose_batch_size` sizes from the GPU actually present, so the batch differs per machine — Daniel's
+3 GB card produced 310 and 202 where this box produces the 512 cap (§7j). The evaluation server's GPU
+is unknown, so `BASE_LR` may well be mis-scaled there for every dataset.** The standard remedy is the
+linear scaling rule (`lr ∝ batch_size` relative to a reference batch). **Measure before landing** —
+this is exactly the shape of premise that sank the 2026-07-27 batch (§7a). Related knob: the 512 cap
+is arbitrary and unmeasured.
 
-Direction for the fix (needs measurement, do not just apply it): make the member length depend on a
-*robust* convergence estimate rather than the argmax epoch — e.g. the first time the member came
-within ~1 point of its eventual best — cap `member_budget` at a small multiple of it, and let the
-member *count* grow with the budget instead, raising `MAX_MEMBERS`. Host RAM is ~38 MB/member; the
-binding cost is `predict()`, one test pass per member, and `_ensemble_predict_reserve()` already
-scales the reserve with member count, so that part is in place.
-
-**3. Couple the learning rate to the batch size.** Surfaced by the smoke run (§7g0): `BASE_LR` is a
-fixed 0.01 no matter whether the loader batch is 4 or 512, so the number of optimizer steps a dataset
-gets varies by two orders of magnitude with no compensation. The standard remedy is the linear scaling
-rule (`lr ∝ batch_size`, relative to a reference batch). **Measure before landing** — this is exactly
-the shape of premise that sank the 2026-07-27 batch (§7a). A cheaper, related knob: the 512 cap in
-`_choose_batch_size` is arbitrary and unmeasured; on a small-image dataset a smaller batch buys many
-more steps per epoch for little wall-clock.
-
-**4. A/B horizontal flip** (7e) — measured −0.73% to −1.45% over 3 seeds on AddNIST, consistent sign.
+**5. A/B horizontal flip** (7e) — measured −0.73% to −1.45% over 3 seeds on AddNIST, consistent sign.
 *Pre-existing* behaviour, not anything recently added.
 
-**5. Check whether NAS verification carries signal at all.** On AddNIST the verified candidates spread
+**6. Check whether NAS verification carries signal at all.** On AddNIST the verified candidates spread
 4.4–10.7% around a 5% random baseline (§7h). If verification-time val accuracy does not correlate with
 final trained accuracy, the ~7% of the budget it costs is better spent training. This is a cheap
 experiment and could free a large, guaranteed slice of time.
 
-**5b. `MAX_EPOCHS = 5000` is a hard-coded epoch cap in a clock-driven pipeline — OPEN DECISION.**
+**6b. `MAX_EPOCHS = 5000` is a hard-coded epoch cap in a clock-driven pipeline — OPEN DECISION.**
 Samuel declined this change on 2026-07-28; recorded so it stays a decision rather than an oversight.
 It is not the training budget (the clock is); it exists only so the loop terminates if `clock.check()`
 fails and `_remaining()` returns its `1e9` sentinel. But it binds at long budgets: at the measured
@@ -629,16 +618,16 @@ clock-driven cosine frozen partway down, so the final model never had its LR ann
 if ever wanted: keep 5000 as the no-clock safety valve, use an effectively unbounded cap when
 `clock_ok` is true.
 
-**6. Warmup.** Implemented and verified during the reverted batch — linear over a budget *fraction*,
+**7. Warmup.** Implemented and verified during the reverted batch — linear over a budget *fraction*,
 with a floor so a low-epoch-count dataset doesn't waste its first epoch at ~0 LR; reverted only to
 keep the benchmark clean.
 
-**7. Re-attempt time-aware macro growth** — only after fixing the projection basis (7d), and note that
+**8. Re-attempt time-aware macro growth** — only after fixing the projection basis (7d), and note that
 §7h partly re-frames it: the datasets that looked capacity-limited (Chesseract, Language) turn out to
 be *over*-fitting, so growing them would make things worse, not better. The remaining candidates for
 growth are the ones that were still improving when the clock stopped.
 
-**8. Equal-fidelity validation comparison** (§4a) — record `n_scored` alongside each accuracy and
+**9. Equal-fidelity validation comparison** (§4a) — record `n_scored` alongside each accuracy and
 refuse to displace a checkpoint scored on substantially more samples.
 
 ### 7g0. End-to-end verification of the 2026-07-28 changes (smoke run, 8 min/dataset)
@@ -719,11 +708,15 @@ Suites live in the session scratchpad; run them with the `stx_r` interpreter, pa
 - `test_train_logging.py <sub> <dataset> <seconds>` — checks the epoch lines parse, that `gap` really
   equals `train − val`, that train accuracy rises and loss falls, that the `SATURATED`/`MEMORISING`
   notes fire on Chesseract, **and that median epoch time is not inflated** by the accumulation.
+- `test_labels.py <sub>` — non-0-based (`1..K`) and non-contiguous (`{0,3,9}`) labels must still
+  train. Reproduces the old `IndexError` at the old head width first, and asserts
+  `n_outputs == num_classes` on the normal 0-based case so the fix is a proven no-op there.
 - `test_ensemble.py <sub> <dataset> <seconds>` — drives the real `Trainer`: asserts the members hold
   **genuinely different weights** (a silently failed `reset_parameters()` would give clones and a
   useless ensemble), that the ensemble beats the single model on held-out data, that `predict()`
   returns exactly `n_test` both ways, and that it degrades to fewer members instead of overrunning
-  when the clock is nearly exhausted. **Use 600s+ on Chesseract.** This test was initially flaky at
+  when the clock is nearly exhausted. **Use 1800s+ on Chesseract** — since the 2026-07-29 gate change
+  600s is no longer enough runway for a second member to fit (§7f.1b). This test was initially flaky at
   420s and the fix was to the *test*, not the code: batch shuffling and the noise augmentation are
   unseeded, so member 1's saturation point moves run to run, and near a marginal budget there is
   sometimes no room for a second member — where the gate is behaving correctly by declining. It now
@@ -814,6 +807,185 @@ MFLOPs, a **16× cut**, and every input ≥32×32 now lands at 4×4.
   while Adaline and Sadie land within 0.4. Partly winner's-curse from taking the max over ~180 noisy
   evaluations, but the size of it suggests genuine split differences. Not currently actionable, but
   don't read a val number as a test number.
+
+### 7j. The 2026-07-28 benchmark + Daniel's 3.5h run — analysis (done 2026-07-29)
+
+Logs: `outputs/output_1h_each_28_07` (13 × 1h, this machine) and
+`outputs/output_3sets_3.5h_29_07.txt` (3 × 3.5h, Daniel: torch **1.10.1**/cu113, torchvision 0.11.2,
+GTX 1060 **3 GB**). **Zero failures in both.**
+
+**Result: the 10-dataset real subtotal went +14.50 → +24.61 (+10.10). Every one of the 10 is now at
+or above its benchmark** (lowest: AddNIST +0.22). Headline 32.078 → 41.397, but quote the 10.
+
+| dataset | adj old | adj new | Δ | driver |
+|---|---:|---:|---:|---|
+| Myofibre | −3.96 | **+3.07** | **+7.03** | `stem_stride` (5 → 81 epochs) |
+| Language | −3.63 | +0.39 | +4.01 | ensembling, crossed benchmark |
+| Chesseract | −0.64 | +0.42 | +1.06 | ensembling, crossed benchmark |
+| Gutenberg | −0.13 | +0.84 | +0.96 | ensembling |
+| CIFARTile | +1.81 | +2.59 | +0.79 | `stem_stride` |
+| Windspeed | −0.04 | +0.21 | +0.25 | ensembling |
+| GameOfLife | +9.96 | +9.92 | −0.05 | — |
+| GeoClassing | +5.82 | +5.67 | −0.15 | — |
+| MultNIST | +1.57 | +1.29 | −0.27 | — |
+| **AddNIST** | +3.74 | **+0.22** | **−3.53** | **false-positive ensembling — see below** |
+
+**§7f.1b is ANSWERED: the ensemble gain transfers to test data.** `summary:` reports the best single
+checkpoint; the submitted predictions are the ensemble. test − best_val averages **+3.33 on the 9
+ensembled datasets and −2.69 on the 4 that were not** — so the ensemble is worth about **+6.0 points
+of test accuracy** over the best single model. Not a validation artefact.
+
+**ISSUE 1 — the saturation gate fires on noisy plateaus. It ran on 9 of 13 datasets, not the 5
+predicted, and the one false positive that mattered cost −3.53.**
+AddNIST hit 84.97% at epoch 43, then oscillated 79.8–84.0 for ten epochs *while train accuracy climbed
+91 → 94%*. `patience = max(8, 0.2·53) = 10`, so it fired, split the budget, and the run ended with
+**1138s (32%) unused**. It was plainly not saturated: member 2 reached 87.05% from scratch in 1082s,
+and the 27/07 single-model run reached 92.92%.
+
+**The original validation of this gate was invalid and that is the real lesson.** It simulated the
+rule from `(best_epoch, total_epochs)` summary pairs, which silently assumes the running best equals
+the final best. Re-run against the actual per-epoch curves, the shipped rule fires on Adaline (ep 67),
+Caitie (29), conway (28), Sadie (64) and Mateo (59) too — matching what production did. **Validate a
+rule against the trajectory it consumes, never against a summary of it.**
+
+**Fix, validated on the clean 27/07 single-model curves:** `PATIENCE_FRACTION 0.2 → 0.75`,
+`MIN_PATIENCE 8 → 10`. Measured drought fraction `(n − best)/n` ever reached: saturating datasets
+**0.82–0.99**, budget-using datasets **≤0.67** (conway) — a real gap, and any threshold in (0.67, 0.82]
+separates them. 0.75 is its midpoint and is stable across frac ∈ [0.70, 0.80] × floor ∈ [10, 20], so it
+is a plateau rather than a knife-edge. It also has a principled reading identical to the `SATURATED`
+note already logged: *fire only when the best checkpoint sits in the first 25% of what has run*. It
+still fires early enough to leave 55–96% of the budget for further members. ⚠ Tuned on 10 datasets —
+the width of the plateau is the argument that it generalises, not the fit itself.
+
+**ISSUE 2 — `MAX_MEMBERS = 7` forces absurdly long members. This is §7f.2b, now measured in
+production, and it is worse than predicted: it binds at 1h, not just at 8h.**
+
+| run | dataset | members × length | converges in | wasted per member |
+|---|---|---|---|---|
+| 1h | Chesseract | 7 × 440s | 33s | ~92% |
+| 3.5h (Daniel) | Sudoku | 7 × 1678s | 178s | ~89% |
+| 3.5h (Daniel) | Voxel | 7 × 1504s | 602s | ~60% |
+
+**ISSUE 3 — every ensembling dataset left 13–32% of its budget unused** (440–1138s each, **1.4 h across
+the 9**), via the "no room for another member" break. Same root cause as issue 2: members are too long
+to pack. The 4 non-ensembling datasets used 98% of theirs.
+
+**Daniel's run confirms 3.5× the budget only helps the dataset that is not saturating**, which is
+exactly what issues 2–3 predict:
+CIFARTile 60.75 → **67.95** raw (+7.20, adj +2.59 → +3.95), Sudoku 23.13 → 25.80 (+2.67),
+Voxel 75.37 → 76.33 (+0.96).
+
+**PORTABILITY: Daniel's environment is the closest thing we have to the evaluation server and the
+submission is clean on it.** torch 1.10.1 + torchvision 0.11.2 + a 3 GB card: no exception, no AMP
+fallback, no `label_smoothing` fallback, no OOM, no TinyNet/MinimalNet fallback, no batch-size
+shrink. `_choose_batch_size` correctly scaled to the smaller card (310 and 202 rather than the 512 cap
+this machine gets), and `stem_stride=2` applied on 64×64. The §3 version-portability work is validated.
+
+**Other observations:**
+- **Sudoku behaves exactly as predicted by §7g0**: raw 34.33 → 23.13 with batch 4 → 512. Confirms the
+  LR/batch coupling item (§7f.3) is real; its benchmark is fake so the score is not the point.
+- **Windspeed is the one dataset that UNDER-fits** — final train **38.6%**, val 16.1%. It cannot fit
+  its own training split, so regularisation is the wrong lever there; it is a different problem class
+  from the memorisers.
+- **Sudoku at 3.5h memorises completely**: 100.00% train vs 24.3% val, gap +75.7. The single strongest
+  case for mixup (§7f.2).
+- NAS picks a different genotype run-to-run (AddNIST 877,876 vs 1,178,036 params), so small per-dataset
+  deltas (±0.3) are search noise, not signal.
+
+### 7k. Generalization audit — is the pipeline over-fitted to the 13 local datasets? (2026-07-29)
+
+Asked by Samuel, and the right question: the competition explicitly forbids tuning to the bundled
+examples, and several constants were introduced by *fitting them to those examples*. Every tunable in
+the pipeline, classified honestly.
+
+**A. Dataset-agnostic by construction — no concern.** The fallback cascades; the clock-driven cosine;
+distrusting `input_shape` (§7c); branching augmentation on measured value *cardinality* rather than on
+shape; batch size derived from the GPU actually present (**proven portable — Daniel's 3 GB card chose
+310/202 where this box chooses 512**); `stem_stride` targeting a 4×4 final map (this made us *more*
+conventional, not less — 32× total reduction is the ImageNet norm); the validation permutation; the
+weight-decay split on `p.dim() > 1`; the NASBench-201 search space; `WEIGHT_DECAY`/`LABEL_SMOOTHING`
+at textbook values.
+
+**B. Fitted to the local datasets — the actual risk.**
+
+1. **`PATIENCE_FRACTION = 0.75` is the most over-fitted constant in the pipeline.** It was chosen by
+   sweeping against 10 local datasets that *I labelled* "saturating" or "not". Three things bound the
+   risk, and they should be checked before anyone re-tunes it: (i) it is a wide plateau, not a point
+   fit — anything in frac 0.70–0.80 × floor 10–20 separates the classes, and the measured class gap is
+   real (0.67 vs 0.82); (ii) it restates as a shape claim independent of the data — *fire only when the
+   best checkpoint is in the first 25% of the run*; (iii) **the failure modes are asymmetric.** A false
+   negative just yields the pre-ensembling single-model pipeline and costs nothing relative to the
+   2026-07-27 baseline; a false positive costs real score (AddNIST, −3.53). 0.75 is the conservative
+   direction, so an unseen dataset that this misjudges most likely loses an *opportunity*, not points.
+2. **`_CARDINALITY_THRESHOLD = 32` + horizontal flip is a KNOWN generalization defect, still unfixed.**
+   It encodes "many distinct values ⇒ photo ⇒ mirroring is safe", which is simply false for glyphs,
+   text, spectrograms, or any directional axis. It already misfires on AddNIST — a digit dataset —
+   costing a measured −0.73 to −1.45 over 3 seeds. An unseen dataset of rendered characters or
+   time-frequency data would be misclassified exactly the same way. **This is the clearest existing
+   over-specialization and it is pre-existing, not something ensembling introduced** (§7f.5).
+3. **`BASE_LR = 0.01` is implicitly tuned for batch 512** — see §7f.4; the batch varies with the GPU,
+   so this is a portability risk on an unknown server, not just a Sudoku curiosity.
+4. `MAX_MEMBERS = 24`, `MEMBER_LENGTH_FACTOR = 1.5`, and the `0.34 × elapsed_member` floor inside
+   `t_conv` are reasoned rather than fitted, but are unvalidated magic numbers.
+
+**C. Assumptions the local data CANNOT test — these worry me more than B.**
+
+1. ~~**`num_classes` trusted from metadata**~~ — **FRAMING CORRECTED, then FIXED 2026-07-29.** The
+   original claim ("metadata might miscount the classes") was wrong, and Samuel was right to push
+   back: `num_classes` is the task *specification*, so a wrong count is the organisers' bug and breaks
+   every competitor equally. That is NOT the same as `input_shape`, where the errors found in §7c are
+   descriptive and harm nobody.
+
+   The real risk is narrower and nobody's fault: **label VALUES that are not 0-based.** Labels `1..K`
+   with a perfectly correct `num_classes = K` give a head of width K (indices 0..K-1), and target K
+   raises `IndexError: Target K is out of bounds` — **not** a `RuntimeError`, so it escapes
+   `NAS._fits` and the Trainer's OOM guard: NAS falls to `MinimalNet`, training dies on batch one, and
+   `predict()` returns an untrained model's guesses. Right length, so no `Failed` flag — it just
+   scores like noise, which on a high-benchmark dataset floors at −10.
+
+   **Fixed** by `DataProcessor._record_label_facts()`, which derives `n_outputs =
+   max(num_classes, max_label + 1)` from the actual labels; `nas.py` uses `n_outputs`. Verified: the
+   old head width reproduces the `IndexError` first, the new one trains on 1-based and on
+   non-contiguous (`{0,3,9}`) labels, and **`n_outputs == num_classes` on all 13 local datasets**, so
+   nothing here changes behaviour. Suite: `<scratchpad>/test_labels.py`.
+
+   **Deliberately NOT a remap to 0..K-1.** That would need the inverse mapping applied in `predict()`,
+   and omitting it would silently return `0..K-1` against labels `1..K` — a total loss on a model that
+   trained perfectly. Widening the head keeps label values usable directly as output indices, which is
+   what `fallback_label` and `predict()` padding already assume.
+
+2. **A pre-existing bug found while testing the above: `np.bincount` rejects non-integer labels.**
+   Voxel ships `train_y` as **float64**, so the whole `fallback_label` block fell into its `except`
+   and Voxel silently used `fallback_label = 0` instead of its computed majority class. Harmless so
+   far only because `predict()` never had to pad on it. Now uses `np.unique`, which tolerates float
+   and negative labels. (Voxel's true majority happens to be 0, so no measured behaviour changed.)
+
+3. **`predict()` has no clock check on the single-model path** and `margin` is capped at a flat **60 s**
+   regardless of test-set size or budget (`min(0.15·budget, 60)`). Our largest test pass is ~5 s, so
+   there is 12× headroom here — but a large, high-resolution unseen test split on a slow server GPU
+   could exceed it, and once inside the loop there is no way to abort. The ensemble path checks the
+   clock *between* members but never within a pass.
+4. `MAX_EPOCHS = 5000` binds above ~11 h (§7f.6b, open decision).
+
+**Verdict (updated after C1/C2 were fixed on 2026-07-29).** The accuracy work — `stem_stride` and
+ensembling — is mechanism rather than dataset-fitting and should transfer. Remaining exposure, in
+order:
+
+1. **(B2) the flip heuristic** — a *measured* −0.73 to −1.45 on AddNIST, and it will recur on any
+   unseen glyph/text/spectrogram-like data. The clearest over-specialization in the pipeline, and it
+   pre-dates all the recent work (§7f.5).
+2. **(B3) LR/batch coupling** — the batch is sized from whatever GPU is present, so an unknown server
+   GPU means an unknown batch and a mis-scaled `BASE_LR` on *every* dataset (§7f.4).
+3. **(B1) `PATIENCE_FRACTION = 0.75`** — the most fitted constant, but bounded by the asymmetry: its
+   likely failure is a missed opportunity, not lost points.
+4. **(C3) `predict()`'s flat 60 s margin with no in-pass clock check** — 12× headroom on our largest
+   test split, unknown on an unseen one, and no way to abort once inside the loop.
+
+C1 (non-0-based labels) and C2 (`bincount` on float labels) are closed. Note both were invisible to
+every local benchmark: all 13 datasets are 0-based, and the float-label bug only ever suppressed a
+`fallback_label` that was never needed. **That is the general lesson of this audit — the local
+datasets cannot fail in the ways an unseen one can, so "the benchmark is green" says nothing about
+category C.**
 
 ### 7i. Code review of the whole pipeline, 2026-07-28
 

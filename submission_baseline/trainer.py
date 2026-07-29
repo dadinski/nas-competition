@@ -136,24 +136,43 @@ LABEL_SMOOTHING = 0.1
 # memorised its training split just re-memorises after a restart, so every
 # member ends up computing the same function. The individual members here are
 # no better than a single model either - the entire gain is decorrelation.
-MAX_MEMBERS = 8            # caps host RAM for snapshots and predict() cost
-MIN_PATIENCE = 8           # floor on "no improvement" epochs before declaring saturation
-PATIENCE_FRACTION = 0.2    # ...and it also scales with how long the member has run
+MAX_MEMBERS = 24           # caps host RAM for snapshots and predict() cost
+MIN_PATIENCE = 10          # floor on "no improvement" epochs before declaring saturation
+PATIENCE_FRACTION = 0.75   # ...and it also scales with how long the member has run
+MEMBER_LENGTH_FACTOR = 1.5  # a member gets this multiple of the time member 1 needed to converge
 
 
 def _saturation_patience(epochs_in_member):
     """Epochs without a validation improvement before a member counts as done.
 
-    Deliberately RELATIVE to how long the member has already trained. A flat
-    constant would cut off datasets that are still genuinely improving, just
-    slowly: AddNIST's best checkpoint is at epoch 166 of 197, i.e. it ends on a
-    31-epoch dry spell that a constant patience of 8 or 10 would have
-    misread as saturation. Checked against all 13 datasets of the 2026-07-27
-    run: this rule fires on exactly the five that saturate (Chesseract at 3% of
-    the run, Language 5%, Windspeed 14%, Voxel 15%, Gutenberg 46%) and NEVER on
-    the five that use their budget productively (GameOfLife, GeoClassing,
-    AddNIST, CIFARTile, MultNIST) nor on the three that run out of time. Those
-    eight therefore behave exactly as they do today.
+    RELATIVE to how long the member has already trained, so the condition reads:
+    fire only once the best checkpoint sits in the first (1 - FRACTION) = 25% of
+    what has run. That is deliberately the same definition as the SATURATED note
+    in _log_training_summary, and it is a statement about the shape of the curve
+    rather than a tuned constant.
+
+    THE FRACTION WAS 0.2 AND THAT WAS TOO EAGER - it cost a measured -3.53 on
+    AddNIST (2026-07-28 run, CLAUDE.md 7j). AddNIST reached 84.97% at epoch 43,
+    then oscillated 79.8-84.0 for ten epochs *while train accuracy climbed 91 ->
+    94%*; patience was max(8, 0.2*53) = 10, so it fired, split the budget and
+    left 32% of it unused. It was not saturated: a from-scratch member then beat
+    that mark, and the single-model run had reached 92.92%. The argmax of a noisy
+    validation curve is simply not evidence of convergence.
+
+    0.75 is validated against the CLEAN single-model per-epoch curves of all 13
+    datasets (the 2026-07-27 run). The largest drought fraction (n - best)/n each
+    dataset ever reaches is 0.82-0.99 for the five that genuinely saturate and
+    <= 0.67 for the five that use their budget - a real gap, and any threshold
+    inside it separates them. 0.75 is its midpoint and holds across
+    FRACTION in [0.70, 0.80] x MIN_PATIENCE in [10, 20], i.e. it is a plateau and
+    not a knife-edge fit. It still fires early enough to leave 55-96% of the run
+    for further members.
+
+    NOTE the earlier version of this rule was "validated" against
+    (best_epoch, total_epochs) summary pairs, which silently assumes the running
+    best equals the final best. It does not, and that is why the gate misfired in
+    production. Any future change here must be replayed against real per-epoch
+    trajectories.
     """
     return max(MIN_PATIENCE, int(PATIENCE_FRACTION * max(0, epochs_in_member)))
 
@@ -546,18 +565,37 @@ class Trainer:
                             # the table. Sizing by elapsed_member instead left 25% of
                             # a 600s Chesseract budget unused and bought only 2
                             # members where the budget supported 7.
-                            # KNOWN WEAKNESS (CLAUDE.md 7f.2b): member_best_time is
-                            # the time to the ARGMAX epoch, which is noisy when the
-                            # validation curve is flat - Chesseract at a fixed 600s
-                            # budget produced 7, 2 and 7 members across three runs
-                            # (gains +4.03, +1.95, +4.45). Every run still beats the
-                            # single model, so this is magnitude, not correctness,
-                            # but a robust convergence estimate belongs here.
+                            # How long ONE member needs: enough to converge plus a
+                            # tail for the cosine to anneal. Sizing members as
+                            # avail/MAX_MEMBERS instead made them ~10x longer than
+                            # necessary once the member cap bound, which it did even
+                            # at 1h: Chesseract ran 7 x 440s while converging in 33s,
+                            # and Sudoku at 3.5h ran 7 x 1678s while converging in
+                            # 178s - ~90% of every member's time spent after it had
+                            # stopped improving (CLAUDE.md 7j, issue 2).
+                            #
+                            # KNOWN WEAKNESS (CLAUDE.md 7f.2b): member_best_time is the
+                            # time to the ARGMAX epoch, which is noisy when the
+                            # validation curve is flat - three 600s Chesseract runs
+                            # gave 7, 2 and 7 members. Every run still beat the single
+                            # model, so this is magnitude, not correctness, but a
+                            # robust convergence estimate belongs here.
                             t_conv = max(member_best_time, 0.34 * elapsed_member, 1.0)
-                            avail = max(0.0, self._remaining() - margin
-                                        - self._ensemble_predict_reserve())
-                            k_more = int(avail // t_conv)
+                            target = MEMBER_LENGTH_FACTOR * t_conv
+
+                            # predict() costs one test pass per member, so the reserve
+                            # grows as members accumulate. Estimate it for the member
+                            # count we are about to plan rather than the one we have
+                            # now, otherwise the last members silently do not fit and
+                            # their budget is wasted.
+                            avail0 = max(0.0, self._remaining() - margin)
+                            k0 = max(1, min(int(avail0 // target), MAX_MEMBERS - 1))
+                            avail = max(0.0, avail0 - k0 * self._last_eval_time * 1.5)
+
+                            k_more = int(avail // target)
                             k_more = max(1, min(k_more, MAX_MEMBERS - 1))
+                            # avail/k_more is >= target by construction, so this fills
+                            # the budget exactly while keeping members near `target`
                             member_budget = max(1.0, avail / k_more)
                             print("[Trainer] saturated after {} epochs ({:.0f}s, best at {:.0f}s) with "
                                   "{:.0f}s left -> up to {} more independent members of {:.0f}s each"
