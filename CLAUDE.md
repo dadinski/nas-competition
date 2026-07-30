@@ -535,6 +535,22 @@ them:
 | Chesseract, Language, Gutenberg, Windspeed, Voxel | 15–24 members; unused budget <10% (was 13–32%) | `MEMBER_LENGTH_FACTOR` / `MAX_MEMBERS` |
 | real-10 subtotal | ~+28 (from +24.61) | — |
 
+**0b. Split the work across the two machines — they answer different questions.** Samuel's box runs
+the 13 × 1h benchmark above (Phase 2's actual regime, comparable to the +24.61 baseline). Daniel's
+machine should NOT repeat it: at 3 × 3.5h it is the only place the **member-sizing fix can be tested
+in the regime where it was most broken**, and he already has an exact baseline from 2026-07-29 —
+same machine, same budget, same datasets, only the code changed. Recommended set:
+
+| dataset | why | baseline raw | before → predicted |
+|---|---|---:|---|
+| Sudoku | most extreme member-sizing case | 25.80 | 7 × 1686s → **24 × 512s** |
+| Voxel | second saturator, exact baseline | 76.33 | 7 × 1513s → **12 × 960s** |
+| Language *(swap in for CIFARTile)* | a saturator with a REAL benchmark; Sudoku and Voxel both have `benchmark: 0.0` so only their raw accuracy means anything | — | expect ≥ the 85.77 raw it got at 1h |
+
+He must set `metadata['time_limit'] = 3.5` in his copy of `evaluation/main.py` (the scaffold in §3
+forces 1). Checks: member counts rise as predicted, unused budget falls below 10%, and the run stays
+clean on torch 1.10.1 — his stack remains our closest proxy for the evaluation server.
+
 ⚠ **`MAX_MEMBERS = 24` is the least-validated thing in this change.** It rests on "more members is
 better", which is true from 1 → 4 (measured, §7f.2) but **not** measured from 7 → 24, and shorter
 members are individually weaker. The 1800s Chesseract check gave best val 55.95% with 22 members
