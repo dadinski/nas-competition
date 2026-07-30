@@ -138,7 +138,7 @@ LABEL_SMOOTHING = 0.1
 # no better than a single model either - the entire gain is decorrelation.
 MAX_MEMBERS = 24           # caps host RAM for snapshots and predict() cost
 MIN_PATIENCE = 10          # floor on "no improvement" epochs before declaring saturation
-PATIENCE_FRACTION = 0.75   # ...and it also scales with how long the member has run
+PATIENCE_FRACTION = 0.50   # ...and it also scales with how long the member has run
 MEMBER_LENGTH_FACTOR = 1.5  # a member gets this multiple of the time member 1 needed to converge
 
 
@@ -146,33 +146,52 @@ def _saturation_patience(epochs_in_member):
     """Epochs without a validation improvement before a member counts as done.
 
     RELATIVE to how long the member has already trained, so the condition reads:
-    fire only once the best checkpoint sits in the first (1 - FRACTION) = 25% of
-    what has run. That is deliberately the same definition as the SATURATED note
-    in _log_training_summary, and it is a statement about the shape of the curve
-    rather than a tuned constant.
+    fire once the best checkpoint sits in the first (1 - FRACTION) = 50% of what
+    has run - a statement about the shape of the curve rather than a bare
+    constant.
 
-    THE FRACTION WAS 0.2 AND THAT WAS TOO EAGER - it cost a measured -3.53 on
-    AddNIST (2026-07-28 run, CLAUDE.md 7j). AddNIST reached 84.97% at epoch 43,
-    then oscillated 79.8-84.0 for ten epochs *while train accuracy climbed 91 ->
-    94%*; patience was max(8, 0.2*53) = 10, so it fired, split the budget and
-    left 32% of it unused. It was not saturated: a from-scratch member then beat
-    that mark, and the single-model run had reached 92.92%. The argmax of a noisy
-    validation curve is simply not evidence of convergence.
+    This value has moved twice and BOTH moves were driven by measurement, so the
+    history matters more than the number:
 
-    0.75 is validated against the CLEAN single-model per-epoch curves of all 13
-    datasets (the 2026-07-27 run). The largest drought fraction (n - best)/n each
-    dataset ever reaches is 0.82-0.99 for the five that genuinely saturate and
-    <= 0.67 for the five that use their budget - a real gap, and any threshold
-    inside it separates them. 0.75 is its midpoint and holds across
-    FRACTION in [0.70, 0.80] x MIN_PATIENCE in [10, 20], i.e. it is a plateau and
-    not a knife-edge fit. It still fires early enough to leave 55-96% of the run
-    for further members.
+    1. It was 0.2, which was too eager. On AddNIST it fired on a noisy plateau
+       (84.97% at epoch 43, then ten epochs oscillating 79.8-84.0 *while train
+       accuracy climbed 91 -> 94%*), split the budget and cost a measured -3.53
+       (CLAUDE.md 7j). The argmax of a noisy validation curve is not evidence of
+       convergence.
+    2. 0.75 fixed that but over-corrected, and the evidence is the strongest we
+       have: the competition ORGANISER ran our submission on their own test
+       datasets (CLAUDE.md 7l). Theirs are ~10x smaller than ours (4,500-5,300
+       training samples, 6-minute budgets) and ALL THREE memorised completely -
+       100% train accuracy, val gaps of +67.7 / +32.0 / +11.3 - which is exactly
+       the profile ensembling exists for. At 0.75 the gate fired on NONE of them.
+       Ganges spent 359 of its 513 epochs, 70% of its budget, at 100% train
+       accuracy with zero validation improvement, and we declined to ensemble.
+       On a small dataset the validation split is small, so noise keeps nudging
+       the running max and resetting the drought counter even when the model is
+       demonstrably finished - the statistic simply does not transfer between
+       dataset sizes, and 0.75 was tuned on our 45k-sample locals.
 
-    NOTE the earlier version of this rule was "validated" against
-    (best_epoch, total_epochs) summary pairs, which silently assumes the running
-    best equals the final best. It does not, and that is why the gate misfired in
-    production. Any future change here must be replayed against real per-epoch
-    trajectories.
+    0.50 is measured, not reasoned: Gutenberg subsampled to exactly 1/10 (4,500
+    train / 1,500 valid - a near-replica of the organiser's Ganges, same 1x27x18
+    shape and 6 classes) scored on its real 6,000-sample test split at a 360s
+    budget, genotype fixed across arms so search variance could not contaminate
+    it. 0.75 -> 31.63% / 31.30% test; 0.50 -> 33.28% / 32.17%, i.e. +1.26 points
+    on average with the same sign on both seeds. 0.35 is indistinguishable from
+    0.50, so there is no reason to go lower.
+
+    What it costs locally is one dataset: replaying both thresholds over the
+    clean 2026-07-27 curves, only conway changes (to a false positive), measured
+    at -0.046. All five genuine saturators still fire and fire much EARLIER
+    (Gutenberg ep 97->49, Language 33->19, Windspeed 113->19), which also
+    recovers most of the 3-31% of budget that detection was consuming.
+
+    TWO STANDING WARNINGS for anyone changing this again:
+      * Replay against real per-epoch TRAJECTORIES. The original 0.2 rule was
+        "validated" against (best_epoch, total_epochs) summary pairs, which
+        silently assumes the running best equals the final best. It does not,
+        and that is why the gate misfired in production.
+      * Weight the SMALL-data regime. The organiser's datasets, not ours, are
+        the ones that resemble what gets scored.
     """
     return max(MIN_PATIENCE, int(PATIENCE_FRACTION * max(0, epochs_in_member)))
 

@@ -53,11 +53,20 @@ the 10-dataset number; the three placeholders tell us nothing.
 and of Daniel's 3.5h run in **§7j**. The pipeline is also confirmed clean on torch 1.10.1 with a 3 GB
 card, which is the closest proxy we have for the evaluation server.
 
-**Where to pick up (as of 2026-07-29): §7f.1 — fix the saturation gate's false positives.** It fired
-on 9 of 13 datasets rather than 5; on AddNIST that cost **−3.53** and left 32% of the budget unused.
-The fix is two constants, already validated against real per-epoch curves (§7j, issue 1). Second
-priority is member sizing (§7f.2b), which is now measured to waste ~90% of each member's time and
-13–32% of every ensembling dataset's budget.
+**Where to pick up (as of 2026-07-30): RE-BENCHMARK — two changes are in and unmeasured.**
+The 30/07 run scored **+26.37 on the real 10** (§7m) and a submission with the first change below has
+already been sent to the organisers. Since then:
+
+1. **`next_cost` bug fix** — member 1 demanded room for a member as long as the whole *detection*
+   phase, so windspeed detected saturation and built **zero** members (§7m). Shipped in the submitted
+   zip.
+2. **`PATIENCE_FRACTION 0.75 → 0.50`** — landed *after* that submission, so it is **not** in the
+   organisers' hands yet. Driven by §7l: at 0.75 the gate fired on **none** of the organiser's own
+   test datasets despite all three memorising completely.
+
+**§7l is the single most important section in this file** — the organisers ran our submission on
+their infrastructure and their datasets are ~10× smaller than ours. Read it before touching the gate
+or arguing from the local benchmark.
 
 A larger batch of changes was implemented on 2026-07-27, reviewed, and **reverted** — the pipeline
 deliberately sits at a small, individually verified set of fixes so that the next benchmark measures
@@ -241,19 +250,22 @@ Each of these fixed a diagnosed bug. Changing them needs a reason.
   walk into the persistent-OOM guard *by construction* — which is what produced the partial epoch 1
   above. The runtime OOM guard remains a safety net, not the primary mechanism.
 - **Surplus budget is spent on an ensemble of INDEPENDENTLY RE-INITIALISED models, gated on the
-  saturation signal.** When a member goes `max(10, 0.75 × epochs_run_in_member)` epochs without a
+  saturation signal.** When a member goes `max(10, 0.50 × epochs_run_in_member)` epochs without a
   validation improvement *and* a whole further member still fits, `train()` snapshots that member's
   best weights to host RAM, calls `reset_parameters()` across the module tree, and trains another;
   `predict()` averages their softmax outputs. Three details are load-bearing:
   - **Re-initialisation, not warm restarts.** The textbook SGDR/"Snapshot Ensembles" recipe was
     measured and gives **nothing** here (§7f.2) — a memorised model re-memorises after a restart and
     every member computes the same function. Do not "simplify" this back to carrying weights over.
-  - **The patience is RELATIVE, and the fraction is 0.75** — i.e. fire only once the best checkpoint
-    sits in the first 25% of what has run, the same definition as the `SATURATED` log note. It was
-    0.2 and that was too eager: it cost **−3.53 on AddNIST** in the 2026-07-28 run (§7j). Validated by
-    replaying the shipped `_saturation_patience` against the clean per-epoch curves of all 13
-    datasets — **0 misclassified**, versus 5 with the old constants. Do not re-tune this against
-    summary statistics; see §7j for why that validation is invalid.
+  - **The patience is RELATIVE, and the fraction is 0.50** (LANDED 2026-07-30) — fire once the best
+    checkpoint sits in the first 50% of what has run. It has moved twice, both times on measurement:
+    0.2 was too eager (**−3.53 on AddNIST**, §7j); 0.75 over-corrected and fired on **none** of the
+    organiser's own test datasets even though all three had memorised completely (§7l). 0.50 is
+    measured on a 1/10-scale Gutenberg replica of their Ganges: **+1.26 test points, same sign on
+    both seeds**, against a measured **−0.046** for the single local dataset that flips (conway).
+    Two rules for anyone changing it again: replay against real per-epoch **trajectories** (the 0.2
+    rule was 'validated' against summary pairs, which is why it misfired), and weight the
+    **small-data** regime — the organiser's datasets, not ours, resemble what gets scored.
   - **Later members are sized by CONVERGENCE time, not saturation-detection time**, and their length
     is capped at `MEMBER_LENGTH_FACTOR × t_conv` so that surplus budget buys MORE members rather than
     longer ones. Sizing them as `avail / MAX_MEMBERS` made members ~10× longer than needed as soon as
@@ -558,7 +570,8 @@ against ~55.5–55.9 with 7 — not a clear win. If the saturating datasets do n
 benchmark, `MAX_MEMBERS` is the first thing to put back down.
 
 **1. LANDED 2026-07-29 — the saturation gate and member sizing are both fixed.** Constants now
-`PATIENCE_FRACTION = 0.75`, `MIN_PATIENCE = 10`, `MAX_MEMBERS = 24`, `MEMBER_LENGTH_FACTOR = 1.5`
+`PATIENCE_FRACTION = 0.75` (since superseded by 0.50, §7l), `MIN_PATIENCE = 10`, `MAX_MEMBERS = 24`,
+`MEMBER_LENGTH_FACTOR = 1.5`
 (§4a). Replaying the shipped `_saturation_patience` against the clean per-epoch curves of all 13
 datasets misclassifies **0**, versus 5 before. Member sizing replayed on the production numbers:
 
@@ -996,7 +1009,7 @@ Only `PATIENCE_FRACTION` varies:
 
 | frac | seed 0 members / test | seed 1 members / test | mean test vs 0.75 |
 |---:|---|---|---:|
-| **0.75** (shipped) | 3 → 31.63% | 3 → 31.30% | — |
+| **0.75** (then shipped) | 3 → 31.63% | 3 → 31.30% | — |
 | **0.50** | 23 → **33.28%** | 5 → **32.17%** | **+1.26** |
 | 0.35 | 23 → 33.17% | 8 → 32.23% | +1.24 |
 
@@ -1010,7 +1023,7 @@ MultNIST and GeoClassing still never fire. All five genuine saturators still fir
 earlier** (Gutenberg ep 97→49, Language 33→19, Voxel 121→61, Windspeed 113→19), which also recovers
 most of the 3–31% of budget currently spent on detection.
 
-**Recommendation: `PATIENCE_FRACTION = 0.75 → 0.50`.** Measured +1.26 test points in the regime the
+**LANDED 2026-07-30: `PATIENCE_FRACTION = 0.75 → 0.50`.** Verified by replaying the shipped function: locally all five saturators still fire and fire earlier, Adaline/CIFARTile/MultNIST/GeoClassing still never fire, conway flips as expected. On the organiser's curves **Ganges now fires at epoch 55 of 513** (11% in, so 89% of the budget is left for members) where it previously never fired; Congo fires at ep 217 of 223, too late to build anything; Rhine still never fires and genuinely uses its budget. `test_ensemble.py` on Chesseract at 600s: 6 members, ensemble 58.16% vs 55.51% single, above the 57.83 benchmark. Original recommendation and its evidence: Measured +1.26 test points in the regime the
 organiser's datasets occupy, against a measured −0.046 on the one local dataset that flips. ⚠ Still a
 constant fitted to data — but now fitted to a *small-data replica of the organiser's own dataset*
 rather than to our 45k-sample locals, which is the right target.
@@ -1037,15 +1050,23 @@ at textbook values.
 
 **B. Fitted to the local datasets — the actual risk.**
 
-1. **`PATIENCE_FRACTION = 0.75` is the most over-fitted constant in the pipeline.** It was chosen by
-   sweeping against 10 local datasets that *I labelled* "saturating" or "not". Three things bound the
-   risk, and they should be checked before anyone re-tunes it: (i) it is a wide plateau, not a point
-   fit — anything in frac 0.70–0.80 × floor 10–20 separates the classes, and the measured class gap is
-   real (0.67 vs 0.82); (ii) it restates as a shape claim independent of the data — *fire only when the
-   best checkpoint is in the first 25% of the run*; (iii) **the failure modes are asymmetric.** A false
-   negative just yields the pre-ensembling single-model pipeline and costs nothing relative to the
-   2026-07-27 baseline; a false positive costs real score (AddNIST, −3.53). 0.75 is the conservative
-   direction, so an unseen dataset that this misjudges most likely loses an *opportunity*, not points.
+1. **`PATIENCE_FRACTION` is the most over-fitted constant in the pipeline — and this audit entry is
+   itself a worked example of getting it wrong.** When written (2026-07-29) it defended **0.75**,
+   chosen by sweeping against 10 local datasets that *I labelled* "saturating" or "not", on the
+   argument that the failure modes are asymmetric: a false negative merely reverts to the
+   single-model pipeline, a false positive costs real score (AddNIST, −3.53), so the conservative
+   direction is safe.
+
+   **That argument was wrong on both halves, and the organiser's run proved it (§7l).** The false
+   *negative* is not free: at 0.75 the gate fired on **none** of their three test datasets even though
+   all three had memorised completely, and Ganges wasted 70% of its budget as a result. And the false
+   *positive* is not expensive: most of AddNIST's −3.53 was the packing failure that member sizing has
+   since removed, and the other false positive (conway) cost **−0.046**. The value is now **0.50**,
+   fitted to a 1/10-scale replica of the organiser's own dataset rather than to our 45k-sample locals.
+
+   The constant is still fitted. What changed is *what it is fitted to* — and the general lesson is
+   that a threshold swept on the datasets you happen to own encodes their size, their noise level and
+   your own labels, none of which need transfer.
 2. **`_CARDINALITY_THRESHOLD = 32` + horizontal flip is a KNOWN generalization defect, still unfixed.**
    It encodes "many distinct values ⇒ photo ⇒ mirroring is safe", which is simply false for glyphs,
    text, spectrograms, or any directional axis. It already misfires on AddNIST — a digit dataset —
@@ -1105,8 +1126,11 @@ order:
    pre-dates all the recent work (§7f.5).
 2. **(B3) LR/batch coupling** — the batch is sized from whatever GPU is present, so an unknown server
    GPU means an unknown batch and a mis-scaled `BASE_LR` on *every* dataset (§7f.4).
-3. **(B1) `PATIENCE_FRACTION = 0.75`** — the most fitted constant, but bounded by the asymmetry: its
-   likely failure is a missed opportunity, not lost points.
+3. **(B1) `PATIENCE_FRACTION`, now 0.50** — still the most fitted constant in the pipeline, but it is
+   now fitted to a small-data replica of the organiser's own dataset rather than to our 45k-sample
+   locals (§7l), which is the right target. Note the asymmetry argument that justified 0.75 no longer
+   holds: most of AddNIST's −3.53 was the packing failure that member sizing has since removed, and
+   the other false positive (conway) cost −0.046.
 4. **(C3) `predict()`'s flat 60 s margin with no in-pass clock check** — 12× headroom on our largest
    test split, unknown on an unseen one, and no way to abort once inside the loop.
 
