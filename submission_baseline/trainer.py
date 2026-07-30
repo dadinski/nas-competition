@@ -530,10 +530,22 @@ class Trainer:
 
                 # --- should this member be closed and a fresh one started? ---
                 elapsed_member = time.time() - member_start
+                # Time a FRESH member would need: convergence plus an annealing
+                # tail. Computed here as well as below because the "is there room
+                # for another member?" test must use it.
+                t_conv = max(member_best_time, 0.34 * elapsed_member, 1.0)
                 if member_budget is None:
                     # member 1: watch for saturation
                     done = since_improve >= _saturation_patience(epochs_in_member)
-                    next_cost = elapsed_member
+                    # NOT elapsed_member. A later member is sized from CONVERGENCE
+                    # time and does not repeat member 1's patience tail, so asking
+                    # for `elapsed_member` of room demanded ~4x what the member we
+                    # would actually build costs - and once detection passes ~50%
+                    # of the budget that test can never pass. Measured: windspeed
+                    # detected saturation at epoch 141 of 268 and built ZERO
+                    # members, needing 1664s of room for a 637s member
+                    # (CLAUDE.md 7m).
+                    next_cost = MEMBER_LENGTH_FACTOR * t_conv
                 else:
                     # later members run their calibrated slice to completion; the
                     # cosine has annealed by then, so there is nothing to detect
@@ -580,7 +592,7 @@ class Trainer:
                             # gave 7, 2 and 7 members. Every run still beat the single
                             # model, so this is magnitude, not correctness, but a
                             # robust convergence estimate belongs here.
-                            t_conv = max(member_best_time, 0.34 * elapsed_member, 1.0)
+                            # (t_conv is computed above, where the room test needs it)
                             target = MEMBER_LENGTH_FACTOR * t_conv
 
                             # predict() costs one test pass per member, so the reserve

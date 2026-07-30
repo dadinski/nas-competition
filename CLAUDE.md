@@ -908,6 +908,119 @@ this machine gets), and `stem_stride=2` applied on 64×64. The §3 version-porta
 - NAS picks a different genotype run-to-run (AddNIST 877,876 vs 1,178,036 params), so small per-dataset
   deltas (±0.3) are search noise, not signal.
 
+### 7m. The 2026-07-30 benchmark (13 × 1h) — gate + member sizing measured
+
+Log `outputs/output_1h_each_30_07`. **Zero failures. Real-10 subtotal +24.61 → +26.37 (+1.76).**
+
+- **AddNIST fixed as predicted: +0.22 → +3.26 (+3.04).** The gate no longer fires on it, and the
+  −3.53 regression is recovered. This was the change's main purpose and it worked.
+- **The gate fired on 4 datasets** (Chesseract, Gutenberg, Language, Sudoku), down from 9. Predicted 5.
+- **Member sizing works**: Chesseract took **23 members × 134s** (was 7 × 440s), Language 9 × 298s,
+  Sudoku 8 × 320s.
+- **conway lost 2.14** (9.92 → 7.78) — **not** the gate. NAS picked a different genotype and best val
+  fell 98.36% → 89.04% before any ensembling. Search/init variance on a single run is worth ±2 adj on
+  this dataset, which means **per-dataset deltas below ~±1 in a single run are not evidence.**
+
+**BUG FOUND — `next_cost = elapsed_member` blocks ensembling exactly when the stricter gate makes
+detection long.** Member 1's "is there room for another member?" test demands room for a member as
+long as the whole *detection* phase, but later members are sized from `t_conv` and are ~4× shorter.
+Once detection passes ~50% of the budget the test can never pass. Measured: **windspeed detected
+saturation at epoch 141 of 268 and created zero members** — `next_cost ≈ 1664s` against ~1420s of
+room, where the member it would actually have built needs ~637s. It would have got ~3 members.
+conway also detected (epoch 425, 91% in) and correctly declined — that one is genuine.
+**FIXED 2026-07-30:** `next_cost` for member 1 is now `MEMBER_LENGTH_FACTOR × t_conv`, not
+`elapsed_member`. Replayed on the measured windspeed case: room 1435s against a cost that drops
+1664s → 849s, so it goes from **0 members to ~2**. Independent of the unresolved threshold question
+in §7l.
+
+**Detection itself is now a real cost, which is a second argument against 0.75.** Time spent in
+member 1 before it closes, in this run: Chesseract 88s (3% of budget), Language 533s (16%), Sudoku
+610s (18%), **Gutenberg 1039s (31%)**. That time buys one model plus a decision — at 0.2 it was
+73–265s. So a higher fraction does not only miss saturators, it spends more of the budget deciding.
+
+### 7l. THE ORGANISER RAN OUR SUBMISSION — read this before touching the gate (2026-07-30)
+
+`logs/daniel-1.log` is our 2026-07-29 submission run **by the competition organiser on their own
+infrastructure and their own test datasets** (not the final three). It is by far the most valuable
+artifact we have, and it changes what we should believe.
+
+**It works.** Three datasets, zero failures, zero exceptions, no AMP/`label_smoothing` fallback, no
+OOM, no TinyNet/MinimalNet fallback, batch 512 throughout. **Final Score 2.953, all three above
+benchmark** (+0.046 / +2.471 / +0.437). Note their metadata has **no `grace_time` key** — our
+submission never reads it, verified, so their `main.py` differs from our local copy without
+consequence.
+
+**The `margin` is proportionally far too large at their budgets.** All three used **309s of 360s** —
+about **51s (14%) held back unspent** — because `margin = max(2, min(0.15·budget, 60))` gives 54s at a
+6-minute budget, while their actual test pass over 6,000 tiny images is well under a second. §7k C3
+flagged this constant as possibly too *small* for a huge unseen test split; the organiser's run shows
+the opposite failure is the one actually happening. Sizing the margin from the measured validation
+pass (we already store `_last_eval_time`) instead of a flat fraction would return ~13% of the budget
+to training on short runs.
+
+**Their datasets are a DIFFERENT REGIME from ours, and it is the one that counts:**
+
+| | codename | train samples | shape | classes | benchmark | budget |
+|---|---|---:|---|---:|---:|---|
+| | Ganges | **4,500** | 1×27×18 | 6 | 27.5 | **0.1 h = 6 min** |
+| | Congo | **5,000** | 3×32×32 | 10 | 57.5 | 6 min |
+| | Rhine | **5,328** | 3×29×29 | 43 | 89.03 | 6 min |
+
+Ours are 34k–60k. Theirs are **~10× smaller**, and Ganges is plainly a Gutenberg variant (identical
+1×27×18 shape, 6 classes). Budgets were 6 minutes, not an hour.
+
+**ALL THREE MEMORISE COMPLETELY** — final train 100.00% / 99.96% / 100.00%, gaps **+67.7 / +32.0 /
++11.3**. This is the profile ensembling exists for.
+
+**And our gate fired on NONE of them.** Ganges spent **359 of 513 epochs — 70% of its budget — at
+100% train accuracy with zero validation improvement**, and we declined to ensemble. It scored +0.046.
+
+**Why: the drought statistic does not transfer between regimes.** Max drought fraction reached is
+Ganges 0.70, Congo 0.51, Rhine 0.39 — all below our 0.75 threshold. On a small dataset the validation
+split is small, so noise keeps nudging the running max and resetting the counter, even while the model
+is demonstrably finished. **`PATIENCE_FRACTION = 0.75` was tuned on 45–50k-sample datasets and is too
+conservative for the regime the competition actually uses.** This is the over-specialization risk from
+§7k arriving in practice.
+
+**No threshold satisfies both regimes.** Swept `FRACTION` × a minimum-improvement delta over the local
+curves *and* theirs: at 0.50 both organiser datasets fire but conway false-positives; at 0.60 the local
+set is clean but only 1 of 2 organiser datasets fires; at 0.75 neither does. Adding a
+"must beat best by δ" guard changes almost nothing. Final train accuracy does not separate them either
+(Adaline 99.71% must **not** fire, Volga 99.35% **should**). **The drought-from-argmax statistic is the
+wrong primitive — do not simply re-tune it.**
+
+**THE EXPERIMENT WAS RUN (2026-07-30) — `<scratchpad>/ab_smalldata.py`.** Gutenberg subsampled to
+exactly 1/10 (4,500 train / 1,500 valid), scored on its real 6,000-sample test split, 360s budget,
+**genotype and macro fixed across arms** so NAS variance (worth ±2 adj, §7m) cannot contaminate it.
+Only `PATIENCE_FRACTION` varies:
+
+| frac | seed 0 members / test | seed 1 members / test | mean test vs 0.75 |
+|---:|---|---|---:|
+| **0.75** (shipped) | 3 → 31.63% | 3 → 31.30% | — |
+| **0.50** | 23 → **33.28%** | 5 → **32.17%** | **+1.26** |
+| 0.35 | 23 → 33.17% | 8 → 32.23% | +1.24 |
+
+Consistent sign on both seeds. 0.50 and 0.35 are equivalent (both hit `MAX_MEMBERS`), so **0.50 is the
+value to take** — no reason to go lower.
+
+**What 0.50 costs on the local set: one dataset, worth −0.046.** Replaying both thresholds over the
+clean 27/07 curves, the *only* classification that changes is conway (false positive) — and conway
+false-positived in the 28/07 run and scored 9.918 against 9.964, i.e. **−0.046**. Adaline, CIFARTile,
+MultNIST and GeoClassing still never fire. All five genuine saturators still fire, and **fire much
+earlier** (Gutenberg ep 97→49, Language 33→19, Voxel 121→61, Windspeed 113→19), which also recovers
+most of the 3–31% of budget currently spent on detection.
+
+**Recommendation: `PATIENCE_FRACTION = 0.75 → 0.50`.** Measured +1.26 test points in the regime the
+organiser's datasets occupy, against a measured −0.046 on the one local dataset that flips. ⚠ Still a
+constant fitted to data — but now fitted to a *small-data replica of the organiser's own dataset*
+rather than to our 45k-sample locals, which is the right target.
+
+**Cost/benefit has also shifted since 0.75 was chosen.** That value was justified by the asymmetry
+"false positives are expensive" — from AddNIST's −3.53. But most of that −3.53 was the packing failure
+(32% of budget unused), which the member-sizing fix has since removed; the other false positive,
+conway, cost only −0.05. So false positives are now much cheaper than when the threshold was set,
+while the Ganges-style false negative is expensive.
+
 ### 7k. Generalization audit — is the pipeline over-fitted to the 13 local datasets? (2026-07-29)
 
 Asked by Samuel, and the right question: the competition explicitly forbids tuning to the bundled
