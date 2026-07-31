@@ -2,16 +2,24 @@
 NAS - Step 3 (training-free search with NASWOT + SynFlow, short verification)
 
 search() proceeds in three phases:
-  1. Macro sizing: same OOM-safe probe/shrink loop as Step 2, using the fixed
-     ResidualBlock skeleton, to determine (c0, n, d) that fits in memory.
-  2. Cell search: iterate the full genotype search space (shuffled, so a
-     time cutoff still samples it uniformly), discard degenerate ones,
-     score with NASWOT + SynFlow, combine via rank aggregation, verify the
-     top-n with a few quick training epochs, and keep the best by
-     validation accuracy.
-  3. Fallback: if the search budget is too small, or anything fails, fall
-     back to the fixed ResidualBlock skeleton (Step 2 baseline). TinyNet
-     remains the last-resort fallback if even that doesn't fit.
+  1. Macro sizing: OOM-safe probe/shrink loop using the fixed ResidualBlock
+     skeleton, to determine (c0, n, d, stem_stride) that fits in memory. The
+     stem stride comes from derive_macro and is never shrunk.
+  2. Cell search: iterate the full genotype search space (shuffled, so a time
+     cutoff still samples it uniformly), discard degenerate ones, score with
+     NASWOT + SynFlow and combine via rank aggregation. Scoring is bounded by
+     SCORING_SHARE of the budget so verification cannot be squeezed out.
+     Then EITHER verify the top-n - a short, deadline-bounded burst of
+     training BATCHES each (not epochs), best validation accuracy wins - OR,
+     when only one candidate is affordable, hand the choice to
+     _cost_aware_pick, which re-ranks the top proxy candidates by measured
+     step time. That second path is what runs on large-image datasets, and
+     exists because both proxies are size-biased (see _cost_aware_pick).
+  3. Build the final model and fit-check it, shrinking the batch before
+     giving up on the genotype.
+
+Fallback is not a phase but a cascade used throughout: searched cell ->
+fixed-ResidualBlock skeleton -> TinyNet -> MinimalNet (the true last resort).
 """
 
 import random
@@ -387,6 +395,109 @@ class NAS:
             torch.cuda.synchronize()
         return time.perf_counter() - t0
 
+    def _cost_aware_pick(self, scored, order, in_ch, num_classes, c0, n, d, stem,
+                         device, deadline, top_k=10, share=0.25):
+        """Choose among the top proxy-ranked genotypes, balancing proxy rank
+        against MEASURED training-step time. Used only when verification cannot
+        afford to compare two candidates.
+
+        WHY THIS EXISTS. Both zero-cost proxies are size-biased: measured over
+        120 non-degenerate genotypes at GeoClassing's shape, SynFlow correlates
+        **+0.697** with parameter count (it sums |param * grad| over every
+        parameter, so it grows with size almost by construction) and NASWOT
+        +0.510. Their rank aggregate picks a cell **2.68x the median candidate
+        size**. On the 12 datasets where verification runs, training-based
+        comparison corrects that. Where it cannot run we used to take the biased
+        leader directly - and that happens precisely on the datasets least able
+        to afford an oversized model. Measured on GeoClassing: epoch time
+        47.9s -> 153.4s, 21 epochs instead of 67, -1.30 adj (CLAUDE.md 7o).
+
+        WHY RANK AGGREGATION AND NOT "TAKE THE CHEAPEST". The proxies do carry
+        signal; they are simply miscalibrated on size. Taking the smallest model
+        would throw the signal away along with the bias, so proxy rank and cost
+        rank are combined - we decline the extreme rather than invert it.
+
+        WHY STEP TIME AND NOT A SHORT TRAINING RUN. Timing is a precise
+        measurement. Verification accuracy over a few batches is not: on AddNIST
+        the verified candidates spread 4.4%-10.7% around a 5% random baseline
+        (CLAUDE.md 7h). When the budget only allows one cheap signal, take the
+        reliable one.
+
+        Bounded by `share` of the remaining search budget, and degrades to the
+        old behaviour (the proxy leader) on any failure.
+        """
+        fallback = scored[order[0]][2]
+        shortlist = list(order[:max(0, int(top_k))])
+        if len(shortlist) < 2:
+            return fallback
+        try:
+            data, target = next(iter(self.train_loader))
+        except Exception as e:
+            print('[NAS] cost-aware pick: no batch available ({!r}), using proxy leader'.format(e))
+            return fallback
+
+        # Time on a REDUCED batch. We only need the relative ordering, and conv
+        # cost scales linearly with batch size, so ranking is preserved - but the
+        # measurement gets much cheaper, which matters because this path only
+        # runs on datasets whose candidates are expensive by definition. At the
+        # full loader batch of 512 this took 158s for 7 candidates on
+        # GeoClassing; at 64 it fits comfortably inside the budget below.
+        tb = min(64, int(data.shape[0]))
+        data, target = data[:tb], target[:tb]
+
+        budget = max(0.0, share * (deadline - time.perf_counter()))
+        t_start = time.perf_counter()
+        timed = []                      # (proxy_rank, t_step, genotype)
+        for rank, idx in enumerate(shortlist):
+            if time.perf_counter() - t_start > budget:
+                break
+            geno = scored[idx][2]
+            try:
+                m = build_skeleton(in_ch, num_classes, c0, n, d,
+                                   genotype=geno, stem_stride=stem)
+                t_step = self._measure_step_time(m, data, target, device, n_iters=2)
+                timed.append((rank, t_step, geno))
+            except RuntimeError as e:
+                # a candidate that will not even run one step is unaffordable by
+                # definition - skipping it is the correct answer, not a failure
+                if _is_oom(e):
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    continue
+                raise
+            finally:
+                try:
+                    del m
+                except Exception:
+                    pass
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+        if len(timed) < 2:
+            print('[NAS] cost-aware pick: only {} candidate(s) could be timed, '
+                  'using proxy leader'.format(len(timed)))
+            return fallback
+
+        by_cost = sorted(range(len(timed)), key=lambda i: timed[i][1])
+        cost_rank = {j: r for r, j in enumerate(by_cost)}
+        best = min(range(len(timed)), key=lambda i: timed[i][0] + cost_rank[i])
+        chosen_rank, chosen_t, chosen_geno = timed[best]
+        # Look the leader up by RANK, not by position: a candidate that OOMs is
+        # skipped above, and the proxy leader is the likeliest one to OOM here
+        # (it is by hypothesis the oversized cell), in which case timed[0] is a
+        # different candidate and the comparison printed would be nonsense.
+        leader_t = next((t for r, t, _ in timed if r == 0), None)
+        if leader_t is None:
+            print('[NAS] cost-aware pick over {} candidates in {:.0f}s: proxy leader could '
+                  'not be timed (too large to run) -> chose proxy-rank {} at {:.3f}s/step'
+                  .format(len(timed), time.perf_counter() - t_start, chosen_rank, chosen_t))
+        else:
+            print('[NAS] cost-aware pick over {} candidates in {:.0f}s: proxy leader '
+                  '{:.3f}s/step -> chose proxy-rank {} at {:.3f}s/step ({:.2f}x cheaper)'
+                  .format(len(timed), time.perf_counter() - t_start, leader_t,
+                          chosen_rank, chosen_t, (leader_t / chosen_t) if chosen_t > 0 else 1.0))
+        return chosen_geno
+
     def _search_cell(self, in_ch, num_classes, c0, n, d, stem, xb, device, search_budget):
         """Pick a cell genotype within `search_budget` seconds. Returns None to
         mean "use the fixed ResidualBlock".
@@ -500,9 +611,10 @@ class NAS:
         # cost 525s, to re-derive the genotype it started with. Same failure
         # the successive-halving attempt had with rungs==[1] (CLAUDE.md 7d).
         if n_verify <= 1:
-            print('[NAS] only {} candidate affordable for verification - nothing to '
-                  'compare against, using top-ranked genotype by proxy score'.format(n_verify))
-            return top_geno
+            print('[NAS] only {} candidate affordable for verification - falling back to '
+                  'COST-AWARE proxy selection'.format(n_verify))
+            return self._cost_aware_pick(scored, order, in_ch, num_classes,
+                                         c0, n, d, stem, device, deadline)
 
         leftover = verify_budget - n_verify * t_val
         max_batches = max(min_batches, min(max_batches_cap, int(leftover / (n_verify * t_batch))))

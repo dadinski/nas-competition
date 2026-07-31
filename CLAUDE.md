@@ -53,16 +53,18 @@ the 10-dataset number; the three placeholders tell us nothing.
 and of Daniel's 3.5h run in **§7j**. The pipeline is also confirmed clean on torch 1.10.1 with a 3 GB
 card, which is the closest proxy we have for the evaluation server.
 
-**Where to pick up (as of 2026-07-30): RE-BENCHMARK — two changes are in and unmeasured.**
-The 30/07 run scored **+26.37 on the real 10** (§7m) and a submission with the first change below has
-already been sent to the organisers. Since then:
+**Where to pick up (as of 2026-07-31): the gate work is DONE and measured. Next lever is NAS.**
+`PATIENCE_FRACTION = 0.50` and the `next_cost` fix are both in and both validated (§7n): every one of
+the five real-benchmark datasets that ensembled improved, 5/5. The real-10 subtotal is **+26.57**.
 
-1. **`next_cost` bug fix** — member 1 demanded room for a member as long as the whole *detection*
-   phase, so windspeed detected saturation and built **zero** members (§7m). Shipped in the submitted
-   zip.
-2. **`PATIENCE_FRACTION 0.75 → 0.50`** — landed *after* that submission, so it is **not** in the
-   organisers' hands yet. Driven by §7l: at 0.75 the gate fired on **none** of the organiser's own
-   test datasets despite all three memorising completely.
+**The bottleneck has moved, and it is NOT random.** §7o diagnoses it: the zero-cost proxies are
+size-biased (SynFlow correlates **+0.697** with parameter count, the rank-aggregate winner is
+**2.68x** the median candidate size) and budget-blind. On the one dataset where verification cannot
+afford two candidates — GeoClassing, in both runs — we take that biased leader directly and pay for
+it: 47.9s → 153.4s per epoch, 21 epochs instead of 67, −1.30 adj. **Read §7o before touching nas.py**;
+the fix is to make the proxy-only fallback cost-aware, not to chase variance.
+
+Note the submitted zip contains the `next_cost` fix but **not** `PATIENCE_FRACTION = 0.50`.
 
 **§7l is the single most important section in this file** — the organisers ran our submission on
 their infrastructure and their datasets are ~10× smaller than ours. Read it before touching the gate
@@ -185,10 +187,17 @@ have to a dress rehearsal of the real harness. Run everything with the **`stx_r`
   `_find_macro()` then **shrinks** c0 → n → d until a forward+backward fits (never the stem stride —
   reducing it makes the model both slower *and* larger). It only ever shrinks — see §7d for why the
   time-aware growth experiment was reverted.
-- **Every input ≥32×32 now ends at a 4×4 feature map.** Before `stem_stride` existed, `d` was capped
-  at 3, so total downsampling was at most 8× *however large the input was*: a 128×128 dataset ran its
-  whole network at 128/64/32/16 and cost ~28× a 28×28 one per sample. See §7h for the measurement and
-  the score it cost. Inputs ≤32×32 get `stem_stride == 1` and are bit-for-bit unaffected.
+- **Total downsampling is now `2**d_full`, so per-sample cost is BOUNDED rather than growing with
+  resolution.** Before `stem_stride` existed, `d` was capped at 3, so total downsampling was at most
+  8× *however large the input was*: a 128×128 dataset ran its whole network at 128/64/32/16 and cost
+  ~28× a 28×28 one per sample. See §7h for the measurement and the score it cost.
+  ⚠ **An earlier version of this bullet claimed "every input ≥32×32 ends at 4×4". That is FALSE and
+  was corrected 2026-07-31.** It holds only when `min(H,W)` is a power of two — measured 32→4×4,
+  64→4×4, 128→4×4, but **60→8×8, 96→6×6, 224→7×7**, and an anisotropic input keeps its long
+  axis (128×32 → 16×4). Cost is ~1.7–2.0× the 28×28 case for power-of-two inputs but **6.33× at
+  60×60** and 4.00× at 96×96 — which is precisely why GeoClassing (60×60, its metadata wrongly says
+  64×64) is the most expensive dataset we have per sample. Inputs with `min(H,W) < 64` get
+  `stem_stride == 1` and are bit-for-bit unaffected.
 - **Fallback cascade:** primary searched architecture → `TinyNet` (adaptive, spatial downsampling
   with an `s_min=4` floor) → `MinimalNet` (GlobalAvgPool + Linear, absolute last resort).
   `_safe_fallback()` fit-checks before escalating down this chain.
@@ -267,8 +276,10 @@ Each of these fixed a diagnosed bug. Changing them needs a reason.
     rule was 'validated' against summary pairs, which is why it misfired), and weight the
     **small-data** regime — the organiser's datasets, not ours, resemble what gets scored.
   - **Later members are sized by CONVERGENCE time, not saturation-detection time**, and their length
-    is capped at `MEMBER_LENGTH_FACTOR × t_conv` so that surplus budget buys MORE members rather than
-    longer ones. Sizing them as `avail / MAX_MEMBERS` made members ~10× longer than needed as soon as
+    is a TARGET of `MEMBER_LENGTH_FACTOR × t_conv`, not a cap — `member_budget = avail / k_more` then
+    stretches them to fill the budget exactly, so once the `MAX_MEMBERS` clamp binds they run LONGER
+    than the target (Chesseract: target 49.5s, actual 133s). The point is that surplus buys more
+    members rather than longer ones until that clamp is reached. Sizing them as `avail / MAX_MEMBERS` made members ~10× longer than needed as soon as
     the member cap bound — which it did even at 1h (Chesseract 7 × 440s while converging in 33s;
     Sudoku at 3.5h 7 × 1678s while converging in 178s) and left 13–32% of every ensembling dataset's
     budget unused. `MAX_MEMBERS` is 24; host RAM is ~38 MB per snapshot and the binding cost is one
@@ -524,6 +535,28 @@ Do not simply re-apply the patch; the premise below has to be fixed first.
   accounting.
 - **Host-RAM OOM is not caught by `_is_oom`** — it matches `'out of memory'`, but a CPU allocator
   failure says `DefaultCPUAllocator: can't allocate memory`.
+- **`is_degenerate` misses cells with a DEAD OUTPUT NODE** (found by the 2026-07-31 review). `EDGES[3:6]`
+  are the three edges into node 3, so any genotype with `'none'` on all three returns identically zero
+  regardless of the other edges — **117 of 15,625 genotypes (0.75%)**, verified: cell output std 0.0,
+  and the full skeleton then predicts one class for every sample. **Not reachable in practice** —
+  SynFlow scores such a cell 0.60 against ~1.7e24 for a live one, so it ranks near-last and can neither
+  lead the rank aggregation nor enter the top-10 `_cost_aware_pick` times. Fix is
+  `or all(op == 'none' for op in genotype[3:6])`, but it changes which genotypes get scored, so it
+  wants a benchmark behind it. Documented at the code site.
+- **`synflow_score` has no `try/finally` around its sign flip.** It sets every parameter to `abs()`,
+  runs forward+backward, then restores signs — but an exception in between (OOM is the realistic one)
+  leaves the model **permanently sign-stripped**. Verified: forcing a `RuntimeError` in the forward
+  took the negative-parameter count 436,135 → 0. Currently harmless because `nas.py` discards the model
+  on `RuntimeError`, but it is one refactor away from silently training a sign-stripped network.
+- **`_snapshot`'s "snapshots must not sit on the GPU" is true only of the ensemble members.**
+  `best_state` and `_best_state_for_fallback` are `copy.deepcopy(state_dict())` and stay GPU-resident
+  for the whole run, so one extra model's worth of VRAM is always held.
+- **The `SATURATED` note in `_log_training_summary` computes `best_epoch / epochs_run` GLOBALLY across
+  all ensemble members**, so on any ensembling dataset member 1's early peak makes it print "the
+  remaining N epochs gained nothing" about epochs that were building the ensemble — worth a measured
+  +3.33 test points (§7j). The note is systematically wrong on exactly the datasets ensembling was
+  built for. Same applies to the `gap` in the MEMORISING note, which mixes the last member's train
+  accuracy with the global best val.
 - **`torchvision` is imported unguarded at module level.** If it were absent on the server, *all three*
   datasets fail at import (−30). Near-certainly fine (it's in the starter kit), but it is the hardest
   dependency in the submission.
@@ -920,6 +953,145 @@ this machine gets), and `stem_stride=2` applied on 64×64. The §3 version-porta
   case for mixup (§7f.2).
 - NAS picks a different genotype run-to-run (AddNIST 877,876 vs 1,178,036 params), so small per-dataset
   deltas (±0.3) are search noise, not signal.
+
+### 7p. Speed levers we are NOT using (measured 2026-07-31)
+
+GeoClassing is still time-limited after the §7o fix (best val at epoch 70 of 75), which prompted the
+question of whether more speed is even available. Measured through the REAL DataLoader on GeoClassing
+(so augmentation and host→device transfer are included), 20 batches per arm:
+
+| arm | s/epoch-equivalent | speedup |
+|---|---:|---:|
+| baseline (as shipped) | 38.22 | 1.00× |
+| `torch.backends.cudnn.benchmark = True` | 38.29 | **1.00×** |
+| **`num_workers=4`** | **24.93** | **1.53×** |
+| both | 24.85 | 1.54× |
+
+- **`cudnn.benchmark` does nothing here.** A first run suggested 1.15×, but it did not reproduce — the
+  baseline itself moved 43.6s → 38.2s between runs, so that was noise. Recorded because the tempting
+  "free 15%" is not real.
+- **`num_workers` is worth ~1.5×** and reproduces. `DataProcessor` builds every loader with the
+  default `num_workers=0`, so all augmentation runs serialised in front of the GPU (§7e measured the
+  augmentation itself at 23.4 s/epoch against 5.1 s of pure loading on AddNIST). GeoClassing would go
+  from 75 epochs to ~115.
+
+**⚠ Why this is NOT a free win, and why it should not be shipped without testing on Daniel's Linux
+box.** `_ArrayDataset` materialises the whole split as float32 in memory — Myofibre's training tensor
+is **~7.8 GB**. With `fork` (Linux) worker memory is copy-on-write and shared, so this is fine. With
+`spawn` (Windows, and any platform where the default changed) the dataset is pickled into every
+worker: 4 workers × 7.8 GB is an instant OOM and therefore a **−10**, on exactly the largest datasets.
+The organiser's harness appears to run on Linux, and their `main.py` does have the
+`if __name__ == '__main__'` guard that workers require — but "appears to" is not a basis for a change
+that fails catastrophically rather than gracefully. If attempted: few workers, size-gated on the
+training tensor, and verified on Daniel's machine first.
+
+(Aside, learned the hard way here: a test script that creates workers needs its own
+`if __name__ == '__main__'` guard on Windows, or every worker re-executes the file and the run hangs.)
+
+### 7o. The "NAS noise" is NOT noise — the proxies are size-biased (diagnosed 2026-07-31)
+
+GeoClassing's −1.30 in the 31/07 run looked like search variance. It is not. It is a systematic bias
+with a specific trigger, and the trigger fires on exactly the datasets least able to survive it.
+
+**What actually happened:** GeoClassing is the ONLY dataset that hits the
+`only 1 candidate affordable for verification` path — and it hits it in **both** the 30/07 and 31/07
+runs. There, verification is skipped (correctly — one candidate compares against nothing, §7h) and the
+model is chosen by the **zero-cost proxies alone**. Measured over 120 non-degenerate genotypes at
+GeoClassing's shape:
+
+| correlation | value |
+|---|---:|
+| SynFlow vs parameter count | **+0.697** |
+| NASWOT vs parameter count | +0.510 |
+| SynFlow vs number of `conv3x3` ops | +0.644 |
+| **rank-aggregate winner vs median candidate size** | **2.68×** |
+
+Both proxies prefer bigger, denser cells — SynFlow sums `|param × grad|` over every parameter, so it
+grows with parameter count almost by construction — and **neither knows the training budget**. On the
+12 datasets where verification runs, training-based comparison corrects this. On GeoClassing it does
+not, so we take a cell ~2.7× the median size on the dataset that can least afford it: epoch time went
+47.9s → 153.4s, giving **21 epochs instead of 67**, still improving when the clock stopped.
+
+**LANDED 2026-07-31 — `NAS._cost_aware_pick`.** In the `n_verify <= 1` branch only, the top 10
+proxy-ranked genotypes are timed with `_measure_step_time` and the winner is chosen by
+`proxy_rank + cost_rank`. Rank aggregation rather than "take the cheapest", because the proxies do
+carry signal and are merely miscalibrated on size — we decline the extreme rather than invert it.
+The diff removes exactly three lines (the old `return top_geno`), everything else is additive, so
+**the 12 verification-using datasets are provably untouched**.
+
+Two implementation details that matter:
+- **Timing uses a batch capped at 64, not the loader's batch.** Only relative ordering is needed and
+  conv cost is linear in batch size, so ranking is preserved — but at the full 512 the measurement
+  itself cost **158s for 7 candidates** on GeoClassing, which is absurd on the one path that exists
+  to save time. At 64 it is **10s for all 10**, and it picks the same genotype.
+- The whole step is bounded by 25% of the remaining search budget and degrades to the old proxy
+  leader on any failure, so it cannot become a new timeout risk.
+
+Measured live on GeoClassing at a 1h budget, scored on the real test split:
+
+| run | s/epoch | epochs | best val | adj |
+|---|---:|---:|---:|---:|
+| 31/07, no fix (unlucky proxy leader) | 153.4 | 21 | 88.91% | +4.400 |
+| 30/07, no fix (lucky proxy leader) | 47.9 | 67 | 91.43% | +5.701 |
+| **with the fix** | **42.4** | **75** | 91.42% | **+5.736** |
+
+The proxy leader that run was **2.112s/step** and the cost-aware pick chose one at **0.074s/step —
+28.6× cheaper**. (In a separate 250-genotype sample the gap was only 1.9×; how bad the leader is
+varies enormously run to run, which is exactly why a fixed size penalty would not work and measuring
+does.)
+
+**Read the result correctly: this does not beat the good case, it removes the bad one.** +5.736 is
+statistically the same as the lucky run's +5.701; the gain is that **+4.400 can no longer happen**.
+That is what a variance fix looks like, and it is worth ~1.3 adj in expectation on any dataset that
+lands in this path. Note GeoClassing is *still* time-limited even at 75 epochs — best val at epoch 70
+of 75 — so it remains a candidate for further speedups rather than more capacity.
+
+**Do NOT add a cost term to the main rank aggregation without measuring it** — that changes selection
+on every dataset, and some of them may genuinely want the larger model. §7a is exactly about this kind
+of plausible-but-unvalidated broadening.
+
+**Second, independent improvement (helps the 12, not GeoClassing): verification allocates equal
+BATCHES, not equal TIME.** `max_batches` is computed once from `top_geno` and applied to every
+candidate, so an expensive cell is not penalised at all during verification but is penalised heavily
+during training. Giving each candidate an equal wall-clock slice instead would make verification
+measure accuracy-per-second, which is what the competition actually scores. `_quick_val_acc` already
+accepts a deadline, so this is a small change.
+
+### 7n. The 2026-07-31 benchmark — was `PATIENCE_FRACTION 0.75 → 0.50` worth it? (YES, but read how)
+
+Log `outputs/output_1h_each_31_07`. Zero failures. Gate fired on **8 of 13** (was 4).
+**Real-10 subtotal +26.374 → +26.570, i.e. +0.196 — essentially flat.**
+
+**The aggregate is the wrong way to read this run**, because NAS genotype variance is now larger than
+the effect being measured. Split the ten real-benchmark datasets by whether ensembling actually fired:
+
+| | datasets | mean Δ | positive |
+|---|---|---:|---|
+| **Ensembled** (treatment) | Chesseract, Gutenberg, Language, Windspeed, GameOfLife | **+0.274** | **5 / 5** |
+| Not ensembled (control) | AddNIST, CIFARTile, MultNIST, GeoClassing, Myofibre | −0.235 | 2 / 5 |
+
+**Every single dataset that ensembled improved** (+0.126 to +0.483), while the datasets that did not
+moved in both directions around zero. That sign consistency — 5/5 — is the evidence, not the total.
+Windspeed also crossed back above benchmark (−0.084 → +0.162).
+
+**The conway false positive that 0.50 was expected to cost us did not cost anything.** It ensembled
+(12 members) and scored **+0.171**. The −0.046 estimate was the worst case, and it did not materialise.
+
+**Why the total is flat anyway: GeoClassing lost 1.301 to NAS search variance alone.** Same macro
+(`c0=32 n=2 d=3 stem_stride=1`), but epoch time went **47.9s → 153.4s** — NAS picked a ~3× more
+expensive cell, so it got **21 epochs instead of 67** and was still improving when the clock stopped
+(best val at epoch 21 of 21). It never ensembled; the gate is not involved. Combined with conway's
+−2.14 in the previous run from the same cause, **NAS genotype selection is now the single largest
+source of run-to-run noise in the pipeline — worth ±1–2 adj per dataset, which is several times the
+effect of any tuning change we are currently making.**
+
+**Consequences for how we work from here:**
+- Never judge a change by the 13-dataset total in a single run. Split by whether the change could
+  have applied, and look at the sign across the affected group (§7m already warned that per-dataset
+  deltas below ~±1 are not evidence; this run shows the *total* is no safer).
+- §7f.6 (does NAS verification carry signal?) is promoted: it is no longer just a possible time
+  saving, it is the largest remaining source of score variance. A cell that is 3× more expensive
+  should never have been selected on a dataset whose epochs already cost 48s.
 
 ### 7m. The 2026-07-30 benchmark (13 × 1h) — gate + member sizing measured
 

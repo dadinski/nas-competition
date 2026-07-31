@@ -9,7 +9,8 @@ Two building blocks:
     has picked a genotype; ResidualBlock remains as a simple fixed fallback
     block.
 
-TinyNet is the ultimate fallback network (works for any C/H/W).
+TinyNet and MinimalNet are the fallback networks; MinimalNet is the true
+last resort (see nas.py _safe_fallback). Both work for any C/H/W.
 """
 
 import itertools
@@ -39,16 +40,23 @@ def derive_macro(h, w, s_min=4, d_max=3, c0=32, n=2):
     per epoch versus AddNIST's 14.6s, completed FIVE epochs in its hour, was
     still improving steeply when the clock ran out, and scored -3.96.
 
-    Taking the surplus reduction in the stem instead makes per-sample cost
-    roughly independent of input resolution (all inputs land at ~1.7-1.8x
-    the 28x28 cost) and is simply what standard CNNs already do - ResNet
-    drops 224x224 to 56x56 before its first stage. Note this makes us *more*
-    conventional, not less: total reduction is now 32x, the ImageNet norm,
-    where before it was 8x.
+    Taking the surplus reduction in the stem instead BOUNDS per-sample cost
+    instead of letting it grow with resolution, and is what standard CNNs
+    already do - ResNet drops 224x224 to 56x56 before its first stage.
 
-    Inputs at or below 32x32 get stem_stride == 1, i.e. they are completely
-    unaffected by this - which covers most of the local datasets and is why
-    this change cannot regress them.
+    BE PRECISE ABOUT WHAT THIS DOES AND DOES NOT GUARANTEE (measured, and an
+    earlier version of this docstring got all three wrong):
+      * Total reduction is 2**d_full, which is input-dependent - 8x at 32x32,
+        16x at 64x64, 32x at 128x128, 64x at 256x256. It is NOT a fixed 32x.
+      * The final feature map is 4x4 only when min(H,W) is a power of two.
+        Measured: 32->4x4, 64->4x4, 128->4x4, but 60->8x8, 96->6x6, 224->7x7.
+      * Cost is therefore ~1.7-2.0x the 28x28 case for power-of-two inputs but
+        can still be 4-6x for others (measured 6.33x at 60x60, 4.00x at 96x96).
+        A strongly anisotropic input keeps its long axis: 128x32 -> 16x4.
+
+    Inputs with min(H,W) < 64 get stem_stride == 1 and are completely
+    unaffected - that covers every local dataset except CIFARTile, Myofibre
+    and GeoClassing, which is why this change could not regress the others.
     """
     m = max(1, min(int(h), int(w)))
     d_full = int(math.floor(math.log2(m / s_min))) if m > s_min else 0
@@ -131,7 +139,18 @@ def all_genotypes():
 
 
 def is_degenerate(genotype):
-    """A cell that is (almost) only 'none'/'skip' carries no real signal."""
+    """A cell that is only 'none'/'skip' carries no real signal.
+
+    KNOWN GAP (measured 2026-07-31, deliberately NOT fixed on submission day):
+    this misses cells whose OUTPUT NODE is dead. EDGES[3:6] are the three edges
+    into node 3, so any genotype with 'none' on all of them returns identically
+    zero whatever the other edges do - 117 of the 15,625 genotypes (0.75%).
+    They are not reachable in practice: SynFlow scores such a cell 0.60 against
+    ~1.7e24 for a live one, so it ranks near-last and can neither lead the rank
+    aggregation nor enter the top-10 that _cost_aware_pick times. Fix would be
+    `or all(op == 'none' for op in genotype[3:6])`; it changes which genotypes
+    get scored, so it wants a benchmark behind it.
+    """
     useful = sum(1 for op in genotype if op not in ('none', 'skip'))
     return useful == 0
 

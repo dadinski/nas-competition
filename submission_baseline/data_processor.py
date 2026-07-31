@@ -49,6 +49,26 @@ def _to_4d_float(x):
     return t
 
 
+def _to_long(y):
+    """label array -> int64 tensor, tolerating the same awkward layouts as
+    _to_4d_float.
+
+    This exists because the hardening in _to_4d_float covered the IMAGES only.
+    A label array with negative strides (saved from a reversed view without
+    .copy()) or non-native byte order raises `ValueError` in
+    `torch.as_tensor` exactly as the image path used to - and it does so inside
+    `_ArrayDataset.__init__`, which BOTH `_process` and `_minimal_process`
+    call, so the exception escapes `process()` entirely and fails the dataset
+    for -10. Verified by reproduction, 2026-07-31. Same fix, same reasoning as
+    CLAUDE.md 7b; labels were simply missed the first time.
+    """
+    a = np.asarray(y)
+    try:
+        return torch.as_tensor(a).long()
+    except (ValueError, TypeError):
+        return torch.as_tensor(np.ascontiguousarray(a).astype(np.int64))
+
+
 class _GaussianNoise:
     """Adds small Gaussian noise, scaled relative to the (already
     per-channel-normalized) data. This is the one augmentation that needs
@@ -74,7 +94,7 @@ class _ArrayDataset(torch.utils.data.Dataset):
 
     def __init__(self, x, y, transform=None, order=None):
         self.x = _to_4d_float(x)
-        self.y = None if y is None else torch.as_tensor(np.asarray(y)).long()
+        self.y = None if y is None else _to_long(y)
         self.transform = transform
         # Optional fixed index permutation (see process()). Applied lazily so
         # we get a reordered view without copying the underlying array.

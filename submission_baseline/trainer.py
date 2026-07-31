@@ -291,8 +291,8 @@ class Trainer:
         """Copy the current weights to HOST memory. Snapshots must not sit on the
         GPU: several of them plus the live model is exactly the resident-memory
         pattern that made the reverted SWA attempt a plausible -10 (CLAUDE.md 7d).
-        A 9.5M-parameter model is ~38 MB here, so MAX_MEMBERS of them is ~300 MB
-        of ordinary RAM."""
+        A 9.5M-parameter model is ~38 MB here, so MAX_MEMBERS of them is ~900 MB
+        of ordinary RAM (the figure was ~300 MB when MAX_MEMBERS was 8)."""
         return {k: v.detach().to('cpu', copy=True)
                 for k, v in self.model.state_dict().items()}
 
@@ -325,8 +325,10 @@ class Trainer:
     def _rebuild_train_loader(self, bs):
         """Rebuild the train loader at batch size `bs`, keeping the
         shuffle/drop_last semantics the DataProcessor used."""
-        # floor of 2, not 1: a full loader of single-sample batches would make
-        # BatchNorm raise on every batch (see helpers.safe_drop_last)
+        # floor of 2, not 1: with bs == 1 every batch is dropped by the
+        # `data.shape[0] < 2` guard in train(), so the model would take ZERO
+        # gradient steps - silently. (BatchNorm would also raise, but that
+        # guard now runs first, so starvation is the failure mode to prevent.)
         bs = max(2, int(bs))
         ds = self.train_dataloader.dataset
         drop_last = safe_drop_last(len(ds), bs)
@@ -605,7 +607,7 @@ class Trainer:
                             # 178s - ~90% of every member's time spent after it had
                             # stopped improving (CLAUDE.md 7j, issue 2).
                             #
-                            # KNOWN WEAKNESS (CLAUDE.md 7f.2b): member_best_time is the
+                            # KNOWN WEAKNESS (CLAUDE.md 7f.2): member_best_time is the
                             # time to the ARGMAX epoch, which is noisy when the
                             # validation curve is flat - three 600s Chesseract runs
                             # gave 7, 2 and 7 members. Every run still beat the single
@@ -680,20 +682,43 @@ class Trainer:
             memorisation, so the answer is regularisation, NOT more capacity
             or more time. Measured 99.99%/53% on Chesseract, 100%/79% on
             Language.
+
+        ⚠ ALL THREE INPUTS ARE GLOBAL ACROSS ENSEMBLE MEMBERS. `epochs_run` and
+        `best_epoch` span every member, and `train_acc` is the LAST member's
+        running figure while `best_val` is the best over all of them - so on an
+        ensembling run the gap compares two different models. Both notes below
+        are reworded in that case rather than suppressed, because the numbers
+        are still informative once you know what they refer to; the wording is
+        what would otherwise mislead.
         """
         if not epochs_run:
             print("[Trainer] summary: no epoch completed")
             return
         frac = 100.0 * best_epoch / epochs_run
         gap = (train_acc - best_val) * 100
+        # epochs_run / best_epoch / train_acc are GLOBAL across ensemble members,
+        # so once an ensemble formed they mix models: `train_acc` is the LAST
+        # member's running figure while `best_val` is the best over all members.
+        # Saying "the remaining N epochs gained nothing" would then be actively
+        # false - those epochs built the members predict() averages, measured at
+        # +3.33 test points (CLAUDE.md 7j). Say what actually happened instead.
+        ensembled = len(getattr(self, 'ensemble_states', [])) > 1
         notes = []
         if frac <= 25.0:
-            notes.append("SATURATED - best checkpoint in the first {:.0f}% of the run, "
-                         "the remaining {} epochs gained nothing".format(frac, epochs_run - best_epoch))
+            if ensembled:
+                notes.append("member 1 saturated {:.0f}% into the run - the remaining {} epochs "
+                             "went into the {} ensemble members, not into one model".format(
+                                 frac, epochs_run - best_epoch, len(self.ensemble_states)))
+            else:
+                notes.append("SATURATED - best checkpoint in the first {:.0f}% of the run, "
+                             "the remaining {} epochs gained nothing".format(
+                                 frac, epochs_run - best_epoch))
         if train_acc == train_acc and gap >= 15.0 and train_acc >= 0.95:
             notes.append("MEMORISING - train {:.1f}% vs val {:.1f}%, gap {:+.1f}pts "
-                         "(needs regularisation, not capacity/time)".format(
-                             train_acc * 100, best_val * 100, gap))
+                         "(needs regularisation, not capacity/time){}".format(
+                             train_acc * 100, best_val * 100, gap,
+                             " [train is the last member's, val is the global best]"
+                             if ensembled else ""))
         print("[Trainer] summary: {} epochs, best val {:.2f}% at epoch {} ({:.0f}% in), "
               "final train {:.2f}%".format(
                   epochs_run, best_val * 100, best_epoch, frac,
