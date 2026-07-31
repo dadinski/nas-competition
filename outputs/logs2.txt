@@ -1,0 +1,1093 @@
+rm -Rf scoring
+rm -Rf package
+rm -Rf package
+mkdir package
+mkdir package/predictions
+mkdir package/datasets
+rsync -ar --exclude='**/test_y.npy' datasets/* package/datasets/
+cp -R evaluation/main.py package/main.py
+cp -R daniel-2/* package
+cd package; python3 main.py
+==============================================================================
+=============    Your NAS Unseen-Data 2026 Submission is running     =============
+==============================================================================
+========== Dataset   Ganges   =============================================
+  Metadata:
+   - num_classes         : 6
+   - input_shape         : [4500, 1, 27, 18]
+   - codename            : Ganges
+   - benchmark           : 27.5
+   - time_limit          : 0.1
+   - time_remaining      : 359.9958777278662
+
+=== Processing Data ===
+  Allotted compute time remaining: ~5m,59s
+[DataProcessor] augmentation: quantized/categorical (noise only) - shape 1x27x18, 2 unique values seen in 20000 sampled
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~5m,57s
+[NAS] macro: c0=32 n=2 d=2 stem_stride=1 (H=27, W=18 -> 6x4)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 410 genotypes, verifying top 19 (max_batches=20, batch_size=512, t_batch~0.063s, t_val~0.02s)
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=18.50% t=0.7s
+  [NAS] verify: val=17.00% t=0.6s
+  [NAS] verify: val=15.83% t=0.5s
+  [NAS] verify: val=15.50% t=0.5s
+  [NAS] verify: val=15.50% t=0.7s
+  [NAS] verify: val=18.50% t=0.5s
+  [NAS] verify: val=15.50% t=0.5s
+  [NAS] verify: val=17.33% t=0.6s
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=17.33% t=0.5s
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=15.83% t=0.5s
+  [NAS] verify: val=17.33% t=0.6s
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=17.00% t=0.6s
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=17.00% t=0.5s
+  [NAS] verify: val=18.50% t=0.5s
+[NAS] selected genotype (val=18.50%): ['conv3x3', 'conv3x3', 'skip', 'conv3x3', 'conv3x3', 'conv3x3']
+
+=== Training ===
+  Allotted compute time remaining: ~5m,34s
+[Trainer] weight decay on 34 tensors, none on 67 (BN/bias)
+  [Trainer] Epoch   1 | train=18.19% val=15.83% gap= +2.36 | loss=1.8194 | lr=0.01000 | t/ep=  0.5s t/eval= 0.1s | rem=   334s
+  [Trainer] Epoch   2 | train=23.88% val=16.17% gap= +7.71 | loss=1.7704 | lr=0.01000 | t/ep=  0.5s t/eval= 0.1s | rem=   334s
+  [Trainer] Epoch   3 | train=29.64% val=16.83% gap=+12.81 | loss=1.7336 | lr=0.01000 | t/ep=  0.5s t/eval= 0.1s | rem=   333s
+  [Trainer] Epoch   4 | train=40.55% val=16.00% gap=+24.55 | loss=1.6748 | lr=0.01000 | t/ep=  0.5s t/eval= 0.0s | rem=   333s
+  [Trainer] Epoch   5 | train=46.70% val=21.83% gap=+24.87 | loss=1.6050 | lr=0.01000 | t/ep=  0.5s t/eval= 0.1s | rem=   332s
+  [Trainer] Epoch   6 | train=54.30% val=20.00% gap=+34.30 | loss=1.4966 | lr=0.01000 | t/ep=  0.5s t/eval= 0.0s | rem=   332s
+  [Trainer] Epoch   7 | train=61.62% val=20.50% gap=+41.12 | loss=1.3302 | lr=0.01000 | t/ep=  0.5s t/eval= 0.0s | rem=   331s
+  [Trainer] Epoch   8 | train=69.19% val=18.17% gap=+51.02 | loss=1.1494 | lr=0.01000 | t/ep=  0.5s t/eval= 0.0s | rem=   331s
+  [Trainer] Epoch   9 | train=73.66% val=17.50% gap=+56.16 | loss=1.0220 | lr=0.00999 | t/ep=  0.5s t/eval= 0.0s | rem=   330s
+  [Trainer] Epoch  10 | train=76.12% val=20.67% gap=+55.46 | loss=0.9526 | lr=0.00999 | t/ep=  0.5s t/eval= 0.0s | rem=   329s
+  [Trainer] Epoch  11 | train=81.32% val=18.33% gap=+62.99 | loss=0.8536 | lr=0.00999 | t/ep=  0.5s t/eval= 0.0s | rem=   329s
+  [Trainer] Epoch  12 | train=86.38% val=18.83% gap=+67.54 | loss=0.7630 | lr=0.00999 | t/ep=  0.5s t/eval= 0.0s | rem=   328s
+  [Trainer] Epoch  13 | train=92.16% val=22.00% gap=+70.16 | loss=0.6754 | lr=0.00999 | t/ep=  0.5s t/eval= 0.1s | rem=   328s
+  [Trainer] Epoch  14 | train=94.90% val=20.67% gap=+74.23 | loss=0.6156 | lr=0.00998 | t/ep=  0.5s t/eval= 0.0s | rem=   327s
+  [Trainer] Epoch  15 | train=97.90% val=23.83% gap=+74.07 | loss=0.5515 | lr=0.00998 | t/ep=  0.5s t/eval= 0.1s | rem=   327s
+  [Trainer] Epoch  16 | train=99.29% val=28.50% gap=+70.79 | loss=0.5168 | lr=0.00998 | t/ep=  0.5s t/eval= 0.1s | rem=   326s
+  [Trainer] Epoch  17 | train=99.90% val=26.50% gap=+73.40 | loss=0.4854 | lr=0.00998 | t/ep=  0.5s t/eval= 0.0s | rem=   325s
+  [Trainer] Epoch  18 | train=100.00% val=25.67% gap=+74.33 | loss=0.4654 | lr=0.00997 | t/ep=  0.5s t/eval= 0.0s | rem=   325s
+  [Trainer] Epoch  19 | train=100.00% val=26.67% gap=+73.33 | loss=0.4530 | lr=0.00997 | t/ep=  0.5s t/eval= 0.0s | rem=   324s
+  [Trainer] Epoch  20 | train=100.00% val=28.50% gap=+71.50 | loss=0.4441 | lr=0.00997 | t/ep=  0.5s t/eval= 0.0s | rem=   324s
+  [Trainer] Epoch  21 | train=100.00% val=28.17% gap=+71.83 | loss=0.4386 | lr=0.00996 | t/ep=  0.5s t/eval= 0.0s | rem=   323s
+  [Trainer] Epoch  22 | train=100.00% val=28.17% gap=+71.83 | loss=0.4349 | lr=0.00996 | t/ep=  0.5s t/eval= 0.0s | rem=   323s
+  [Trainer] Epoch  23 | train=100.00% val=30.00% gap=+70.00 | loss=0.4330 | lr=0.00995 | t/ep=  0.5s t/eval= 0.1s | rem=   322s
+  [Trainer] Epoch  24 | train=100.00% val=30.33% gap=+69.67 | loss=0.4312 | lr=0.00995 | t/ep=  0.5s t/eval= 0.1s | rem=   322s
+  [Trainer] Epoch  25 | train=100.00% val=30.00% gap=+70.00 | loss=0.4300 | lr=0.00995 | t/ep=  0.5s t/eval= 0.0s | rem=   321s
+  [Trainer] Epoch  26 | train=100.00% val=29.33% gap=+70.67 | loss=0.4293 | lr=0.00994 | t/ep=  0.5s t/eval= 0.0s | rem=   321s
+  [Trainer] Epoch  27 | train=100.00% val=29.67% gap=+70.33 | loss=0.4286 | lr=0.00994 | t/ep=  0.5s t/eval= 0.0s | rem=   320s
+  [Trainer] Epoch  28 | train=100.00% val=28.83% gap=+71.17 | loss=0.4280 | lr=0.00993 | t/ep=  0.5s t/eval= 0.0s | rem=   319s
+  [Trainer] Epoch  29 | train=100.00% val=28.83% gap=+71.17 | loss=0.4273 | lr=0.00993 | t/ep=  0.5s t/eval= 0.0s | rem=   319s
+  [Trainer] Epoch  30 | train=100.00% val=29.83% gap=+70.17 | loss=0.4272 | lr=0.00992 | t/ep=  0.5s t/eval= 0.0s | rem=   318s
+  [Trainer] Epoch  31 | train=100.00% val=29.67% gap=+70.33 | loss=0.4266 | lr=0.00992 | t/ep=  0.5s t/eval= 0.0s | rem=   318s
+  [Trainer] Epoch  32 | train=100.00% val=29.83% gap=+70.17 | loss=0.4262 | lr=0.00991 | t/ep=  0.5s t/eval= 0.0s | rem=   317s
+  [Trainer] Epoch  33 | train=100.00% val=29.17% gap=+70.83 | loss=0.4260 | lr=0.00990 | t/ep=  0.5s t/eval= 0.0s | rem=   317s
+  [Trainer] Epoch  34 | train=100.00% val=29.17% gap=+70.83 | loss=0.4262 | lr=0.00990 | t/ep=  0.5s t/eval= 0.0s | rem=   316s
+  [Trainer] Epoch  35 | train=100.00% val=30.00% gap=+70.00 | loss=0.4257 | lr=0.00989 | t/ep=  0.5s t/eval= 0.0s | rem=   316s
+  [Trainer] Epoch  36 | train=100.00% val=28.17% gap=+71.83 | loss=0.4256 | lr=0.00989 | t/ep=  0.5s t/eval= 0.0s | rem=   315s
+  [Trainer] Epoch  37 | train=100.00% val=29.17% gap=+70.83 | loss=0.4253 | lr=0.00988 | t/ep=  0.5s t/eval= 0.0s | rem=   314s
+  [Trainer] Epoch  38 | train=100.00% val=29.17% gap=+70.83 | loss=0.4251 | lr=0.00987 | t/ep=  0.5s t/eval= 0.0s | rem=   314s
+  [Trainer] Epoch  39 | train=100.00% val=29.17% gap=+70.83 | loss=0.4249 | lr=0.00987 | t/ep=  0.5s t/eval= 0.0s | rem=   313s
+  [Trainer] Epoch  40 | train=100.00% val=29.17% gap=+70.83 | loss=0.4249 | lr=0.00986 | t/ep=  0.5s t/eval= 0.0s | rem=   313s
+  [Trainer] Epoch  41 | train=100.00% val=29.17% gap=+70.83 | loss=0.4247 | lr=0.00985 | t/ep=  0.5s t/eval= 0.0s | rem=   312s
+  [Trainer] Epoch  42 | train=100.00% val=29.33% gap=+70.67 | loss=0.4242 | lr=0.00984 | t/ep=  0.5s t/eval= 0.0s | rem=   312s
+  [Trainer] Epoch  43 | train=100.00% val=30.00% gap=+70.00 | loss=0.4245 | lr=0.00984 | t/ep=  0.5s t/eval= 0.0s | rem=   311s
+  [Trainer] Epoch  44 | train=100.00% val=28.50% gap=+71.50 | loss=0.4245 | lr=0.00983 | t/ep=  0.5s t/eval= 0.0s | rem=   311s
+  [Trainer] Epoch  45 | train=100.00% val=30.17% gap=+69.83 | loss=0.4243 | lr=0.00982 | t/ep=  0.5s t/eval= 0.0s | rem=   310s
+  [Trainer] Epoch  46 | train=100.00% val=28.50% gap=+71.50 | loss=0.4242 | lr=0.00981 | t/ep=  0.5s t/eval= 0.0s | rem=   310s
+  [Trainer] Epoch  47 | train=100.00% val=30.50% gap=+69.50 | loss=0.4241 | lr=0.00981 | t/ep=  0.5s t/eval= 0.1s | rem=   309s
+  [Trainer] Epoch  48 | train=100.00% val=28.83% gap=+71.17 | loss=0.4236 | lr=0.00980 | t/ep=  0.5s t/eval= 0.0s | rem=   308s
+  [Trainer] Epoch  49 | train=100.00% val=29.50% gap=+70.50 | loss=0.4238 | lr=0.00979 | t/ep=  0.5s t/eval= 0.0s | rem=   308s
+  [Trainer] Epoch  50 | train=100.00% val=29.50% gap=+70.50 | loss=0.4236 | lr=0.00978 | t/ep=  0.5s t/eval= 0.0s | rem=   307s
+  [Trainer] Epoch  51 | train=100.00% val=29.67% gap=+70.33 | loss=0.4234 | lr=0.00977 | t/ep=  0.5s t/eval= 0.0s | rem=   307s
+  [Trainer] Epoch  52 | train=100.00% val=29.17% gap=+70.83 | loss=0.4234 | lr=0.00976 | t/ep=  0.6s t/eval= 0.0s | rem=   306s
+  [Trainer] Epoch  53 | train=100.00% val=30.00% gap=+70.00 | loss=0.4234 | lr=0.00975 | t/ep=  0.5s t/eval= 0.0s | rem=   306s
+  [Trainer] Epoch  54 | train=100.00% val=29.17% gap=+70.83 | loss=0.4232 | lr=0.00974 | t/ep=  0.5s t/eval= 0.0s | rem=   305s
+  [Trainer] Epoch  55 | train=100.00% val=28.67% gap=+71.33 | loss=0.4232 | lr=0.00973 | t/ep=  0.5s t/eval= 0.0s | rem=   305s
+  [Trainer] Epoch  56 | train=100.00% val=30.17% gap=+69.83 | loss=0.4232 | lr=0.00972 | t/ep=  0.5s t/eval= 0.0s | rem=   304s
+  [Trainer] Epoch  57 | train=100.00% val=29.50% gap=+70.50 | loss=0.4231 | lr=0.00971 | t/ep=  0.5s t/eval= 0.0s | rem=   303s
+  [Trainer] Epoch  58 | train=100.00% val=28.17% gap=+71.83 | loss=0.4230 | lr=0.00970 | t/ep=  0.5s t/eval= 0.0s | rem=   303s
+  [Trainer] Epoch  59 | train=100.00% val=29.33% gap=+70.67 | loss=0.4231 | lr=0.00969 | t/ep=  0.5s t/eval= 0.0s | rem=   302s
+  [Trainer] Epoch  60 | train=100.00% val=28.00% gap=+72.00 | loss=0.4230 | lr=0.00968 | t/ep=  0.5s t/eval= 0.0s | rem=   302s
+  [Trainer] Epoch  61 | train=100.00% val=29.33% gap=+70.67 | loss=0.4230 | lr=0.00967 | t/ep=  0.5s t/eval= 0.0s | rem=   301s
+  [Trainer] Epoch  62 | train=100.00% val=29.67% gap=+70.33 | loss=0.4229 | lr=0.00966 | t/ep=  0.5s t/eval= 0.0s | rem=   301s
+  [Trainer] Epoch  63 | train=100.00% val=29.83% gap=+70.17 | loss=0.4228 | lr=0.00965 | t/ep=  0.5s t/eval= 0.0s | rem=   300s
+  [Trainer] Epoch  64 | train=100.00% val=29.50% gap=+70.50 | loss=0.4229 | lr=0.00964 | t/ep=  0.5s t/eval= 0.0s | rem=   300s
+  [Trainer] Epoch  65 | train=100.00% val=28.67% gap=+71.33 | loss=0.4229 | lr=0.00963 | t/ep=  0.5s t/eval= 0.0s | rem=   299s
+  [Trainer] Epoch  66 | train=100.00% val=30.00% gap=+70.00 | loss=0.4230 | lr=0.00961 | t/ep=  0.5s t/eval= 0.0s | rem=   299s
+  [Trainer] Epoch  67 | train=100.00% val=30.17% gap=+69.83 | loss=0.4227 | lr=0.00960 | t/ep=  0.5s t/eval= 0.0s | rem=   298s
+  [Trainer] Epoch  68 | train=100.00% val=29.50% gap=+70.50 | loss=0.4228 | lr=0.00959 | t/ep=  0.5s t/eval= 0.0s | rem=   297s
+  [Trainer] Epoch  69 | train=100.00% val=29.67% gap=+70.33 | loss=0.4228 | lr=0.00958 | t/ep=  0.5s t/eval= 0.0s | rem=   297s
+  [Trainer] Epoch  70 | train=100.00% val=29.83% gap=+70.17 | loss=0.4228 | lr=0.00957 | t/ep=  0.5s t/eval= 0.0s | rem=   296s
+  [Trainer] Epoch  71 | train=100.00% val=29.33% gap=+70.67 | loss=0.4227 | lr=0.00955 | t/ep=  0.5s t/eval= 0.0s | rem=   296s
+  [Trainer] Epoch  72 | train=100.00% val=29.50% gap=+70.50 | loss=0.4227 | lr=0.00954 | t/ep=  0.5s t/eval= 0.0s | rem=   295s
+  [Trainer] Epoch  73 | train=100.00% val=30.00% gap=+70.00 | loss=0.4228 | lr=0.00953 | t/ep=  0.5s t/eval= 0.0s | rem=   295s
+  [Trainer] Epoch  74 | train=100.00% val=30.17% gap=+69.83 | loss=0.4225 | lr=0.00952 | t/ep=  0.5s t/eval= 0.0s | rem=   294s
+  [Trainer] Epoch  75 | train=100.00% val=28.33% gap=+71.67 | loss=0.4227 | lr=0.00950 | t/ep=  0.5s t/eval= 0.0s | rem=   294s
+  [Trainer] Epoch  76 | train=100.00% val=30.17% gap=+69.83 | loss=0.4226 | lr=0.00949 | t/ep=  0.5s t/eval= 0.0s | rem=   293s
+  [Trainer] Epoch  77 | train=100.00% val=29.50% gap=+70.50 | loss=0.4224 | lr=0.00948 | t/ep=  0.5s t/eval= 0.0s | rem=   293s
+  [Trainer] Epoch  78 | train=100.00% val=30.17% gap=+69.83 | loss=0.4224 | lr=0.00946 | t/ep=  0.5s t/eval= 0.0s | rem=   292s
+  [Trainer] Epoch  79 | train=100.00% val=29.00% gap=+71.00 | loss=0.4226 | lr=0.00945 | t/ep=  0.5s t/eval= 0.0s | rem=   291s
+  [Trainer] Epoch  80 | train=100.00% val=28.50% gap=+71.50 | loss=0.4227 | lr=0.00944 | t/ep=  0.5s t/eval= 0.1s | rem=   291s
+  [Trainer] Epoch  81 | train=100.00% val=29.33% gap=+70.67 | loss=0.4226 | lr=0.00942 | t/ep=  0.5s t/eval= 0.0s | rem=   290s
+  [Trainer] Epoch  82 | train=100.00% val=30.00% gap=+70.00 | loss=0.4225 | lr=0.00941 | t/ep=  0.5s t/eval= 0.0s | rem=   290s
+  [Trainer] Epoch  83 | train=100.00% val=29.83% gap=+70.17 | loss=0.4226 | lr=0.00939 | t/ep=  0.5s t/eval= 0.0s | rem=   289s
+  [Trainer] Epoch  84 | train=100.00% val=28.33% gap=+71.67 | loss=0.4223 | lr=0.00938 | t/ep=  0.5s t/eval= 0.0s | rem=   289s
+  [Trainer] Epoch  85 | train=100.00% val=30.17% gap=+69.83 | loss=0.4225 | lr=0.00936 | t/ep=  0.5s t/eval= 0.0s | rem=   288s
+  [Trainer] Epoch  86 | train=100.00% val=28.83% gap=+71.17 | loss=0.4224 | lr=0.00935 | t/ep=  0.5s t/eval= 0.0s | rem=   288s
+  [Trainer] Epoch  87 | train=100.00% val=29.83% gap=+70.17 | loss=0.4222 | lr=0.00933 | t/ep=  0.5s t/eval= 0.0s | rem=   287s
+  [Trainer] Epoch  88 | train=100.00% val=29.67% gap=+70.33 | loss=0.4226 | lr=0.00932 | t/ep=  0.5s t/eval= 0.0s | rem=   287s
+  [Trainer] Epoch  89 | train=100.00% val=29.83% gap=+70.17 | loss=0.4225 | lr=0.00930 | t/ep=  0.5s t/eval= 0.0s | rem=   286s
+  [Trainer] Epoch  90 | train=100.00% val=29.33% gap=+70.67 | loss=0.4225 | lr=0.00929 | t/ep=  0.5s t/eval= 0.0s | rem=   285s
+  [Trainer] Epoch  91 | train=100.00% val=29.33% gap=+70.67 | loss=0.4224 | lr=0.00927 | t/ep=  0.5s t/eval= 0.0s | rem=   285s
+  [Trainer] Epoch  92 | train=100.00% val=29.33% gap=+70.67 | loss=0.4224 | lr=0.00926 | t/ep=  0.5s t/eval= 0.0s | rem=   284s
+  [Trainer] Epoch  93 | train=100.00% val=30.00% gap=+70.00 | loss=0.4227 | lr=0.00924 | t/ep=  0.5s t/eval= 0.0s | rem=   284s
+  [Trainer] Epoch  94 | train=100.00% val=28.00% gap=+72.00 | loss=0.4224 | lr=0.00922 | t/ep=  0.5s t/eval= 0.0s | rem=   283s
+  [Trainer] Epoch  95 | train=100.00% val=29.67% gap=+70.33 | loss=0.4223 | lr=0.00921 | t/ep=  0.5s t/eval= 0.0s | rem=   283s
+  [Trainer] Epoch  96 | train=100.00% val=28.33% gap=+71.67 | loss=0.4224 | lr=0.00919 | t/ep=  0.5s t/eval= 0.0s | rem=   282s
+  [Trainer] Epoch  97 | train=100.00% val=29.50% gap=+70.50 | loss=0.4223 | lr=0.00918 | t/ep=  0.5s t/eval= 0.0s | rem=   282s
+  [Trainer] Epoch  98 | train=100.00% val=30.00% gap=+70.00 | loss=0.4225 | lr=0.00916 | t/ep=  0.5s t/eval= 0.0s | rem=   281s
+  [Trainer] Epoch  99 | train=100.00% val=29.33% gap=+70.67 | loss=0.4223 | lr=0.00914 | t/ep=  0.5s t/eval= 0.0s | rem=   281s
+  [Trainer] Epoch 100 | train=100.00% val=29.50% gap=+70.50 | loss=0.4221 | lr=0.00913 | t/ep=  0.5s t/eval= 0.0s | rem=   280s
+  [Trainer] Epoch 101 | train=100.00% val=30.17% gap=+69.83 | loss=0.4223 | lr=0.00911 | t/ep=  0.5s t/eval= 0.0s | rem=   279s
+  [Trainer] Epoch 102 | train=100.00% val=30.33% gap=+69.67 | loss=0.4222 | lr=0.00909 | t/ep=  0.5s t/eval= 0.0s | rem=   279s
+  [Trainer] Epoch 103 | train=100.00% val=29.67% gap=+70.33 | loss=0.4225 | lr=0.00907 | t/ep=  0.6s t/eval= 0.0s | rem=   278s
+  [Trainer] Epoch 104 | train=100.00% val=28.67% gap=+71.33 | loss=0.4226 | lr=0.00905 | t/ep=  0.5s t/eval= 0.0s | rem=   278s
+  [Trainer] Epoch 105 | train=100.00% val=30.00% gap=+70.00 | loss=0.4224 | lr=0.00903 | t/ep=  0.5s t/eval= 0.0s | rem=   277s
+  [Trainer] Epoch 106 | train=100.00% val=28.67% gap=+71.33 | loss=0.4222 | lr=0.00902 | t/ep=  0.5s t/eval= 0.0s | rem=   277s
+  [Trainer] Epoch 107 | train=100.00% val=29.83% gap=+70.17 | loss=0.4222 | lr=0.00900 | t/ep=  0.5s t/eval= 0.0s | rem=   276s
+  [Trainer] Epoch 108 | train=100.00% val=29.67% gap=+70.33 | loss=0.4223 | lr=0.00898 | t/ep=  0.5s t/eval= 0.0s | rem=   275s
+  [Trainer] Epoch 109 | train=100.00% val=29.17% gap=+70.83 | loss=0.4225 | lr=0.00896 | t/ep=  0.5s t/eval= 0.0s | rem=   275s
+  [Trainer] Epoch 110 | train=100.00% val=29.67% gap=+70.33 | loss=0.4221 | lr=0.00894 | t/ep=  0.5s t/eval= 0.0s | rem=   274s
+  [Trainer] Epoch 111 | train=100.00% val=29.33% gap=+70.67 | loss=0.4223 | lr=0.00892 | t/ep=  0.5s t/eval= 0.0s | rem=   274s
+  [Trainer] Epoch 112 | train=100.00% val=29.67% gap=+70.33 | loss=0.4223 | lr=0.00891 | t/ep=  0.5s t/eval= 0.0s | rem=   273s
+  [Trainer] Epoch 113 | train=100.00% val=29.50% gap=+70.50 | loss=0.4221 | lr=0.00889 | t/ep=  0.5s t/eval= 0.0s | rem=   273s
+  [Trainer] Epoch 114 | train=100.00% val=29.83% gap=+70.17 | loss=0.4224 | lr=0.00887 | t/ep=  0.5s t/eval= 0.0s | rem=   272s
+  [Trainer] Epoch 115 | train=100.00% val=30.83% gap=+69.17 | loss=0.4222 | lr=0.00885 | t/ep=  0.5s t/eval= 0.1s | rem=   272s
+  [Trainer] Epoch 116 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00883 | t/ep=  0.5s t/eval= 0.0s | rem=   271s
+  [Trainer] Epoch 117 | train=100.00% val=29.50% gap=+70.50 | loss=0.4221 | lr=0.00881 | t/ep=  0.5s t/eval= 0.0s | rem=   271s
+  [Trainer] Epoch 118 | train=100.00% val=29.67% gap=+70.33 | loss=0.4221 | lr=0.00879 | t/ep=  0.5s t/eval= 0.0s | rem=   270s
+  [Trainer] Epoch 119 | train=100.00% val=30.17% gap=+69.83 | loss=0.4223 | lr=0.00877 | t/ep=  0.5s t/eval= 0.0s | rem=   269s
+  [Trainer] Epoch 120 | train=100.00% val=29.17% gap=+70.83 | loss=0.4223 | lr=0.00875 | t/ep=  0.5s t/eval= 0.0s | rem=   269s
+  [Trainer] Epoch 121 | train=100.00% val=30.83% gap=+69.17 | loss=0.4221 | lr=0.00873 | t/ep=  0.5s t/eval= 0.0s | rem=   268s
+  [Trainer] Epoch 122 | train=100.00% val=30.50% gap=+69.50 | loss=0.4221 | lr=0.00871 | t/ep=  0.5s t/eval= 0.0s | rem=   268s
+  [Trainer] Epoch 123 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00869 | t/ep=  0.5s t/eval= 0.0s | rem=   267s
+  [Trainer] Epoch 124 | train=100.00% val=30.67% gap=+69.33 | loss=0.4223 | lr=0.00867 | t/ep=  0.5s t/eval= 0.0s | rem=   267s
+  [Trainer] Epoch 125 | train=100.00% val=28.67% gap=+71.33 | loss=0.4221 | lr=0.00865 | t/ep=  0.5s t/eval= 0.0s | rem=   266s
+  [Trainer] Epoch 126 | train=100.00% val=30.17% gap=+69.83 | loss=0.4222 | lr=0.00863 | t/ep=  0.5s t/eval= 0.0s | rem=   266s
+  [Trainer] Epoch 127 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00861 | t/ep=  0.5s t/eval= 0.0s | rem=   265s
+  [Trainer] Epoch 128 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00858 | t/ep=  0.5s t/eval= 0.0s | rem=   264s
+  [Trainer] Epoch 129 | train=100.00% val=29.50% gap=+70.50 | loss=0.4223 | lr=0.00856 | t/ep=  0.5s t/eval= 0.0s | rem=   264s
+  [Trainer] Epoch 130 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00854 | t/ep=  0.5s t/eval= 0.0s | rem=   263s
+  [Trainer] Epoch 131 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00852 | t/ep=  0.5s t/eval= 0.0s | rem=   263s
+  [Trainer] Epoch 132 | train=100.00% val=30.00% gap=+70.00 | loss=0.4220 | lr=0.00850 | t/ep=  0.5s t/eval= 0.0s | rem=   262s
+  [Trainer] Epoch 133 | train=100.00% val=29.83% gap=+70.17 | loss=0.4223 | lr=0.00848 | t/ep=  0.6s t/eval= 0.0s | rem=   262s
+  [Trainer] Epoch 134 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00845 | t/ep=  0.5s t/eval= 0.0s | rem=   261s
+  [Trainer] Epoch 135 | train=100.00% val=29.17% gap=+70.83 | loss=0.4223 | lr=0.00843 | t/ep=  0.5s t/eval= 0.0s | rem=   261s
+  [Trainer] Epoch 136 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00841 | t/ep=  0.5s t/eval= 0.0s | rem=   260s
+  [Trainer] Epoch 137 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00839 | t/ep=  0.5s t/eval= 0.0s | rem=   259s
+  [Trainer] Epoch 138 | train=100.00% val=30.33% gap=+69.67 | loss=0.4227 | lr=0.00836 | t/ep=  0.5s t/eval= 0.0s | rem=   259s
+  [Trainer] Epoch 139 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00834 | t/ep=  0.5s t/eval= 0.0s | rem=   258s
+  [Trainer] Epoch 140 | train=100.00% val=29.50% gap=+70.50 | loss=0.4221 | lr=0.00832 | t/ep=  0.5s t/eval= 0.0s | rem=   258s
+  [Trainer] Epoch 141 | train=100.00% val=29.50% gap=+70.50 | loss=0.4222 | lr=0.00830 | t/ep=  0.5s t/eval= 0.0s | rem=   257s
+  [Trainer] Epoch 142 | train=100.00% val=28.83% gap=+71.17 | loss=0.4221 | lr=0.00827 | t/ep=  0.5s t/eval= 0.0s | rem=   257s
+  [Trainer] Epoch 143 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00825 | t/ep=  0.5s t/eval= 0.0s | rem=   256s
+  [Trainer] Epoch 144 | train=100.00% val=30.00% gap=+70.00 | loss=0.4222 | lr=0.00823 | t/ep=  0.5s t/eval= 0.0s | rem=   256s
+  [Trainer] Epoch 145 | train=100.00% val=30.17% gap=+69.83 | loss=0.4222 | lr=0.00820 | t/ep=  0.5s t/eval= 0.0s | rem=   255s
+  [Trainer] Epoch 146 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00818 | t/ep=  0.5s t/eval= 0.0s | rem=   255s
+  [Trainer] Epoch 147 | train=100.00% val=29.33% gap=+70.67 | loss=0.4219 | lr=0.00816 | t/ep=  0.5s t/eval= 0.0s | rem=   254s
+  [Trainer] Epoch 148 | train=100.00% val=29.67% gap=+70.33 | loss=0.4221 | lr=0.00813 | t/ep=  0.5s t/eval= 0.0s | rem=   253s
+  [Trainer] Epoch 149 | train=100.00% val=31.00% gap=+69.00 | loss=0.4220 | lr=0.00811 | t/ep=  0.5s t/eval= 0.1s | rem=   253s
+  [Trainer] Epoch 150 | train=100.00% val=30.00% gap=+70.00 | loss=0.4220 | lr=0.00809 | t/ep=  0.5s t/eval= 0.0s | rem=   252s
+  [Trainer] Epoch 151 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00806 | t/ep=  0.5s t/eval= 0.0s | rem=   252s
+  [Trainer] Epoch 152 | train=100.00% val=29.67% gap=+70.33 | loss=0.4221 | lr=0.00804 | t/ep=  0.5s t/eval= 0.0s | rem=   251s
+  [Trainer] Epoch 153 | train=100.00% val=29.83% gap=+70.17 | loss=0.4224 | lr=0.00801 | t/ep=  0.5s t/eval= 0.0s | rem=   251s
+  [Trainer] Epoch 154 | train=100.00% val=28.83% gap=+71.17 | loss=0.4220 | lr=0.00799 | t/ep=  0.5s t/eval= 0.0s | rem=   250s
+  [Trainer] Epoch 155 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00797 | t/ep=  0.5s t/eval= 0.0s | rem=   250s
+  [Trainer] Epoch 156 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00794 | t/ep=  0.5s t/eval= 0.0s | rem=   249s
+  [Trainer] Epoch 157 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00792 | t/ep=  0.5s t/eval= 0.0s | rem=   249s
+  [Trainer] Epoch 158 | train=100.00% val=29.67% gap=+70.33 | loss=0.4221 | lr=0.00789 | t/ep=  0.5s t/eval= 0.0s | rem=   248s
+  [Trainer] Epoch 159 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00787 | t/ep=  0.5s t/eval= 0.0s | rem=   247s
+  [Trainer] Epoch 160 | train=100.00% val=30.50% gap=+69.50 | loss=0.4221 | lr=0.00784 | t/ep=  0.5s t/eval= 0.0s | rem=   247s
+  [Trainer] Epoch 161 | train=100.00% val=30.33% gap=+69.67 | loss=0.4221 | lr=0.00782 | t/ep=  0.5s t/eval= 0.0s | rem=   246s
+  [Trainer] Epoch 162 | train=100.00% val=30.50% gap=+69.50 | loss=0.4223 | lr=0.00779 | t/ep=  0.5s t/eval= 0.0s | rem=   246s
+  [Trainer] Epoch 163 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00777 | t/ep=  0.5s t/eval= 0.0s | rem=   245s
+  [Trainer] Epoch 164 | train=100.00% val=29.17% gap=+70.83 | loss=0.4224 | lr=0.00774 | t/ep=  0.5s t/eval= 0.0s | rem=   245s
+  [Trainer] Epoch 165 | train=100.00% val=30.17% gap=+69.83 | loss=0.4222 | lr=0.00772 | t/ep=  0.5s t/eval= 0.0s | rem=   244s
+  [Trainer] Epoch 166 | train=100.00% val=30.00% gap=+70.00 | loss=0.4222 | lr=0.00769 | t/ep=  0.5s t/eval= 0.0s | rem=   244s
+  [Trainer] Epoch 167 | train=100.00% val=28.50% gap=+71.50 | loss=0.4219 | lr=0.00767 | t/ep=  0.5s t/eval= 0.0s | rem=   243s
+  [Trainer] Epoch 168 | train=100.00% val=29.17% gap=+70.83 | loss=0.4221 | lr=0.00764 | t/ep=  0.6s t/eval= 0.0s | rem=   242s
+  [Trainer] Epoch 169 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00761 | t/ep=  0.5s t/eval= 0.0s | rem=   242s
+  [Trainer] Epoch 170 | train=100.00% val=30.33% gap=+69.67 | loss=0.4222 | lr=0.00759 | t/ep=  0.5s t/eval= 0.0s | rem=   241s
+  [Trainer] Epoch 171 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00756 | t/ep=  0.5s t/eval= 0.0s | rem=   241s
+  [Trainer] Epoch 172 | train=100.00% val=30.00% gap=+70.00 | loss=0.4222 | lr=0.00753 | t/ep=  0.5s t/eval= 0.0s | rem=   240s
+  [Trainer] Epoch 173 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00751 | t/ep=  0.5s t/eval= 0.0s | rem=   240s
+  [Trainer] Epoch 174 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00748 | t/ep=  0.6s t/eval= 0.0s | rem=   239s
+  [Trainer] Epoch 175 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00745 | t/ep=  0.5s t/eval= 0.0s | rem=   238s
+  [Trainer] Epoch 176 | train=100.00% val=30.00% gap=+70.00 | loss=0.4220 | lr=0.00743 | t/ep=  0.5s t/eval= 0.0s | rem=   238s
+  [Trainer] Epoch 177 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00740 | t/ep=  0.5s t/eval= 0.0s | rem=   237s
+  [Trainer] Epoch 178 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00737 | t/ep=  0.5s t/eval= 0.0s | rem=   237s
+  [Trainer] Epoch 179 | train=100.00% val=30.33% gap=+69.67 | loss=0.4221 | lr=0.00735 | t/ep=  0.5s t/eval= 0.0s | rem=   236s
+  [Trainer] Epoch 180 | train=100.00% val=29.33% gap=+70.67 | loss=0.4218 | lr=0.00732 | t/ep=  0.5s t/eval= 0.0s | rem=   236s
+  [Trainer] Epoch 181 | train=100.00% val=29.83% gap=+70.17 | loss=0.4222 | lr=0.00729 | t/ep=  0.5s t/eval= 0.0s | rem=   235s
+  [Trainer] Epoch 182 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00727 | t/ep=  0.5s t/eval= 0.0s | rem=   235s
+  [Trainer] Epoch 183 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00724 | t/ep=  0.5s t/eval= 0.1s | rem=   234s
+  [Trainer] Epoch 184 | train=100.00% val=29.33% gap=+70.67 | loss=0.4221 | lr=0.00721 | t/ep=  0.5s t/eval= 0.0s | rem=   234s
+  [Trainer] Epoch 185 | train=100.00% val=30.50% gap=+69.50 | loss=0.4222 | lr=0.00718 | t/ep=  0.5s t/eval= 0.0s | rem=   233s
+  [Trainer] Epoch 186 | train=100.00% val=29.00% gap=+71.00 | loss=0.4218 | lr=0.00716 | t/ep=  0.5s t/eval= 0.0s | rem=   232s
+  [Trainer] Epoch 187 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00713 | t/ep=  0.5s t/eval= 0.0s | rem=   232s
+  [Trainer] Epoch 188 | train=100.00% val=28.67% gap=+71.33 | loss=0.4218 | lr=0.00710 | t/ep=  0.5s t/eval= 0.0s | rem=   231s
+  [Trainer] Epoch 189 | train=100.00% val=30.50% gap=+69.50 | loss=0.4220 | lr=0.00707 | t/ep=  0.5s t/eval= 0.0s | rem=   231s
+  [Trainer] Epoch 190 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00705 | t/ep=  0.5s t/eval= 0.0s | rem=   230s
+  [Trainer] Epoch 191 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00702 | t/ep=  0.5s t/eval= 0.0s | rem=   230s
+  [Trainer] Epoch 192 | train=100.00% val=30.00% gap=+70.00 | loss=0.4222 | lr=0.00699 | t/ep=  0.5s t/eval= 0.0s | rem=   229s
+  [Trainer] Epoch 193 | train=100.00% val=29.83% gap=+70.17 | loss=0.4223 | lr=0.00696 | t/ep=  0.5s t/eval= 0.0s | rem=   229s
+  [Trainer] Epoch 194 | train=100.00% val=29.33% gap=+70.67 | loss=0.4222 | lr=0.00694 | t/ep=  0.5s t/eval= 0.0s | rem=   228s
+  [Trainer] Epoch 195 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00691 | t/ep=  0.5s t/eval= 0.0s | rem=   228s
+  [Trainer] Epoch 196 | train=100.00% val=30.00% gap=+70.00 | loss=0.4220 | lr=0.00688 | t/ep=  0.5s t/eval= 0.0s | rem=   227s
+  [Trainer] Epoch 197 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00685 | t/ep=  0.5s t/eval= 0.0s | rem=   226s
+  [Trainer] Epoch 198 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00682 | t/ep=  0.5s t/eval= 0.0s | rem=   226s
+  [Trainer] Epoch 199 | train=100.00% val=29.83% gap=+70.17 | loss=0.4224 | lr=0.00680 | t/ep=  0.5s t/eval= 0.0s | rem=   225s
+  [Trainer] Epoch 200 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00677 | t/ep=  0.5s t/eval= 0.0s | rem=   225s
+  [Trainer] Epoch 201 | train=100.00% val=30.17% gap=+69.83 | loss=0.4222 | lr=0.00674 | t/ep=  0.5s t/eval= 0.0s | rem=   224s
+  [Trainer] Epoch 202 | train=100.00% val=29.33% gap=+70.67 | loss=0.4220 | lr=0.00671 | t/ep=  0.5s t/eval= 0.0s | rem=   224s
+  [Trainer] Epoch 203 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00668 | t/ep=  0.5s t/eval= 0.0s | rem=   223s
+  [Trainer] Epoch 204 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00666 | t/ep=  0.5s t/eval= 0.0s | rem=   223s
+  [Trainer] Epoch 205 | train=100.00% val=29.50% gap=+70.50 | loss=0.4221 | lr=0.00663 | t/ep=  0.5s t/eval= 0.0s | rem=   222s
+  [Trainer] Epoch 206 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00660 | t/ep=  0.5s t/eval= 0.0s | rem=   222s
+  [Trainer] Epoch 207 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00657 | t/ep=  0.5s t/eval= 0.0s | rem=   221s
+  [Trainer] Epoch 208 | train=100.00% val=29.33% gap=+70.67 | loss=0.4219 | lr=0.00654 | t/ep=  0.5s t/eval= 0.0s | rem=   220s
+  [Trainer] Epoch 209 | train=100.00% val=29.33% gap=+70.67 | loss=0.4219 | lr=0.00651 | t/ep=  0.5s t/eval= 0.0s | rem=   220s
+  [Trainer] Epoch 210 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00648 | t/ep=  0.5s t/eval= 0.0s | rem=   219s
+  [Trainer] Epoch 211 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00645 | t/ep=  0.5s t/eval= 0.0s | rem=   219s
+  [Trainer] Epoch 212 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00642 | t/ep=  0.5s t/eval= 0.0s | rem=   218s
+  [Trainer] Epoch 213 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00640 | t/ep=  0.5s t/eval= 0.0s | rem=   218s
+  [Trainer] Epoch 214 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00637 | t/ep=  0.5s t/eval= 0.0s | rem=   217s
+  [Trainer] Epoch 215 | train=100.00% val=29.83% gap=+70.17 | loss=0.4221 | lr=0.00634 | t/ep=  0.5s t/eval= 0.0s | rem=   217s
+  [Trainer] Epoch 216 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00631 | t/ep=  0.5s t/eval= 0.0s | rem=   216s
+  [Trainer] Epoch 217 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00628 | t/ep=  0.5s t/eval= 0.0s | rem=   215s
+  [Trainer] Epoch 218 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00625 | t/ep=  0.5s t/eval= 0.0s | rem=   215s
+  [Trainer] Epoch 219 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00622 | t/ep=  0.6s t/eval= 0.0s | rem=   214s
+  [Trainer] Epoch 220 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00618 | t/ep=  0.5s t/eval= 0.0s | rem=   214s
+  [Trainer] Epoch 221 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00616 | t/ep=  0.5s t/eval= 0.0s | rem=   213s
+  [Trainer] Epoch 222 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00613 | t/ep=  0.5s t/eval= 0.0s | rem=   213s
+  [Trainer] Epoch 223 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00610 | t/ep=  0.5s t/eval= 0.0s | rem=   212s
+  [Trainer] Epoch 224 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00607 | t/ep=  0.5s t/eval= 0.0s | rem=   212s
+  [Trainer] Epoch 225 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00604 | t/ep=  0.5s t/eval= 0.0s | rem=   211s
+  [Trainer] Epoch 226 | train=100.00% val=29.17% gap=+70.83 | loss=0.4218 | lr=0.00601 | t/ep=  0.5s t/eval= 0.0s | rem=   210s
+  [Trainer] Epoch 227 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00598 | t/ep=  0.5s t/eval= 0.0s | rem=   210s
+  [Trainer] Epoch 228 | train=100.00% val=29.17% gap=+70.83 | loss=0.4218 | lr=0.00595 | t/ep=  0.5s t/eval= 0.0s | rem=   209s
+  [Trainer] Epoch 229 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00592 | t/ep=  0.5s t/eval= 0.0s | rem=   209s
+  [Trainer] Epoch 230 | train=100.00% val=29.17% gap=+70.83 | loss=0.4220 | lr=0.00589 | t/ep=  0.5s t/eval= 0.0s | rem=   208s
+  [Trainer] Epoch 231 | train=100.00% val=29.17% gap=+70.83 | loss=0.4219 | lr=0.00586 | t/ep=  0.5s t/eval= 0.0s | rem=   208s
+  [Trainer] Epoch 232 | train=100.00% val=30.00% gap=+70.00 | loss=0.4222 | lr=0.00583 | t/ep=  0.5s t/eval= 0.0s | rem=   207s
+  [Trainer] Epoch 233 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00580 | t/ep=  0.5s t/eval= 0.0s | rem=   207s
+  [Trainer] Epoch 234 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00577 | t/ep=  0.5s t/eval= 0.0s | rem=   206s
+  [Trainer] Epoch 235 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00574 | t/ep=  0.5s t/eval= 0.0s | rem=   206s
+  [Trainer] Epoch 236 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00571 | t/ep=  0.5s t/eval= 0.0s | rem=   205s
+  [Trainer] Epoch 237 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00568 | t/ep=  0.5s t/eval= 0.0s | rem=   204s
+  [Trainer] Epoch 238 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00565 | t/ep=  0.5s t/eval= 0.0s | rem=   204s
+  [Trainer] Epoch 239 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00562 | t/ep=  0.5s t/eval= 0.0s | rem=   203s
+  [Trainer] Epoch 240 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00559 | t/ep=  0.5s t/eval= 0.0s | rem=   203s
+  [Trainer] Epoch 241 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00556 | t/ep=  0.5s t/eval= 0.0s | rem=   202s
+  [Trainer] Epoch 242 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00553 | t/ep=  0.5s t/eval= 0.0s | rem=   202s
+  [Trainer] Epoch 243 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00550 | t/ep=  0.5s t/eval= 0.0s | rem=   201s
+  [Trainer] Epoch 244 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00547 | t/ep=  0.5s t/eval= 0.0s | rem=   201s
+  [Trainer] Epoch 245 | train=100.00% val=30.00% gap=+70.00 | loss=0.4220 | lr=0.00544 | t/ep=  0.5s t/eval= 0.0s | rem=   200s
+  [Trainer] Epoch 246 | train=100.00% val=30.50% gap=+69.50 | loss=0.4217 | lr=0.00541 | t/ep=  0.5s t/eval= 0.0s | rem=   199s
+  [Trainer] Epoch 247 | train=100.00% val=30.33% gap=+69.67 | loss=0.4221 | lr=0.00538 | t/ep=  0.6s t/eval= 0.0s | rem=   199s
+  [Trainer] Epoch 248 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00535 | t/ep=  0.5s t/eval= 0.0s | rem=   198s
+  [Trainer] Epoch 249 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00532 | t/ep=  0.5s t/eval= 0.0s | rem=   198s
+  [Trainer] Epoch 250 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00528 | t/ep=  0.5s t/eval= 0.0s | rem=   197s
+  [Trainer] Epoch 251 | train=100.00% val=30.33% gap=+69.67 | loss=0.4220 | lr=0.00525 | t/ep=  0.5s t/eval= 0.0s | rem=   197s
+  [Trainer] Epoch 252 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00522 | t/ep=  0.5s t/eval= 0.0s | rem=   196s
+  [Trainer] Epoch 253 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00519 | t/ep=  0.5s t/eval= 0.0s | rem=   196s
+  [Trainer] Epoch 254 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00516 | t/ep=  0.5s t/eval= 0.0s | rem=   195s
+  [Trainer] Epoch 255 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00513 | t/ep=  0.5s t/eval= 0.0s | rem=   194s
+  [Trainer] Epoch 256 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00510 | t/ep=  0.5s t/eval= 0.0s | rem=   194s
+  [Trainer] Epoch 257 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00507 | t/ep=  0.5s t/eval= 0.0s | rem=   193s
+  [Trainer] Epoch 258 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00504 | t/ep=  0.5s t/eval= 0.0s | rem=   193s
+  [Trainer] Epoch 259 | train=100.00% val=30.33% gap=+69.67 | loss=0.4221 | lr=0.00501 | t/ep=  0.5s t/eval= 0.0s | rem=   192s
+  [Trainer] Epoch 260 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00498 | t/ep=  0.5s t/eval= 0.0s | rem=   192s
+  [Trainer] Epoch 261 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00495 | t/ep=  0.5s t/eval= 0.0s | rem=   191s
+  [Trainer] Epoch 262 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00492 | t/ep=  0.5s t/eval= 0.0s | rem=   191s
+  [Trainer] Epoch 263 | train=100.00% val=30.50% gap=+69.50 | loss=0.4220 | lr=0.00489 | t/ep=  0.5s t/eval= 0.0s | rem=   190s
+  [Trainer] Epoch 264 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00486 | t/ep=  0.5s t/eval= 0.0s | rem=   190s
+  [Trainer] Epoch 265 | train=100.00% val=30.33% gap=+69.67 | loss=0.4220 | lr=0.00483 | t/ep=  0.5s t/eval= 0.0s | rem=   189s
+  [Trainer] Epoch 266 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00480 | t/ep=  0.5s t/eval= 0.0s | rem=   188s
+  [Trainer] Epoch 267 | train=100.00% val=30.33% gap=+69.67 | loss=0.4220 | lr=0.00477 | t/ep=  0.5s t/eval= 0.0s | rem=   188s
+  [Trainer] Epoch 268 | train=100.00% val=30.33% gap=+69.67 | loss=0.4220 | lr=0.00474 | t/ep=  0.5s t/eval= 0.0s | rem=   187s
+  [Trainer] Epoch 269 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00471 | t/ep=  0.5s t/eval= 0.0s | rem=   187s
+  [Trainer] Epoch 270 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00468 | t/ep=  0.5s t/eval= 0.0s | rem=   186s
+  [Trainer] Epoch 271 | train=100.00% val=30.50% gap=+69.50 | loss=0.4217 | lr=0.00465 | t/ep=  0.5s t/eval= 0.0s | rem=   186s
+  [Trainer] Epoch 272 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00462 | t/ep=  0.5s t/eval= 0.0s | rem=   185s
+  [Trainer] Epoch 273 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00459 | t/ep=  0.5s t/eval= 0.0s | rem=   185s
+  [Trainer] Epoch 274 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00456 | t/ep=  0.5s t/eval= 0.0s | rem=   184s
+  [Trainer] Epoch 275 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00453 | t/ep=  0.5s t/eval= 0.0s | rem=   184s
+  [Trainer] Epoch 276 | train=100.00% val=29.33% gap=+70.67 | loss=0.4217 | lr=0.00450 | t/ep=  0.5s t/eval= 0.0s | rem=   183s
+  [Trainer] Epoch 277 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00447 | t/ep=  0.5s t/eval= 0.0s | rem=   182s
+  [Trainer] Epoch 278 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00444 | t/ep=  0.5s t/eval= 0.0s | rem=   182s
+  [Trainer] Epoch 279 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00441 | t/ep=  0.5s t/eval= 0.0s | rem=   181s
+  [Trainer] Epoch 280 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00438 | t/ep=  0.5s t/eval= 0.0s | rem=   181s
+  [Trainer] Epoch 281 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00435 | t/ep=  0.5s t/eval= 0.0s | rem=   180s
+  [Trainer] Epoch 282 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00432 | t/ep=  0.5s t/eval= 0.0s | rem=   180s
+  [Trainer] Epoch 283 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00429 | t/ep=  0.5s t/eval= 0.0s | rem=   179s
+  [Trainer] Epoch 284 | train=100.00% val=29.33% gap=+70.67 | loss=0.4218 | lr=0.00426 | t/ep=  0.5s t/eval= 0.0s | rem=   179s
+  [Trainer] Epoch 285 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00423 | t/ep=  0.5s t/eval= 0.0s | rem=   178s
+  [Trainer] Epoch 286 | train=100.00% val=30.00% gap=+70.00 | loss=0.4221 | lr=0.00420 | t/ep=  0.5s t/eval= 0.0s | rem=   177s
+  [Trainer] Epoch 287 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00417 | t/ep=  0.5s t/eval= 0.0s | rem=   177s
+  [Trainer] Epoch 288 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00414 | t/ep=  0.5s t/eval= 0.0s | rem=   176s
+  [Trainer] Epoch 289 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00411 | t/ep=  0.5s t/eval= 0.0s | rem=   176s
+  [Trainer] Epoch 290 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00408 | t/ep=  0.5s t/eval= 0.0s | rem=   175s
+  [Trainer] Epoch 291 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00405 | t/ep=  0.5s t/eval= 0.0s | rem=   175s
+  [Trainer] Epoch 292 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00402 | t/ep=  0.5s t/eval= 0.0s | rem=   174s
+  [Trainer] Epoch 293 | train=100.00% val=29.33% gap=+70.67 | loss=0.4219 | lr=0.00399 | t/ep=  0.5s t/eval= 0.0s | rem=   174s
+  [Trainer] Epoch 294 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00396 | t/ep=  0.5s t/eval= 0.0s | rem=   173s
+  [Trainer] Epoch 295 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00393 | t/ep=  0.5s t/eval= 0.0s | rem=   173s
+  [Trainer] Epoch 296 | train=100.00% val=28.83% gap=+71.17 | loss=0.4218 | lr=0.00390 | t/ep=  0.5s t/eval= 0.0s | rem=   172s
+  [Trainer] Epoch 297 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00387 | t/ep=  0.5s t/eval= 0.0s | rem=   171s
+  [Trainer] Epoch 298 | train=100.00% val=30.50% gap=+69.50 | loss=0.4216 | lr=0.00384 | t/ep=  0.5s t/eval= 0.0s | rem=   171s
+  [Trainer] Epoch 299 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00382 | t/ep=  0.6s t/eval= 0.0s | rem=   170s
+  [Trainer] Epoch 300 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00378 | t/ep=  0.5s t/eval= 0.0s | rem=   170s
+  [Trainer] Epoch 301 | train=100.00% val=29.00% gap=+71.00 | loss=0.4219 | lr=0.00375 | t/ep=  0.5s t/eval= 0.0s | rem=   169s
+  [Trainer] Epoch 302 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00372 | t/ep=  0.5s t/eval= 0.0s | rem=   169s
+  [Trainer] Epoch 303 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00369 | t/ep=  0.5s t/eval= 0.0s | rem=   168s
+  [Trainer] Epoch 304 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00366 | t/ep=  0.5s t/eval= 0.0s | rem=   168s
+  [Trainer] Epoch 305 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00363 | t/ep=  0.5s t/eval= 0.0s | rem=   167s
+  [Trainer] Epoch 306 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00361 | t/ep=  0.5s t/eval= 0.0s | rem=   166s
+  [Trainer] Epoch 307 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00358 | t/ep=  0.5s t/eval= 0.0s | rem=   166s
+  [Trainer] Epoch 308 | train=100.00% val=30.67% gap=+69.33 | loss=0.4218 | lr=0.00355 | t/ep=  0.5s t/eval= 0.0s | rem=   165s
+  [Trainer] Epoch 309 | train=100.00% val=30.50% gap=+69.50 | loss=0.4218 | lr=0.00352 | t/ep=  0.5s t/eval= 0.0s | rem=   165s
+  [Trainer] Epoch 310 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00349 | t/ep=  0.5s t/eval= 0.0s | rem=   164s
+  [Trainer] Epoch 311 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00346 | t/ep=  0.5s t/eval= 0.0s | rem=   164s
+  [Trainer] Epoch 312 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00343 | t/ep=  0.5s t/eval= 0.0s | rem=   163s
+  [Trainer] Epoch 313 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00340 | t/ep=  0.5s t/eval= 0.0s | rem=   163s
+  [Trainer] Epoch 314 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00338 | t/ep=  0.5s t/eval= 0.0s | rem=   162s
+  [Trainer] Epoch 315 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00335 | t/ep=  0.5s t/eval= 0.0s | rem=   162s
+  [Trainer] Epoch 316 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00332 | t/ep=  0.5s t/eval= 0.0s | rem=   161s
+  [Trainer] Epoch 317 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00329 | t/ep=  0.5s t/eval= 0.0s | rem=   160s
+  [Trainer] Epoch 318 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00326 | t/ep=  0.5s t/eval= 0.0s | rem=   160s
+  [Trainer] Epoch 319 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00323 | t/ep=  0.5s t/eval= 0.0s | rem=   159s
+  [Trainer] Epoch 320 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00320 | t/ep=  0.5s t/eval= 0.0s | rem=   159s
+  [Trainer] Epoch 321 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00318 | t/ep=  0.5s t/eval= 0.0s | rem=   158s
+  [Trainer] Epoch 322 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00315 | t/ep=  0.5s t/eval= 0.0s | rem=   158s
+  [Trainer] Epoch 323 | train=100.00% val=30.67% gap=+69.33 | loss=0.4217 | lr=0.00312 | t/ep=  0.5s t/eval= 0.0s | rem=   157s
+  [Trainer] Epoch 324 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00309 | t/ep=  0.5s t/eval= 0.0s | rem=   157s
+  [Trainer] Epoch 325 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00306 | t/ep=  0.5s t/eval= 0.0s | rem=   156s
+  [Trainer] Epoch 326 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00304 | t/ep=  0.5s t/eval= 0.0s | rem=   155s
+  [Trainer] Epoch 327 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00301 | t/ep=  0.5s t/eval= 0.1s | rem=   155s
+  [Trainer] Epoch 328 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00297 | t/ep=  0.5s t/eval= 0.0s | rem=   154s
+  [Trainer] Epoch 329 | train=100.00% val=29.50% gap=+70.50 | loss=0.4216 | lr=0.00295 | t/ep=  0.5s t/eval= 0.0s | rem=   154s
+  [Trainer] Epoch 330 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00292 | t/ep=  0.5s t/eval= 0.0s | rem=   153s
+  [Trainer] Epoch 331 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00289 | t/ep=  0.5s t/eval= 0.0s | rem=   153s
+  [Trainer] Epoch 332 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00286 | t/ep=  0.5s t/eval= 0.0s | rem=   152s
+  [Trainer] Epoch 333 | train=100.00% val=30.50% gap=+69.50 | loss=0.4220 | lr=0.00284 | t/ep=  0.5s t/eval= 0.0s | rem=   151s
+  [Trainer] Epoch 334 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00281 | t/ep=  0.5s t/eval= 0.0s | rem=   151s
+  [Trainer] Epoch 335 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00278 | t/ep=  0.5s t/eval= 0.0s | rem=   150s
+  [Trainer] Epoch 336 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00276 | t/ep=  0.5s t/eval= 0.0s | rem=   150s
+  [Trainer] Epoch 337 | train=100.00% val=29.50% gap=+70.50 | loss=0.4220 | lr=0.00273 | t/ep=  0.5s t/eval= 0.0s | rem=   149s
+  [Trainer] Epoch 338 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00270 | t/ep=  0.5s t/eval= 0.0s | rem=   149s
+  [Trainer] Epoch 339 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00267 | t/ep=  0.5s t/eval= 0.0s | rem=   148s
+  [Trainer] Epoch 340 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00265 | t/ep=  0.5s t/eval= 0.0s | rem=   148s
+  [Trainer] Epoch 341 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00262 | t/ep=  0.5s t/eval= 0.0s | rem=   147s
+  [Trainer] Epoch 342 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00260 | t/ep=  0.5s t/eval= 0.0s | rem=   147s
+  [Trainer] Epoch 343 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00257 | t/ep=  0.5s t/eval= 0.0s | rem=   146s
+  [Trainer] Epoch 344 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00254 | t/ep=  0.5s t/eval= 0.0s | rem=   145s
+  [Trainer] Epoch 345 | train=100.00% val=30.33% gap=+69.67 | loss=0.4217 | lr=0.00252 | t/ep=  0.5s t/eval= 0.0s | rem=   145s
+  [Trainer] Epoch 346 | train=100.00% val=30.17% gap=+69.83 | loss=0.4221 | lr=0.00249 | t/ep=  0.5s t/eval= 0.0s | rem=   144s
+  [Trainer] Epoch 347 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00246 | t/ep=  0.5s t/eval= 0.0s | rem=   144s
+  [Trainer] Epoch 348 | train=100.00% val=29.33% gap=+70.67 | loss=0.4217 | lr=0.00244 | t/ep=  0.5s t/eval= 0.0s | rem=   143s
+  [Trainer] Epoch 349 | train=100.00% val=30.50% gap=+69.50 | loss=0.4217 | lr=0.00241 | t/ep=  0.5s t/eval= 0.0s | rem=   143s
+  [Trainer] Epoch 350 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00239 | t/ep=  0.5s t/eval= 0.0s | rem=   142s
+  [Trainer] Epoch 351 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00236 | t/ep=  0.5s t/eval= 0.0s | rem=   142s
+  [Trainer] Epoch 352 | train=100.00% val=28.83% gap=+71.17 | loss=0.4216 | lr=0.00233 | t/ep=  0.5s t/eval= 0.0s | rem=   141s
+  [Trainer] Epoch 353 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00231 | t/ep=  0.5s t/eval= 0.0s | rem=   141s
+  [Trainer] Epoch 354 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00228 | t/ep=  0.5s t/eval= 0.0s | rem=   140s
+  [Trainer] Epoch 355 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00226 | t/ep=  0.5s t/eval= 0.0s | rem=   139s
+  [Trainer] Epoch 356 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00223 | t/ep=  0.5s t/eval= 0.0s | rem=   139s
+  [Trainer] Epoch 357 | train=100.00% val=29.17% gap=+70.83 | loss=0.4218 | lr=0.00221 | t/ep=  0.5s t/eval= 0.0s | rem=   138s
+  [Trainer] Epoch 358 | train=100.00% val=29.33% gap=+70.67 | loss=0.4217 | lr=0.00218 | t/ep=  0.5s t/eval= 0.0s | rem=   138s
+  [Trainer] Epoch 359 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00216 | t/ep=  0.5s t/eval= 0.0s | rem=   137s
+  [Trainer] Epoch 360 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00213 | t/ep=  0.5s t/eval= 0.0s | rem=   137s
+  [Trainer] Epoch 361 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00211 | t/ep=  0.5s t/eval= 0.0s | rem=   136s
+  [Trainer] Epoch 362 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00208 | t/ep=  0.5s t/eval= 0.0s | rem=   136s
+  [Trainer] Epoch 363 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00206 | t/ep=  0.5s t/eval= 0.0s | rem=   135s
+  [Trainer] Epoch 364 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00203 | t/ep=  0.5s t/eval= 0.0s | rem=   134s
+  [Trainer] Epoch 365 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00201 | t/ep=  0.5s t/eval= 0.0s | rem=   134s
+  [Trainer] Epoch 366 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00199 | t/ep=  0.5s t/eval= 0.0s | rem=   133s
+  [Trainer] Epoch 367 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00196 | t/ep=  0.5s t/eval= 0.0s | rem=   133s
+  [Trainer] Epoch 368 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00194 | t/ep=  0.5s t/eval= 0.0s | rem=   132s
+  [Trainer] Epoch 369 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00191 | t/ep=  0.5s t/eval= 0.0s | rem=   132s
+  [Trainer] Epoch 370 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00189 | t/ep=  0.5s t/eval= 0.0s | rem=   131s
+  [Trainer] Epoch 371 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00187 | t/ep=  0.5s t/eval= 0.0s | rem=   131s
+  [Trainer] Epoch 372 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00184 | t/ep=  0.5s t/eval= 0.0s | rem=   130s
+  [Trainer] Epoch 373 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00182 | t/ep=  0.5s t/eval= 0.0s | rem=   130s
+  [Trainer] Epoch 374 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00180 | t/ep=  0.5s t/eval= 0.0s | rem=   129s
+  [Trainer] Epoch 375 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00177 | t/ep=  0.5s t/eval= 0.0s | rem=   128s
+  [Trainer] Epoch 376 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00175 | t/ep=  0.5s t/eval= 0.0s | rem=   128s
+  [Trainer] Epoch 377 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00173 | t/ep=  0.5s t/eval= 0.0s | rem=   127s
+  [Trainer] Epoch 378 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00170 | t/ep=  0.5s t/eval= 0.0s | rem=   127s
+  [Trainer] Epoch 379 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00168 | t/ep=  0.5s t/eval= 0.0s | rem=   126s
+  [Trainer] Epoch 380 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00166 | t/ep=  0.6s t/eval= 0.0s | rem=   126s
+  [Trainer] Epoch 381 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00163 | t/ep=  0.5s t/eval= 0.0s | rem=   125s
+  [Trainer] Epoch 382 | train=100.00% val=29.83% gap=+70.17 | loss=0.4220 | lr=0.00161 | t/ep=  0.5s t/eval= 0.0s | rem=   125s
+  [Trainer] Epoch 383 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00159 | t/ep=  0.5s t/eval= 0.0s | rem=   124s
+  [Trainer] Epoch 384 | train=100.00% val=29.50% gap=+70.50 | loss=0.4218 | lr=0.00156 | t/ep=  0.5s t/eval= 0.0s | rem=   123s
+  [Trainer] Epoch 385 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00154 | t/ep=  0.5s t/eval= 0.0s | rem=   123s
+  [Trainer] Epoch 386 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00152 | t/ep=  0.5s t/eval= 0.0s | rem=   122s
+  [Trainer] Epoch 387 | train=100.00% val=30.33% gap=+69.67 | loss=0.4219 | lr=0.00150 | t/ep=  0.5s t/eval= 0.0s | rem=   122s
+  [Trainer] Epoch 388 | train=100.00% val=30.33% gap=+69.67 | loss=0.4217 | lr=0.00148 | t/ep=  0.5s t/eval= 0.0s | rem=   121s
+  [Trainer] Epoch 389 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00146 | t/ep=  0.5s t/eval= 0.0s | rem=   121s
+  [Trainer] Epoch 390 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00144 | t/ep=  0.5s t/eval= 0.0s | rem=   120s
+  [Trainer] Epoch 391 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00141 | t/ep=  0.5s t/eval= 0.0s | rem=   120s
+  [Trainer] Epoch 392 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00139 | t/ep=  0.5s t/eval= 0.0s | rem=   119s
+  [Trainer] Epoch 393 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00137 | t/ep=  0.5s t/eval= 0.0s | rem=   118s
+  [Trainer] Epoch 394 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00135 | t/ep=  0.5s t/eval= 0.0s | rem=   118s
+  [Trainer] Epoch 395 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00133 | t/ep=  0.5s t/eval= 0.0s | rem=   117s
+  [Trainer] Epoch 396 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00131 | t/ep=  0.5s t/eval= 0.0s | rem=   117s
+  [Trainer] Epoch 397 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00129 | t/ep=  0.5s t/eval= 0.0s | rem=   116s
+  [Trainer] Epoch 398 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00127 | t/ep=  0.5s t/eval= 0.0s | rem=   116s
+  [Trainer] Epoch 399 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00125 | t/ep=  0.5s t/eval= 0.0s | rem=   115s
+  [Trainer] Epoch 400 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00123 | t/ep=  0.5s t/eval= 0.0s | rem=   115s
+  [Trainer] Epoch 401 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00121 | t/ep=  0.5s t/eval= 0.0s | rem=   114s
+  [Trainer] Epoch 402 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00119 | t/ep=  0.5s t/eval= 0.0s | rem=   114s
+  [Trainer] Epoch 403 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00117 | t/ep=  0.5s t/eval= 0.0s | rem=   113s
+  [Trainer] Epoch 404 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00115 | t/ep=  0.5s t/eval= 0.0s | rem=   112s
+  [Trainer] Epoch 405 | train=100.00% val=30.33% gap=+69.67 | loss=0.4218 | lr=0.00113 | t/ep=  0.5s t/eval= 0.0s | rem=   112s
+  [Trainer] Epoch 406 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00111 | t/ep=  0.5s t/eval= 0.0s | rem=   111s
+  [Trainer] Epoch 407 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00109 | t/ep=  0.5s t/eval= 0.0s | rem=   111s
+  [Trainer] Epoch 408 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00108 | t/ep=  0.6s t/eval= 0.0s | rem=   110s
+  [Trainer] Epoch 409 | train=100.00% val=30.00% gap=+70.00 | loss=0.4219 | lr=0.00105 | t/ep=  0.5s t/eval= 0.0s | rem=   110s
+  [Trainer] Epoch 410 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00103 | t/ep=  0.5s t/eval= 0.0s | rem=   109s
+  [Trainer] Epoch 411 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00102 | t/ep=  0.5s t/eval= 0.0s | rem=   108s
+  [Trainer] Epoch 412 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00100 | t/ep=  0.5s t/eval= 0.0s | rem=   108s
+  [Trainer] Epoch 413 | train=100.00% val=29.67% gap=+70.33 | loss=0.4217 | lr=0.00098 | t/ep=  0.5s t/eval= 0.0s | rem=   107s
+  [Trainer] Epoch 414 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00096 | t/ep=  0.5s t/eval= 0.0s | rem=   107s
+  [Trainer] Epoch 415 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00094 | t/ep=  0.5s t/eval= 0.0s | rem=   106s
+  [Trainer] Epoch 416 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00093 | t/ep=  0.5s t/eval= 0.0s | rem=   106s
+  [Trainer] Epoch 417 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00091 | t/ep=  0.5s t/eval= 0.0s | rem=   105s
+  [Trainer] Epoch 418 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00089 | t/ep=  0.5s t/eval= 0.0s | rem=   105s
+  [Trainer] Epoch 419 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00087 | t/ep=  0.5s t/eval= 0.0s | rem=   104s
+  [Trainer] Epoch 420 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00086 | t/ep=  0.5s t/eval= 0.0s | rem=   104s
+  [Trainer] Epoch 421 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00084 | t/ep=  0.5s t/eval= 0.0s | rem=   103s
+  [Trainer] Epoch 422 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00082 | t/ep=  0.5s t/eval= 0.0s | rem=   102s
+  [Trainer] Epoch 423 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00081 | t/ep=  0.5s t/eval= 0.0s | rem=   102s
+  [Trainer] Epoch 424 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00079 | t/ep=  0.5s t/eval= 0.0s | rem=   101s
+  [Trainer] Epoch 425 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00077 | t/ep=  0.5s t/eval= 0.0s | rem=   101s
+  [Trainer] Epoch 426 | train=100.00% val=30.17% gap=+69.83 | loss=0.4220 | lr=0.00076 | t/ep=  0.5s t/eval= 0.0s | rem=   100s
+  [Trainer] Epoch 427 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00074 | t/ep=  0.5s t/eval= 0.0s | rem=   100s
+  [Trainer] Epoch 428 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00073 | t/ep=  0.5s t/eval= 0.0s | rem=    99s
+  [Trainer] Epoch 429 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00071 | t/ep=  0.5s t/eval= 0.0s | rem=    99s
+  [Trainer] Epoch 430 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00070 | t/ep=  0.5s t/eval= 0.0s | rem=    98s
+  [Trainer] Epoch 431 | train=100.00% val=30.33% gap=+69.67 | loss=0.4217 | lr=0.00068 | t/ep=  0.5s t/eval= 0.0s | rem=    98s
+  [Trainer] Epoch 432 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00067 | t/ep=  0.5s t/eval= 0.0s | rem=    97s
+  [Trainer] Epoch 433 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00065 | t/ep=  0.5s t/eval= 0.0s | rem=    96s
+  [Trainer] Epoch 434 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00064 | t/ep=  0.5s t/eval= 0.0s | rem=    96s
+  [Trainer] Epoch 435 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00062 | t/ep=  0.5s t/eval= 0.0s | rem=    95s
+  [Trainer] Epoch 436 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00061 | t/ep=  0.5s t/eval= 0.0s | rem=    95s
+  [Trainer] Epoch 437 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00059 | t/ep=  0.5s t/eval= 0.0s | rem=    94s
+  [Trainer] Epoch 438 | train=100.00% val=29.50% gap=+70.50 | loss=0.4216 | lr=0.00058 | t/ep=  0.5s t/eval= 0.0s | rem=    94s
+  [Trainer] Epoch 439 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00056 | t/ep=  0.5s t/eval= 0.0s | rem=    93s
+  [Trainer] Epoch 440 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00055 | t/ep=  0.5s t/eval= 0.0s | rem=    93s
+  [Trainer] Epoch 441 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00054 | t/ep=  0.5s t/eval= 0.0s | rem=    92s
+  [Trainer] Epoch 442 | train=100.00% val=29.67% gap=+70.33 | loss=0.4216 | lr=0.00052 | t/ep=  0.5s t/eval= 0.0s | rem=    92s
+  [Trainer] Epoch 443 | train=100.00% val=29.67% gap=+70.33 | loss=0.4218 | lr=0.00051 | t/ep=  0.5s t/eval= 0.0s | rem=    91s
+  [Trainer] Epoch 444 | train=100.00% val=29.83% gap=+70.17 | loss=0.4215 | lr=0.00050 | t/ep=  0.5s t/eval= 0.0s | rem=    90s
+  [Trainer] Epoch 445 | train=100.00% val=30.17% gap=+69.83 | loss=0.4219 | lr=0.00048 | t/ep=  0.5s t/eval= 0.0s | rem=    90s
+  [Trainer] Epoch 446 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00047 | t/ep=  0.5s t/eval= 0.0s | rem=    89s
+  [Trainer] Epoch 447 | train=100.00% val=30.33% gap=+69.67 | loss=0.4217 | lr=0.00046 | t/ep=  0.5s t/eval= 0.0s | rem=    89s
+  [Trainer] Epoch 448 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00045 | t/ep=  0.5s t/eval= 0.0s | rem=    88s
+  [Trainer] Epoch 449 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00043 | t/ep=  0.5s t/eval= 0.0s | rem=    88s
+  [Trainer] Epoch 450 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00042 | t/ep=  0.5s t/eval= 0.0s | rem=    87s
+  [Trainer] Epoch 451 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00041 | t/ep=  0.5s t/eval= 0.0s | rem=    87s
+  [Trainer] Epoch 452 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00040 | t/ep=  0.5s t/eval= 0.0s | rem=    86s
+  [Trainer] Epoch 453 | train=100.00% val=30.50% gap=+69.50 | loss=0.4217 | lr=0.00039 | t/ep=  0.5s t/eval= 0.0s | rem=    86s
+  [Trainer] Epoch 454 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00037 | t/ep=  0.5s t/eval= 0.0s | rem=    85s
+  [Trainer] Epoch 455 | train=100.00% val=30.50% gap=+69.50 | loss=0.4219 | lr=0.00036 | t/ep=  0.5s t/eval= 0.0s | rem=    84s
+  [Trainer] Epoch 456 | train=100.00% val=30.50% gap=+69.50 | loss=0.4216 | lr=0.00035 | t/ep=  0.5s t/eval= 0.0s | rem=    84s
+  [Trainer] Epoch 457 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00034 | t/ep=  0.5s t/eval= 0.0s | rem=    83s
+  [Trainer] Epoch 458 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00033 | t/ep=  0.5s t/eval= 0.0s | rem=    83s
+  [Trainer] Epoch 459 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00032 | t/ep=  0.6s t/eval= 0.0s | rem=    82s
+  [Trainer] Epoch 460 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00031 | t/ep=  0.5s t/eval= 0.0s | rem=    82s
+  [Trainer] Epoch 461 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00030 | t/ep=  0.5s t/eval= 0.0s | rem=    81s
+  [Trainer] Epoch 462 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00029 | t/ep=  0.5s t/eval= 0.0s | rem=    80s
+  [Trainer] Epoch 463 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00028 | t/ep=  0.5s t/eval= 0.0s | rem=    80s
+  [Trainer] Epoch 464 | train=100.00% val=30.33% gap=+69.67 | loss=0.4215 | lr=0.00027 | t/ep=  0.5s t/eval= 0.0s | rem=    79s
+  [Trainer] Epoch 465 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00026 | t/ep=  0.5s t/eval= 0.0s | rem=    79s
+  [Trainer] Epoch 466 | train=100.00% val=30.50% gap=+69.50 | loss=0.4220 | lr=0.00025 | t/ep=  0.5s t/eval= 0.0s | rem=    78s
+  [Trainer] Epoch 467 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00024 | t/ep=  0.5s t/eval= 0.0s | rem=    78s
+  [Trainer] Epoch 468 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00023 | t/ep=  0.5s t/eval= 0.0s | rem=    77s
+  [Trainer] Epoch 469 | train=100.00% val=29.67% gap=+70.33 | loss=0.4215 | lr=0.00022 | t/ep=  0.5s t/eval= 0.0s | rem=    77s
+  [Trainer] Epoch 470 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00021 | t/ep=  0.5s t/eval= 0.0s | rem=    76s
+  [Trainer] Epoch 471 | train=100.00% val=30.17% gap=+69.83 | loss=0.4215 | lr=0.00020 | t/ep=  0.5s t/eval= 0.0s | rem=    76s
+  [Trainer] Epoch 472 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00019 | t/ep=  0.5s t/eval= 0.0s | rem=    75s
+  [Trainer] Epoch 473 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00019 | t/ep=  0.5s t/eval= 0.0s | rem=    74s
+  [Trainer] Epoch 474 | train=100.00% val=29.67% gap=+70.33 | loss=0.4214 | lr=0.00018 | t/ep=  0.5s t/eval= 0.0s | rem=    74s
+  [Trainer] Epoch 475 | train=100.00% val=30.33% gap=+69.67 | loss=0.4216 | lr=0.00017 | t/ep=  0.5s t/eval= 0.0s | rem=    73s
+  [Trainer] Epoch 476 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00016 | t/ep=  0.5s t/eval= 0.0s | rem=    73s
+  [Trainer] Epoch 477 | train=100.00% val=30.33% gap=+69.67 | loss=0.4215 | lr=0.00015 | t/ep=  0.5s t/eval= 0.0s | rem=    72s
+  [Trainer] Epoch 478 | train=100.00% val=29.83% gap=+70.17 | loss=0.4216 | lr=0.00015 | t/ep=  0.5s t/eval= 0.0s | rem=    72s
+  [Trainer] Epoch 479 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00014 | t/ep=  0.5s t/eval= 0.0s | rem=    71s
+  [Trainer] Epoch 480 | train=100.00% val=30.50% gap=+69.50 | loss=0.4218 | lr=0.00013 | t/ep=  0.5s t/eval= 0.0s | rem=    71s
+  [Trainer] Epoch 481 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00013 | t/ep=  0.5s t/eval= 0.0s | rem=    70s
+  [Trainer] Epoch 482 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00012 | t/ep=  0.5s t/eval= 0.0s | rem=    70s
+  [Trainer] Epoch 483 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00011 | t/ep=  0.5s t/eval= 0.0s | rem=    69s
+  [Trainer] Epoch 484 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00011 | t/ep=  0.5s t/eval= 0.0s | rem=    68s
+  [Trainer] Epoch 485 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00010 | t/ep=  0.5s t/eval= 0.0s | rem=    68s
+  [Trainer] Epoch 486 | train=100.00% val=30.33% gap=+69.67 | loss=0.4217 | lr=0.00009 | t/ep=  0.6s t/eval= 0.0s | rem=    67s
+  [Trainer] Epoch 487 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00009 | t/ep=  0.5s t/eval= 0.0s | rem=    67s
+  [Trainer] Epoch 488 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00008 | t/ep=  0.5s t/eval= 0.0s | rem=    66s
+  [Trainer] Epoch 489 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00008 | t/ep=  0.5s t/eval= 0.0s | rem=    66s
+  [Trainer] Epoch 490 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00007 | t/ep=  0.5s t/eval= 0.0s | rem=    65s
+  [Trainer] Epoch 491 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00007 | t/ep=  0.5s t/eval= 0.0s | rem=    65s
+  [Trainer] Epoch 492 | train=100.00% val=29.50% gap=+70.50 | loss=0.4217 | lr=0.00006 | t/ep=  0.5s t/eval= 0.0s | rem=    64s
+  [Trainer] Epoch 493 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00006 | t/ep=  0.5s t/eval= 0.0s | rem=    63s
+  [Trainer] Epoch 494 | train=100.00% val=29.67% gap=+70.33 | loss=0.4220 | lr=0.00005 | t/ep=  0.5s t/eval= 0.0s | rem=    63s
+  [Trainer] Epoch 495 | train=100.00% val=29.67% gap=+70.33 | loss=0.4216 | lr=0.00005 | t/ep=  0.5s t/eval= 0.0s | rem=    62s
+  [Trainer] Epoch 496 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00004 | t/ep=  0.5s t/eval= 0.0s | rem=    62s
+  [Trainer] Epoch 497 | train=100.00% val=29.67% gap=+70.33 | loss=0.4219 | lr=0.00004 | t/ep=  0.5s t/eval= 0.0s | rem=    61s
+  [Trainer] Epoch 498 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00004 | t/ep=  0.5s t/eval= 0.0s | rem=    61s
+  [Trainer] Epoch 499 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00003 | t/ep=  0.5s t/eval= 0.0s | rem=    60s
+  [Trainer] Epoch 500 | train=100.00% val=29.50% gap=+70.50 | loss=0.4219 | lr=0.00003 | t/ep=  0.5s t/eval= 0.0s | rem=    60s
+  [Trainer] Epoch 501 | train=100.00% val=30.33% gap=+69.67 | loss=0.4220 | lr=0.00003 | t/ep=  0.5s t/eval= 0.0s | rem=    59s
+  [Trainer] Epoch 502 | train=100.00% val=30.17% gap=+69.83 | loss=0.4216 | lr=0.00002 | t/ep=  0.5s t/eval= 0.0s | rem=    59s
+  [Trainer] Epoch 503 | train=100.00% val=29.83% gap=+70.17 | loss=0.4219 | lr=0.00002 | t/ep=  0.5s t/eval= 0.0s | rem=    58s
+  [Trainer] Epoch 504 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00002 | t/ep=  0.5s t/eval= 0.0s | rem=    57s
+  [Trainer] Epoch 505 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00002 | t/ep=  0.5s t/eval= 0.0s | rem=    57s
+  [Trainer] Epoch 506 | train=100.00% val=30.17% gap=+69.83 | loss=0.4218 | lr=0.00001 | t/ep=  0.5s t/eval= 0.0s | rem=    56s
+  [Trainer] Epoch 507 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00001 | t/ep=  0.5s t/eval= 0.0s | rem=    56s
+  [Trainer] Epoch 508 | train=100.00% val=29.83% gap=+70.17 | loss=0.4218 | lr=0.00001 | t/ep=  0.5s t/eval= 0.0s | rem=    55s
+  [Trainer] Epoch 509 | train=100.00% val=30.00% gap=+70.00 | loss=0.4217 | lr=0.00001 | t/ep=  0.5s t/eval= 0.0s | rem=    55s
+  [Trainer] Epoch 510 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00001 | t/ep=  0.5s t/eval= 0.0s | rem=    54s
+  [Trainer] Epoch 511 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    54s
+  [Trainer] Epoch 512 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    53s
+  [Trainer] Epoch 513 | train=100.00% val=30.17% gap=+69.83 | loss=0.4217 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    52s
+  [Trainer] Epoch 514 | train=100.00% val=30.00% gap=+70.00 | loss=0.4216 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    52s
+  [Trainer] Epoch 515 | train=100.00% val=29.83% gap=+70.17 | loss=0.4217 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    51s
+  [Trainer] Epoch 516 | train=100.00% val=30.00% gap=+70.00 | loss=0.4218 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    51s
+  [Trainer] Epoch 517 | train=100.00% val=30.17% gap=+69.83 | loss=0.4215 | lr=0.00000 | t/ep=  0.5s t/eval= 0.0s | rem=    50s
+[Trainer] summary: 517 epochs, best val 31.00% at epoch 149 (29% in), final train 100.00%
+[Trainer]   -> MEMORISING - train 100.0% vs val 31.0%, gap +69.0pts (needs regularisation, not capacity/time)
+
+=== Predicting ===
+  Allotted compute time remaining: ~50.31s
+Run time for Ganges: 309.7239159308374
+Model Training and Prediction Complete
+finished dataset: Ganges
+========== Dataset   Congo    =============================================
+  Metadata:
+   - num_classes         : 10
+   - input_shape         : [5000, 3, 32, 32]
+   - codename            : Congo
+   - benchmark           : 57.5
+   - time_limit          : 0.1
+   - time_remaining      : 359.9782519377768
+
+=== Processing Data ===
+  Allotted compute time remaining: ~5m,59s
+[DataProcessor] augmentation: continuous (pad+crop+flip+noise) - shape 3x32x32, 256 unique values seen in 20000 sampled
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~5m,59s
+[NAS] macro: c0=32 n=2 d=3 stem_stride=1 (H=32, W=32 -> 4x4)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 262 genotypes, verifying top 7 (max_batches=21, batch_size=512, t_batch~0.153s, t_val~0.13s)
+  [NAS] verify: val=11.70% t=1.6s
+  [NAS] verify: val=19.90% t=1.6s
+  [NAS] verify: val=9.90% t=1.5s
+  [NAS] verify: val=15.20% t=1.3s
+  [NAS] verify: val=12.20% t=1.3s
+  [NAS] verify: val=9.60% t=1.7s
+  [NAS] verify: val=12.40% t=1.6s
+[NAS] selected genotype (val=19.90%): ['conv3x3', 'conv3x3', 'avgpool3x3', 'skip', 'conv3x3', 'conv3x3']
+
+=== Training ===
+  Allotted compute time remaining: ~5m,37s
+[Trainer] weight decay on 37 tensors, none on 73 (BN/bias)
+  [Trainer] Epoch   1 | train=21.79% val=12.30% gap= +9.49 | loss=2.1997 | lr=0.01000 | t/ep=  1.3s t/eval= 0.1s | rem=   336s
+  [Trainer] Epoch   2 | train=32.88% val=13.20% gap=+19.68 | loss=1.9362 | lr=0.01000 | t/ep=  1.3s t/eval= 0.1s | rem=   334s
+  [Trainer] Epoch   3 | train=39.17% val=27.20% gap=+11.97 | loss=1.7994 | lr=0.01000 | t/ep=  1.3s t/eval= 0.1s | rem=   333s
+  [Trainer] Epoch   4 | train=42.71% val=43.10% gap= -0.39 | loss=1.7147 | lr=0.00999 | t/ep=  1.3s t/eval= 0.1s | rem=   331s
+  [Trainer] Epoch   5 | train=45.68% val=44.50% gap= +1.18 | loss=1.6669 | lr=0.00999 | t/ep=  1.3s t/eval= 0.1s | rem=   330s
+  [Trainer] Epoch   6 | train=48.22% val=44.30% gap= +3.92 | loss=1.6010 | lr=0.00998 | t/ep=  1.3s t/eval= 0.1s | rem=   329s
+  [Trainer] Epoch   7 | train=49.74% val=43.40% gap= +6.34 | loss=1.5655 | lr=0.00998 | t/ep=  1.3s t/eval= 0.1s | rem=   327s
+  [Trainer] Epoch   8 | train=52.93% val=50.10% gap= +2.83 | loss=1.5105 | lr=0.00997 | t/ep=  1.3s t/eval= 0.1s | rem=   326s
+  [Trainer] Epoch   9 | train=56.42% val=45.30% gap=+11.12 | loss=1.4629 | lr=0.00996 | t/ep=  1.3s t/eval= 0.1s | rem=   324s
+  [Trainer] Epoch  10 | train=57.31% val=50.90% gap= +6.41 | loss=1.4224 | lr=0.00995 | t/ep=  1.3s t/eval= 0.1s | rem=   323s
+  [Trainer] Epoch  11 | train=58.25% val=44.80% gap=+13.45 | loss=1.4039 | lr=0.00994 | t/ep=  1.3s t/eval= 0.1s | rem=   322s
+  [Trainer] Epoch  12 | train=60.55% val=50.20% gap=+10.35 | loss=1.3879 | lr=0.00993 | t/ep=  1.3s t/eval= 0.1s | rem=   320s
+  [Trainer] Epoch  13 | train=61.02% val=52.10% gap= +8.92 | loss=1.3559 | lr=0.00991 | t/ep=  1.3s t/eval= 0.1s | rem=   319s
+  [Trainer] Epoch  14 | train=62.87% val=51.90% gap=+10.97 | loss=1.3260 | lr=0.00990 | t/ep=  1.3s t/eval= 0.1s | rem=   317s
+  [Trainer] Epoch  15 | train=63.89% val=48.60% gap=+15.29 | loss=1.3004 | lr=0.00988 | t/ep=  1.3s t/eval= 0.1s | rem=   316s
+  [Trainer] Epoch  16 | train=64.82% val=53.70% gap=+11.12 | loss=1.2737 | lr=0.00987 | t/ep=  1.3s t/eval= 0.1s | rem=   315s
+  [Trainer] Epoch  17 | train=67.30% val=56.90% gap=+10.40 | loss=1.2350 | lr=0.00985 | t/ep=  1.3s t/eval= 0.1s | rem=   313s
+  [Trainer] Epoch  18 | train=67.71% val=55.00% gap=+12.71 | loss=1.2200 | lr=0.00983 | t/ep=  1.3s t/eval= 0.1s | rem=   312s
+  [Trainer] Epoch  19 | train=68.92% val=57.10% gap=+11.82 | loss=1.2013 | lr=0.00981 | t/ep=  1.3s t/eval= 0.1s | rem=   310s
+  [Trainer] Epoch  20 | train=70.12% val=57.30% gap=+12.82 | loss=1.1659 | lr=0.00979 | t/ep=  1.3s t/eval= 0.1s | rem=   309s
+  [Trainer] Epoch  21 | train=71.16% val=53.80% gap=+17.36 | loss=1.1546 | lr=0.00976 | t/ep=  1.3s t/eval= 0.1s | rem=   308s
+  [Trainer] Epoch  22 | train=73.11% val=55.90% gap=+17.21 | loss=1.1261 | lr=0.00974 | t/ep=  1.3s t/eval= 0.1s | rem=   306s
+  [Trainer] Epoch  23 | train=74.02% val=58.80% gap=+15.22 | loss=1.1076 | lr=0.00971 | t/ep=  1.3s t/eval= 0.1s | rem=   305s
+  [Trainer] Epoch  24 | train=74.48% val=61.40% gap=+13.08 | loss=1.0921 | lr=0.00969 | t/ep=  1.3s t/eval= 0.1s | rem=   303s
+  [Trainer] Epoch  25 | train=75.85% val=55.90% gap=+19.95 | loss=1.0559 | lr=0.00966 | t/ep=  1.4s t/eval= 0.1s | rem=   302s
+  [Trainer] Epoch  26 | train=76.71% val=52.80% gap=+23.91 | loss=1.0548 | lr=0.00963 | t/ep=  1.3s t/eval= 0.1s | rem=   300s
+  [Trainer] Epoch  27 | train=77.24% val=61.60% gap=+15.64 | loss=1.0318 | lr=0.00960 | t/ep=  1.3s t/eval= 0.1s | rem=   299s
+  [Trainer] Epoch  28 | train=79.49% val=62.40% gap=+17.09 | loss=1.0053 | lr=0.00957 | t/ep=  1.3s t/eval= 0.1s | rem=   298s
+  [Trainer] Epoch  29 | train=80.36% val=61.90% gap=+18.46 | loss=0.9724 | lr=0.00954 | t/ep=  1.3s t/eval= 0.1s | rem=   296s
+  [Trainer] Epoch  30 | train=80.47% val=59.30% gap=+21.17 | loss=0.9758 | lr=0.00950 | t/ep=  1.3s t/eval= 0.1s | rem=   295s
+  [Trainer] Epoch  31 | train=82.18% val=56.90% gap=+25.28 | loss=0.9432 | lr=0.00947 | t/ep=  1.3s t/eval= 0.1s | rem=   293s
+  [Trainer] Epoch  32 | train=81.60% val=60.40% gap=+21.20 | loss=0.9506 | lr=0.00944 | t/ep=  1.3s t/eval= 0.1s | rem=   292s
+  [Trainer] Epoch  33 | train=82.42% val=63.00% gap=+19.42 | loss=0.9362 | lr=0.00940 | t/ep=  1.3s t/eval= 0.1s | rem=   291s
+  [Trainer] Epoch  34 | train=85.09% val=62.40% gap=+22.69 | loss=0.8902 | lr=0.00936 | t/ep=  1.3s t/eval= 0.1s | rem=   289s
+  [Trainer] Epoch  35 | train=86.09% val=62.60% gap=+23.49 | loss=0.8689 | lr=0.00932 | t/ep=  1.3s t/eval= 0.1s | rem=   288s
+  [Trainer] Epoch  36 | train=86.46% val=64.30% gap=+22.16 | loss=0.8554 | lr=0.00929 | t/ep=  1.3s t/eval= 0.1s | rem=   286s
+  [Trainer] Epoch  37 | train=87.22% val=63.10% gap=+24.12 | loss=0.8461 | lr=0.00925 | t/ep=  1.3s t/eval= 0.1s | rem=   285s
+  [Trainer] Epoch  38 | train=88.43% val=60.20% gap=+28.23 | loss=0.8260 | lr=0.00920 | t/ep=  1.3s t/eval= 0.1s | rem=   284s
+  [Trainer] Epoch  39 | train=88.76% val=61.80% gap=+26.96 | loss=0.8199 | lr=0.00916 | t/ep=  1.3s t/eval= 0.1s | rem=   282s
+  [Trainer] Epoch  40 | train=88.72% val=61.10% gap=+27.62 | loss=0.8149 | lr=0.00912 | t/ep=  1.3s t/eval= 0.1s | rem=   281s
+  [Trainer] Epoch  41 | train=89.82% val=62.20% gap=+27.62 | loss=0.8017 | lr=0.00907 | t/ep=  1.3s t/eval= 0.1s | rem=   279s
+  [Trainer] Epoch  42 | train=89.15% val=60.30% gap=+28.85 | loss=0.8066 | lr=0.00903 | t/ep=  1.3s t/eval= 0.1s | rem=   278s
+  [Trainer] Epoch  43 | train=89.54% val=60.10% gap=+29.44 | loss=0.7941 | lr=0.00898 | t/ep=  1.3s t/eval= 0.1s | rem=   277s
+  [Trainer] Epoch  44 | train=90.65% val=64.80% gap=+25.85 | loss=0.7877 | lr=0.00894 | t/ep=  1.3s t/eval= 0.1s | rem=   275s
+  [Trainer] Epoch  45 | train=90.95% val=62.20% gap=+28.75 | loss=0.7722 | lr=0.00889 | t/ep=  1.3s t/eval= 0.1s | rem=   274s
+  [Trainer] Epoch  46 | train=91.45% val=62.50% gap=+28.95 | loss=0.7609 | lr=0.00884 | t/ep=  1.3s t/eval= 0.1s | rem=   272s
+  [Trainer] Epoch  47 | train=93.06% val=63.50% gap=+29.56 | loss=0.7415 | lr=0.00879 | t/ep=  1.3s t/eval= 0.1s | rem=   271s
+  [Trainer] Epoch  48 | train=93.03% val=60.50% gap=+32.53 | loss=0.7339 | lr=0.00874 | t/ep=  1.3s t/eval= 0.1s | rem=   270s
+  [Trainer] Epoch  49 | train=93.64% val=60.30% gap=+33.34 | loss=0.7200 | lr=0.00869 | t/ep=  1.3s t/eval= 0.1s | rem=   268s
+  [Trainer] Epoch  50 | train=94.66% val=63.00% gap=+31.66 | loss=0.7014 | lr=0.00864 | t/ep=  1.3s t/eval= 0.1s | rem=   267s
+  [Trainer] Epoch  51 | train=93.77% val=63.00% gap=+30.77 | loss=0.7079 | lr=0.00858 | t/ep=  1.3s t/eval= 0.1s | rem=   265s
+  [Trainer] Epoch  52 | train=94.70% val=62.20% gap=+32.50 | loss=0.7005 | lr=0.00853 | t/ep=  1.3s t/eval= 0.2s | rem=   264s
+  [Trainer] Epoch  53 | train=94.79% val=63.60% gap=+31.19 | loss=0.6965 | lr=0.00847 | t/ep=  1.3s t/eval= 0.1s | rem=   262s
+  [Trainer] Epoch  54 | train=95.77% val=64.70% gap=+31.07 | loss=0.6744 | lr=0.00842 | t/ep=  1.3s t/eval= 0.1s | rem=   261s
+  [Trainer] Epoch  55 | train=96.16% val=63.70% gap=+32.46 | loss=0.6701 | lr=0.00836 | t/ep=  1.3s t/eval= 0.1s | rem=   260s
+  [Trainer] Epoch  56 | train=96.64% val=62.70% gap=+33.94 | loss=0.6567 | lr=0.00830 | t/ep=  1.3s t/eval= 0.1s | rem=   258s
+  [Trainer] Epoch  57 | train=97.24% val=64.60% gap=+32.64 | loss=0.6517 | lr=0.00824 | t/ep=  1.3s t/eval= 0.1s | rem=   257s
+  [Trainer] Epoch  58 | train=96.90% val=66.10% gap=+30.80 | loss=0.6459 | lr=0.00819 | t/ep=  1.3s t/eval= 0.1s | rem=   255s
+  [Trainer] Epoch  59 | train=97.89% val=63.80% gap=+34.09 | loss=0.6318 | lr=0.00813 | t/ep=  1.3s t/eval= 0.1s | rem=   254s
+  [Trainer] Epoch  60 | train=97.76% val=65.70% gap=+32.06 | loss=0.6317 | lr=0.00806 | t/ep=  1.3s t/eval= 0.1s | rem=   253s
+  [Trainer] Epoch  61 | train=97.55% val=63.90% gap=+33.65 | loss=0.6355 | lr=0.00800 | t/ep=  1.3s t/eval= 0.1s | rem=   251s
+  [Trainer] Epoch  62 | train=97.46% val=64.50% gap=+32.96 | loss=0.6335 | lr=0.00794 | t/ep=  1.3s t/eval= 0.1s | rem=   250s
+  [Trainer] Epoch  63 | train=97.57% val=66.30% gap=+31.27 | loss=0.6326 | lr=0.00788 | t/ep=  1.3s t/eval= 0.1s | rem=   248s
+  [Trainer] Epoch  64 | train=97.72% val=63.80% gap=+33.92 | loss=0.6283 | lr=0.00781 | t/ep=  1.3s t/eval= 0.1s | rem=   247s
+  [Trainer] Epoch  65 | train=98.16% val=65.40% gap=+32.76 | loss=0.6200 | lr=0.00775 | t/ep=  1.3s t/eval= 0.1s | rem=   246s
+  [Trainer] Epoch  66 | train=98.61% val=64.30% gap=+34.31 | loss=0.6103 | lr=0.00769 | t/ep=  1.3s t/eval= 0.1s | rem=   244s
+  [Trainer] Epoch  67 | train=98.24% val=65.30% gap=+32.94 | loss=0.6111 | lr=0.00762 | t/ep=  1.3s t/eval= 0.1s | rem=   243s
+  [Trainer] Epoch  68 | train=98.52% val=64.70% gap=+33.82 | loss=0.6116 | lr=0.00756 | t/ep=  1.3s t/eval= 0.1s | rem=   241s
+  [Trainer] Epoch  69 | train=98.68% val=63.40% gap=+35.28 | loss=0.6047 | lr=0.00749 | t/ep=  1.3s t/eval= 0.1s | rem=   240s
+  [Trainer] Epoch  70 | train=99.09% val=65.30% gap=+33.79 | loss=0.5978 | lr=0.00742 | t/ep=  1.3s t/eval= 0.1s | rem=   239s
+  [Trainer] Epoch  71 | train=98.81% val=65.80% gap=+33.01 | loss=0.6005 | lr=0.00736 | t/ep=  1.3s t/eval= 0.1s | rem=   237s
+  [Trainer] Epoch  72 | train=99.18% val=65.80% gap=+33.38 | loss=0.5928 | lr=0.00729 | t/ep=  1.3s t/eval= 0.1s | rem=   236s
+  [Trainer] Epoch  73 | train=99.13% val=64.90% gap=+34.23 | loss=0.5880 | lr=0.00722 | t/ep=  1.3s t/eval= 0.1s | rem=   234s
+  [Trainer] Epoch  74 | train=99.15% val=62.90% gap=+36.25 | loss=0.5879 | lr=0.00715 | t/ep=  1.3s t/eval= 0.1s | rem=   233s
+  [Trainer] Epoch  75 | train=99.33% val=66.30% gap=+33.03 | loss=0.5844 | lr=0.00708 | t/ep=  1.3s t/eval= 0.1s | rem=   232s
+  [Trainer] Epoch  76 | train=99.31% val=65.70% gap=+33.61 | loss=0.5807 | lr=0.00701 | t/ep=  1.3s t/eval= 0.1s | rem=   230s
+  [Trainer] Epoch  77 | train=99.48% val=66.40% gap=+33.08 | loss=0.5777 | lr=0.00694 | t/ep=  1.3s t/eval= 0.1s | rem=   229s
+  [Trainer] Epoch  78 | train=99.59% val=67.20% gap=+32.39 | loss=0.5744 | lr=0.00687 | t/ep=  1.3s t/eval= 0.1s | rem=   227s
+  [Trainer] Epoch  79 | train=99.52% val=64.30% gap=+35.22 | loss=0.5753 | lr=0.00680 | t/ep=  1.3s t/eval= 0.1s | rem=   226s
+  [Trainer] Epoch  80 | train=99.65% val=64.40% gap=+35.25 | loss=0.5734 | lr=0.00672 | t/ep=  1.3s t/eval= 0.1s | rem=   225s
+  [Trainer] Epoch  81 | train=99.57% val=66.40% gap=+33.17 | loss=0.5719 | lr=0.00665 | t/ep=  1.3s t/eval= 0.1s | rem=   223s
+  [Trainer] Epoch  82 | train=99.63% val=65.60% gap=+34.03 | loss=0.5688 | lr=0.00658 | t/ep=  1.4s t/eval= 0.1s | rem=   222s
+  [Trainer] Epoch  83 | train=99.48% val=67.80% gap=+31.68 | loss=0.5712 | lr=0.00650 | t/ep=  1.3s t/eval= 0.1s | rem=   220s
+  [Trainer] Epoch  84 | train=99.67% val=67.90% gap=+31.77 | loss=0.5670 | lr=0.00643 | t/ep=  1.3s t/eval= 0.1s | rem=   219s
+  [Trainer] Epoch  85 | train=99.59% val=65.50% gap=+34.09 | loss=0.5672 | lr=0.00635 | t/ep=  1.3s t/eval= 0.1s | rem=   217s
+  [Trainer] Epoch  86 | train=99.59% val=66.40% gap=+33.19 | loss=0.5673 | lr=0.00628 | t/ep=  1.3s t/eval= 0.1s | rem=   216s
+  [Trainer] Epoch  87 | train=99.61% val=65.80% gap=+33.81 | loss=0.5647 | lr=0.00620 | t/ep=  1.3s t/eval= 0.1s | rem=   215s
+  [Trainer] Epoch  88 | train=99.89% val=66.90% gap=+32.99 | loss=0.5584 | lr=0.00613 | t/ep=  1.3s t/eval= 0.1s | rem=   213s
+  [Trainer] Epoch  89 | train=99.72% val=66.70% gap=+33.02 | loss=0.5583 | lr=0.00605 | t/ep=  1.3s t/eval= 0.1s | rem=   212s
+  [Trainer] Epoch  90 | train=99.74% val=65.80% gap=+33.94 | loss=0.5598 | lr=0.00598 | t/ep=  1.3s t/eval= 0.1s | rem=   210s
+  [Trainer] Epoch  91 | train=99.85% val=66.00% gap=+33.85 | loss=0.5567 | lr=0.00590 | t/ep=  1.3s t/eval= 0.1s | rem=   209s
+  [Trainer] Epoch  92 | train=99.89% val=65.50% gap=+34.39 | loss=0.5531 | lr=0.00583 | t/ep=  1.3s t/eval= 0.1s | rem=   208s
+  [Trainer] Epoch  93 | train=99.83% val=66.80% gap=+33.03 | loss=0.5542 | lr=0.00575 | t/ep=  1.3s t/eval= 0.1s | rem=   206s
+  [Trainer] Epoch  94 | train=99.85% val=66.70% gap=+33.15 | loss=0.5508 | lr=0.00568 | t/ep=  1.3s t/eval= 0.1s | rem=   205s
+  [Trainer] Epoch  95 | train=99.74% val=66.90% gap=+32.84 | loss=0.5546 | lr=0.00560 | t/ep=  1.3s t/eval= 0.1s | rem=   203s
+  [Trainer] Epoch  96 | train=99.85% val=67.20% gap=+32.65 | loss=0.5515 | lr=0.00552 | t/ep=  1.3s t/eval= 0.1s | rem=   202s
+  [Trainer] Epoch  97 | train=99.96% val=66.30% gap=+33.66 | loss=0.5508 | lr=0.00545 | t/ep=  1.3s t/eval= 0.1s | rem=   201s
+  [Trainer] Epoch  98 | train=99.83% val=67.80% gap=+32.03 | loss=0.5506 | lr=0.00537 | t/ep=  1.3s t/eval= 0.1s | rem=   199s
+  [Trainer] Epoch  99 | train=99.83% val=66.90% gap=+32.93 | loss=0.5477 | lr=0.00529 | t/ep=  1.3s t/eval= 0.1s | rem=   198s
+  [Trainer] Epoch 100 | train=99.93% val=66.80% gap=+33.13 | loss=0.5484 | lr=0.00522 | t/ep=  1.3s t/eval= 0.1s | rem=   196s
+  [Trainer] Epoch 101 | train=99.96% val=67.30% gap=+32.66 | loss=0.5483 | lr=0.00514 | t/ep=  1.3s t/eval= 0.1s | rem=   195s
+  [Trainer] Epoch 102 | train=99.96% val=65.90% gap=+34.06 | loss=0.5479 | lr=0.00506 | t/ep=  1.3s t/eval= 0.1s | rem=   194s
+  [Trainer] Epoch 103 | train=99.93% val=68.20% gap=+31.73 | loss=0.5461 | lr=0.00499 | t/ep=  1.3s t/eval= 0.1s | rem=   192s
+  [Trainer] Epoch 104 | train=99.91% val=66.30% gap=+33.61 | loss=0.5472 | lr=0.00491 | t/ep=  1.3s t/eval= 0.1s | rem=   191s
+  [Trainer] Epoch 105 | train=99.89% val=68.20% gap=+31.69 | loss=0.5488 | lr=0.00483 | t/ep=  1.3s t/eval= 0.1s | rem=   189s
+  [Trainer] Epoch 106 | train=99.91% val=67.40% gap=+32.51 | loss=0.5447 | lr=0.00476 | t/ep=  1.3s t/eval= 0.1s | rem=   188s
+  [Trainer] Epoch 107 | train=99.93% val=67.90% gap=+32.03 | loss=0.5437 | lr=0.00468 | t/ep=  1.3s t/eval= 0.1s | rem=   187s
+  [Trainer] Epoch 108 | train=99.89% val=67.30% gap=+32.59 | loss=0.5446 | lr=0.00460 | t/ep=  1.3s t/eval= 0.1s | rem=   185s
+  [Trainer] Epoch 109 | train=99.87% val=66.00% gap=+33.87 | loss=0.5435 | lr=0.00453 | t/ep=  1.3s t/eval= 0.1s | rem=   184s
+  [Trainer] Epoch 110 | train=99.93% val=67.60% gap=+32.33 | loss=0.5429 | lr=0.00445 | t/ep=  1.3s t/eval= 0.1s | rem=   182s
+  [Trainer] Epoch 111 | train=99.87% val=66.20% gap=+33.67 | loss=0.5440 | lr=0.00437 | t/ep=  1.3s t/eval= 0.1s | rem=   181s
+  [Trainer] Epoch 112 | train=100.00% val=66.80% gap=+33.20 | loss=0.5423 | lr=0.00430 | t/ep=  1.3s t/eval= 0.1s | rem=   180s
+  [Trainer] Epoch 113 | train=99.91% val=65.60% gap=+34.31 | loss=0.5421 | lr=0.00422 | t/ep=  1.3s t/eval= 0.1s | rem=   178s
+  [Trainer] Epoch 114 | train=99.96% val=67.10% gap=+32.86 | loss=0.5427 | lr=0.00415 | t/ep=  1.3s t/eval= 0.1s | rem=   177s
+  [Trainer] Epoch 115 | train=99.98% val=67.00% gap=+32.98 | loss=0.5394 | lr=0.00407 | t/ep=  1.3s t/eval= 0.1s | rem=   175s
+  [Trainer] Epoch 116 | train=99.91% val=66.40% gap=+33.51 | loss=0.5425 | lr=0.00400 | t/ep=  1.3s t/eval= 0.1s | rem=   174s
+  [Trainer] Epoch 117 | train=99.98% val=67.20% gap=+32.78 | loss=0.5389 | lr=0.00392 | t/ep=  1.3s t/eval= 0.1s | rem=   173s
+  [Trainer] Epoch 118 | train=99.98% val=66.10% gap=+33.88 | loss=0.5393 | lr=0.00384 | t/ep=  1.3s t/eval= 0.2s | rem=   171s
+  [Trainer] Epoch 119 | train=99.98% val=67.20% gap=+32.78 | loss=0.5369 | lr=0.00377 | t/ep=  1.3s t/eval= 0.1s | rem=   170s
+  [Trainer] Epoch 120 | train=99.93% val=66.70% gap=+33.23 | loss=0.5380 | lr=0.00369 | t/ep=  1.3s t/eval= 0.1s | rem=   168s
+  [Trainer] Epoch 121 | train=99.93% val=65.70% gap=+34.23 | loss=0.5365 | lr=0.00362 | t/ep=  1.3s t/eval= 0.1s | rem=   167s
+  [Trainer] Epoch 122 | train=99.93% val=66.60% gap=+33.33 | loss=0.5365 | lr=0.00354 | t/ep=  1.3s t/eval= 0.1s | rem=   166s
+  [Trainer] Epoch 123 | train=99.96% val=67.30% gap=+32.66 | loss=0.5370 | lr=0.00347 | t/ep=  1.3s t/eval= 0.1s | rem=   164s
+  [Trainer] Epoch 124 | train=99.98% val=67.30% gap=+32.68 | loss=0.5361 | lr=0.00340 | t/ep=  1.3s t/eval= 0.1s | rem=   163s
+  [Trainer] Epoch 125 | train=99.98% val=66.60% gap=+33.38 | loss=0.5355 | lr=0.00333 | t/ep=  1.3s t/eval= 0.1s | rem=   161s
+  [Trainer] Epoch 126 | train=99.91% val=66.50% gap=+33.41 | loss=0.5366 | lr=0.00325 | t/ep=  1.3s t/eval= 0.1s | rem=   160s
+  [Trainer] Epoch 127 | train=100.00% val=67.10% gap=+32.90 | loss=0.5356 | lr=0.00318 | t/ep=  1.3s t/eval= 0.1s | rem=   159s
+  [Trainer] Epoch 128 | train=99.98% val=67.30% gap=+32.68 | loss=0.5348 | lr=0.00311 | t/ep=  1.3s t/eval= 0.1s | rem=   157s
+  [Trainer] Epoch 129 | train=99.98% val=67.30% gap=+32.68 | loss=0.5346 | lr=0.00304 | t/ep=  1.3s t/eval= 0.1s | rem=   156s
+  [Trainer] Epoch 130 | train=100.00% val=67.60% gap=+32.40 | loss=0.5329 | lr=0.00297 | t/ep=  1.3s t/eval= 0.1s | rem=   154s
+  [Trainer] Epoch 131 | train=100.00% val=66.90% gap=+33.10 | loss=0.5352 | lr=0.00290 | t/ep=  1.3s t/eval= 0.1s | rem=   153s
+  [Trainer] Epoch 132 | train=99.93% val=67.30% gap=+32.63 | loss=0.5355 | lr=0.00283 | t/ep=  1.3s t/eval= 0.1s | rem=   152s
+  [Trainer] Epoch 133 | train=100.00% val=66.90% gap=+33.10 | loss=0.5333 | lr=0.00276 | t/ep=  1.3s t/eval= 0.1s | rem=   150s
+  [Trainer] Epoch 134 | train=100.00% val=66.60% gap=+33.40 | loss=0.5329 | lr=0.00269 | t/ep=  1.3s t/eval= 0.1s | rem=   149s
+  [Trainer] Epoch 135 | train=99.96% val=67.40% gap=+32.56 | loss=0.5323 | lr=0.00262 | t/ep=  1.3s t/eval= 0.1s | rem=   147s
+  [Trainer] Epoch 136 | train=99.98% val=66.70% gap=+33.28 | loss=0.5346 | lr=0.00256 | t/ep=  1.3s t/eval= 0.1s | rem=   146s
+  [Trainer] Epoch 137 | train=99.98% val=67.20% gap=+32.78 | loss=0.5328 | lr=0.00249 | t/ep=  1.3s t/eval= 0.1s | rem=   145s
+  [Trainer] Epoch 138 | train=99.96% val=66.70% gap=+33.26 | loss=0.5344 | lr=0.00242 | t/ep=  1.3s t/eval= 0.1s | rem=   143s
+  [Trainer] Epoch 139 | train=100.00% val=67.70% gap=+32.30 | loss=0.5325 | lr=0.00236 | t/ep=  1.3s t/eval= 0.1s | rem=   142s
+  [Trainer] Epoch 140 | train=99.98% val=66.80% gap=+33.18 | loss=0.5313 | lr=0.00229 | t/ep=  1.3s t/eval= 0.1s | rem=   140s
+  [Trainer] Epoch 141 | train=99.96% val=67.00% gap=+32.96 | loss=0.5316 | lr=0.00223 | t/ep=  1.3s t/eval= 0.2s | rem=   139s
+  [Trainer] Epoch 142 | train=100.00% val=67.10% gap=+32.90 | loss=0.5318 | lr=0.00216 | t/ep=  1.3s t/eval= 0.1s | rem=   137s
+  [Trainer] Epoch 143 | train=99.96% val=67.70% gap=+32.26 | loss=0.5318 | lr=0.00210 | t/ep=  1.3s t/eval= 0.1s | rem=   136s
+  [Trainer] Epoch 144 | train=100.00% val=66.80% gap=+33.20 | loss=0.5314 | lr=0.00204 | t/ep=  1.3s t/eval= 0.1s | rem=   135s
+  [Trainer] Epoch 145 | train=99.98% val=66.80% gap=+33.18 | loss=0.5307 | lr=0.00198 | t/ep=  1.3s t/eval= 0.1s | rem=   133s
+  [Trainer] Epoch 146 | train=100.00% val=66.20% gap=+33.80 | loss=0.5318 | lr=0.00192 | t/ep=  1.3s t/eval= 0.1s | rem=   132s
+  [Trainer] Epoch 147 | train=100.00% val=66.80% gap=+33.20 | loss=0.5307 | lr=0.00185 | t/ep=  1.3s t/eval= 0.1s | rem=   130s
+  [Trainer] Epoch 148 | train=100.00% val=67.60% gap=+32.40 | loss=0.5298 | lr=0.00179 | t/ep=  1.3s t/eval= 0.1s | rem=   129s
+  [Trainer] Epoch 149 | train=100.00% val=66.80% gap=+33.20 | loss=0.5298 | lr=0.00174 | t/ep=  1.3s t/eval= 0.1s | rem=   128s
+  [Trainer] Epoch 150 | train=99.96% val=67.10% gap=+32.86 | loss=0.5312 | lr=0.00168 | t/ep=  1.3s t/eval= 0.1s | rem=   126s
+  [Trainer] Epoch 151 | train=100.00% val=67.70% gap=+32.30 | loss=0.5299 | lr=0.00162 | t/ep=  1.3s t/eval= 0.1s | rem=   125s
+  [Trainer] Epoch 152 | train=100.00% val=67.40% gap=+32.60 | loss=0.5299 | lr=0.00157 | t/ep=  1.3s t/eval= 0.1s | rem=   123s
+  [Trainer] Epoch 153 | train=100.00% val=67.70% gap=+32.30 | loss=0.5304 | lr=0.00151 | t/ep=  1.3s t/eval= 0.1s | rem=   122s
+  [Trainer] Epoch 154 | train=100.00% val=67.60% gap=+32.40 | loss=0.5302 | lr=0.00146 | t/ep=  1.3s t/eval= 0.1s | rem=   121s
+  [Trainer] Epoch 155 | train=100.00% val=66.50% gap=+33.50 | loss=0.5297 | lr=0.00140 | t/ep=  1.3s t/eval= 0.1s | rem=   119s
+  [Trainer] Epoch 156 | train=100.00% val=67.60% gap=+32.40 | loss=0.5298 | lr=0.00135 | t/ep=  1.3s t/eval= 0.1s | rem=   118s
+  [Trainer] Epoch 157 | train=99.98% val=67.10% gap=+32.88 | loss=0.5301 | lr=0.00130 | t/ep=  1.3s t/eval= 0.1s | rem=   116s
+  [Trainer] Epoch 158 | train=99.98% val=66.70% gap=+33.28 | loss=0.5299 | lr=0.00125 | t/ep=  1.3s t/eval= 0.1s | rem=   115s
+  [Trainer] Epoch 159 | train=100.00% val=67.50% gap=+32.50 | loss=0.5298 | lr=0.00120 | t/ep=  1.3s t/eval= 0.1s | rem=   114s
+  [Trainer] Epoch 160 | train=99.96% val=66.80% gap=+33.16 | loss=0.5287 | lr=0.00115 | t/ep=  1.3s t/eval= 0.1s | rem=   112s
+  [Trainer] Epoch 161 | train=100.00% val=66.90% gap=+33.10 | loss=0.5296 | lr=0.00110 | t/ep=  1.3s t/eval= 0.1s | rem=   111s
+  [Trainer] Epoch 162 | train=99.98% val=67.10% gap=+32.88 | loss=0.5295 | lr=0.00105 | t/ep=  1.3s t/eval= 0.1s | rem=   109s
+  [Trainer] Epoch 163 | train=100.00% val=66.90% gap=+33.10 | loss=0.5291 | lr=0.00100 | t/ep=  1.3s t/eval= 0.1s | rem=   108s
+  [Trainer] Epoch 164 | train=100.00% val=67.10% gap=+32.90 | loss=0.5286 | lr=0.00096 | t/ep=  1.3s t/eval= 0.1s | rem=   107s
+  [Trainer] Epoch 165 | train=99.98% val=67.30% gap=+32.68 | loss=0.5293 | lr=0.00091 | t/ep=  1.3s t/eval= 0.1s | rem=   105s
+  [Trainer] Epoch 166 | train=100.00% val=66.80% gap=+33.20 | loss=0.5281 | lr=0.00087 | t/ep=  1.3s t/eval= 0.1s | rem=   104s
+  [Trainer] Epoch 167 | train=100.00% val=67.20% gap=+32.80 | loss=0.5281 | lr=0.00083 | t/ep=  1.3s t/eval= 0.1s | rem=   102s
+  [Trainer] Epoch 168 | train=100.00% val=67.10% gap=+32.90 | loss=0.5277 | lr=0.00079 | t/ep=  1.3s t/eval= 0.1s | rem=   101s
+  [Trainer] Epoch 169 | train=99.98% val=66.70% gap=+33.28 | loss=0.5278 | lr=0.00074 | t/ep=  1.3s t/eval= 0.1s | rem=   100s
+  [Trainer] Epoch 170 | train=99.98% val=66.70% gap=+33.28 | loss=0.5278 | lr=0.00071 | t/ep=  1.3s t/eval= 0.1s | rem=    98s
+  [Trainer] Epoch 171 | train=100.00% val=66.90% gap=+33.10 | loss=0.5294 | lr=0.00067 | t/ep=  1.3s t/eval= 0.1s | rem=    97s
+  [Trainer] Epoch 172 | train=100.00% val=67.10% gap=+32.90 | loss=0.5288 | lr=0.00063 | t/ep=  1.3s t/eval= 0.1s | rem=    95s
+  [Trainer] Epoch 173 | train=100.00% val=67.20% gap=+32.80 | loss=0.5284 | lr=0.00059 | t/ep=  1.3s t/eval= 0.1s | rem=    94s
+  [Trainer] Epoch 174 | train=100.00% val=67.00% gap=+33.00 | loss=0.5273 | lr=0.00056 | t/ep=  1.3s t/eval= 0.1s | rem=    93s
+  [Trainer] Epoch 175 | train=99.98% val=66.90% gap=+33.08 | loss=0.5282 | lr=0.00052 | t/ep=  1.3s t/eval= 0.1s | rem=    91s
+  [Trainer] Epoch 176 | train=100.00% val=67.10% gap=+32.90 | loss=0.5284 | lr=0.00049 | t/ep=  1.3s t/eval= 0.1s | rem=    90s
+  [Trainer] Epoch 177 | train=100.00% val=67.10% gap=+32.90 | loss=0.5284 | lr=0.00046 | t/ep=  1.3s t/eval= 0.1s | rem=    88s
+  [Trainer] Epoch 178 | train=99.98% val=67.60% gap=+32.38 | loss=0.5296 | lr=0.00042 | t/ep=  1.3s t/eval= 0.1s | rem=    87s
+  [Trainer] Epoch 179 | train=100.00% val=67.20% gap=+32.80 | loss=0.5277 | lr=0.00039 | t/ep=  1.3s t/eval= 0.1s | rem=    86s
+  [Trainer] Epoch 180 | train=100.00% val=66.90% gap=+33.10 | loss=0.5284 | lr=0.00036 | t/ep=  1.3s t/eval= 0.1s | rem=    84s
+  [Trainer] Epoch 181 | train=100.00% val=67.40% gap=+32.60 | loss=0.5285 | lr=0.00034 | t/ep=  1.3s t/eval= 0.1s | rem=    83s
+  [Trainer] Epoch 182 | train=100.00% val=67.00% gap=+33.00 | loss=0.5286 | lr=0.00031 | t/ep=  1.3s t/eval= 0.1s | rem=    81s
+  [Trainer] Epoch 183 | train=100.00% val=67.40% gap=+32.60 | loss=0.5274 | lr=0.00028 | t/ep=  1.3s t/eval= 0.2s | rem=    80s
+  [Trainer] Epoch 184 | train=100.00% val=67.00% gap=+33.00 | loss=0.5274 | lr=0.00026 | t/ep=  1.3s t/eval= 0.1s | rem=    78s
+  [Trainer] Epoch 185 | train=100.00% val=66.70% gap=+33.30 | loss=0.5276 | lr=0.00023 | t/ep=  1.3s t/eval= 0.1s | rem=    77s
+  [Trainer] Epoch 186 | train=100.00% val=66.70% gap=+33.30 | loss=0.5281 | lr=0.00021 | t/ep=  1.3s t/eval= 0.1s | rem=    76s
+  [Trainer] Epoch 187 | train=99.98% val=66.70% gap=+33.28 | loss=0.5276 | lr=0.00019 | t/ep=  1.3s t/eval= 0.1s | rem=    74s
+  [Trainer] Epoch 188 | train=100.00% val=66.70% gap=+33.30 | loss=0.5271 | lr=0.00017 | t/ep=  1.3s t/eval= 0.1s | rem=    73s
+  [Trainer] Epoch 189 | train=99.98% val=66.90% gap=+33.08 | loss=0.5295 | lr=0.00015 | t/ep=  1.3s t/eval= 0.1s | rem=    71s
+  [Trainer] Epoch 190 | train=99.98% val=66.50% gap=+33.48 | loss=0.5290 | lr=0.00013 | t/ep=  1.3s t/eval= 0.1s | rem=    70s
+  [Trainer] Epoch 191 | train=100.00% val=66.70% gap=+33.30 | loss=0.5279 | lr=0.00011 | t/ep=  1.3s t/eval= 0.1s | rem=    69s
+  [Trainer] Epoch 192 | train=99.96% val=66.70% gap=+33.26 | loss=0.5276 | lr=0.00010 | t/ep=  1.3s t/eval= 0.1s | rem=    67s
+  [Trainer] Epoch 193 | train=99.91% val=67.10% gap=+32.81 | loss=0.5301 | lr=0.00008 | t/ep=  1.3s t/eval= 0.1s | rem=    66s
+  [Trainer] Epoch 194 | train=100.00% val=67.00% gap=+33.00 | loss=0.5278 | lr=0.00007 | t/ep=  1.3s t/eval= 0.1s | rem=    64s
+  [Trainer] Epoch 195 | train=100.00% val=67.00% gap=+33.00 | loss=0.5278 | lr=0.00006 | t/ep=  1.3s t/eval= 0.1s | rem=    63s
+  [Trainer] Epoch 196 | train=100.00% val=66.90% gap=+33.10 | loss=0.5277 | lr=0.00005 | t/ep=  1.3s t/eval= 0.1s | rem=    62s
+  [Trainer] Epoch 197 | train=100.00% val=67.20% gap=+32.80 | loss=0.5266 | lr=0.00004 | t/ep=  1.3s t/eval= 0.1s | rem=    60s
+  [Trainer] Epoch 198 | train=99.98% val=67.00% gap=+32.98 | loss=0.5286 | lr=0.00003 | t/ep=  1.3s t/eval= 0.1s | rem=    59s
+  [Trainer] Epoch 199 | train=100.00% val=67.20% gap=+32.80 | loss=0.5264 | lr=0.00002 | t/ep=  1.3s t/eval= 0.1s | rem=    57s
+  [Trainer] Epoch 200 | train=99.98% val=67.00% gap=+32.98 | loss=0.5274 | lr=0.00001 | t/ep=  1.3s t/eval= 0.1s | rem=    56s
+  [Trainer] Epoch 201 | train=100.00% val=67.00% gap=+33.00 | loss=0.5265 | lr=0.00001 | t/ep=  1.3s t/eval= 0.1s | rem=    55s
+  [Trainer] Epoch 202 | train=100.00% val=67.00% gap=+33.00 | loss=0.5277 | lr=0.00000 | t/ep=  1.3s t/eval= 0.1s | rem=    53s
+  [Trainer] Epoch 203 | train=100.00% val=66.80% gap=+33.20 | loss=0.5276 | lr=0.00000 | t/ep=  1.3s t/eval= 0.1s | rem=    52s
+[Trainer] summary: 203 epochs, best val 68.20% at epoch 105 (52% in), final train 100.00%
+[Trainer]   -> MEMORISING - train 100.0% vs val 68.2%, gap +31.8pts (needs regularisation, not capacity/time)
+
+=== Predicting ===
+  Allotted compute time remaining: ~51.78s
+Run time for Congo: 308.2800327911973
+Model Training and Prediction Complete
+finished dataset: Congo
+========== Dataset   Rhine    =============================================
+  Metadata:
+   - num_classes         : 43
+   - input_shape         : [5328, 3, 29, 29]
+   - codename            : Rhine
+   - benchmark           : 89.03
+   - time_limit          : 0.1
+   - time_remaining      : 359.97535169124603
+
+=== Processing Data ===
+  Allotted compute time remaining: ~5m,59s
+[DataProcessor] augmentation: continuous (pad+crop+flip+noise) - shape 3x29x29, 251 unique values seen in 20000 sampled
+
+=== Performing NAS ===
+  Allotted compute time remaining: ~5m,59s
+[NAS] macro: c0=32 n=2 d=2 stem_stride=1 (H=29, W=29 -> 7x7)
+[NAS] scoring up to 15625 genotypes (full search space)
+[NAS] scored 0 genotypes
+[NAS] scored 425 genotypes, verifying top 10 (max_batches=21, batch_size=512, t_batch~0.105s, t_val~0.20s)
+  [NAS] verify: val=8.67% t=1.6s
+  [NAS] verify: val=5.11% t=1.5s
+  [NAS] verify: val=4.91% t=1.5s
+  [NAS] verify: val=5.11% t=1.6s
+  [NAS] verify: val=3.72% t=1.5s
+  [NAS] verify: val=4.91% t=1.6s
+  [NAS] verify: val=4.91% t=1.6s
+  [NAS] verify: val=3.72% t=1.5s
+  [NAS] verify: val=4.91% t=1.4s
+  [NAS] verify: val=4.91% t=1.5s
+[NAS] selected genotype (val=8.67%): ['conv3x3', 'conv3x3', 'conv3x3', 'skip', 'conv3x3', 'conv1x1']
+
+=== Training ===
+  Allotted compute time remaining: ~5m,32s
+[Trainer] weight decay on 34 tensors, none on 67 (BN/bias)
+  [Trainer] Epoch   1 | train= 8.24% val= 5.42% gap= +2.82 | loss=3.6889 | lr=0.01000 | t/ep=  1.3s t/eval= 0.2s | rem=   331s
+  [Trainer] Epoch   2 | train=13.09% val= 9.90% gap= +3.19 | loss=3.3186 | lr=0.01000 | t/ep=  1.3s t/eval= 0.2s | rem=   330s
+  [Trainer] Epoch   3 | train=18.01% val=17.89% gap= +0.11 | loss=3.1426 | lr=0.01000 | t/ep=  1.3s t/eval= 0.2s | rem=   328s
+  [Trainer] Epoch   4 | train=20.55% val=14.61% gap= +5.94 | loss=2.9917 | lr=0.00999 | t/ep=  1.3s t/eval= 0.2s | rem=   327s
+  [Trainer] Epoch   5 | train=25.14% val=18.21% gap= +6.93 | loss=2.8634 | lr=0.00999 | t/ep=  1.3s t/eval= 0.2s | rem=   325s
+  [Trainer] Epoch   6 | train=29.90% val=23.28% gap= +6.62 | loss=2.7149 | lr=0.00998 | t/ep=  1.3s t/eval= 0.2s | rem=   324s
+  [Trainer] Epoch   7 | train=34.47% val=22.80% gap=+11.67 | loss=2.5657 | lr=0.00997 | t/ep=  1.3s t/eval= 0.2s | rem=   322s
+  [Trainer] Epoch   8 | train=40.43% val=25.49% gap=+14.93 | loss=2.4075 | lr=0.00997 | t/ep=  1.3s t/eval= 0.2s | rem=   321s
+  [Trainer] Epoch   9 | train=43.65% val=27.83% gap=+15.82 | loss=2.2941 | lr=0.00995 | t/ep=  1.3s t/eval= 0.2s | rem=   319s
+  [Trainer] Epoch  10 | train=47.17% val=34.72% gap=+12.45 | loss=2.1916 | lr=0.00994 | t/ep=  1.3s t/eval= 0.2s | rem=   318s
+  [Trainer] Epoch  11 | train=51.27% val=27.87% gap=+23.40 | loss=2.0993 | lr=0.00993 | t/ep=  1.3s t/eval= 0.2s | rem=   316s
+  [Trainer] Epoch  12 | train=55.18% val=40.62% gap=+14.56 | loss=1.9670 | lr=0.00991 | t/ep=  1.3s t/eval= 0.2s | rem=   315s
+  [Trainer] Epoch  13 | train=59.67% val=41.37% gap=+18.30 | loss=1.8499 | lr=0.00990 | t/ep=  1.3s t/eval= 0.2s | rem=   313s
+  [Trainer] Epoch  14 | train=63.46% val=40.10% gap=+23.35 | loss=1.7633 | lr=0.00988 | t/ep=  1.3s t/eval= 0.3s | rem=   312s
+  [Trainer] Epoch  15 | train=66.58% val=42.87% gap=+23.71 | loss=1.6834 | lr=0.00986 | t/ep=  1.3s t/eval= 0.2s | rem=   310s
+  [Trainer] Epoch  16 | train=70.02% val=52.30% gap=+17.72 | loss=1.6086 | lr=0.00984 | t/ep=  1.3s t/eval= 0.2s | rem=   308s
+  [Trainer] Epoch  17 | train=74.47% val=52.38% gap=+22.10 | loss=1.4965 | lr=0.00982 | t/ep=  1.3s t/eval= 0.2s | rem=   307s
+  [Trainer] Epoch  18 | train=77.32% val=54.79% gap=+22.53 | loss=1.4163 | lr=0.00980 | t/ep=  1.3s t/eval= 0.2s | rem=   305s
+  [Trainer] Epoch  19 | train=79.45% val=56.77% gap=+22.68 | loss=1.3622 | lr=0.00977 | t/ep=  1.3s t/eval= 0.2s | rem=   304s
+  [Trainer] Epoch  20 | train=81.72% val=57.92% gap=+23.80 | loss=1.2994 | lr=0.00974 | t/ep=  1.3s t/eval= 0.2s | rem=   302s
+  [Trainer] Epoch  21 | train=82.01% val=54.59% gap=+27.42 | loss=1.2815 | lr=0.00972 | t/ep=  1.3s t/eval= 0.2s | rem=   301s
+  [Trainer] Epoch  22 | train=84.88% val=58.79% gap=+26.09 | loss=1.2245 | lr=0.00969 | t/ep=  1.3s t/eval= 0.2s | rem=   299s
+  [Trainer] Epoch  23 | train=87.64% val=62.00% gap=+25.64 | loss=1.1561 | lr=0.00966 | t/ep=  1.3s t/eval= 0.2s | rem=   298s
+  [Trainer] Epoch  24 | train=88.69% val=65.24% gap=+23.45 | loss=1.1220 | lr=0.00963 | t/ep=  1.3s t/eval= 0.2s | rem=   296s
+  [Trainer] Epoch  25 | train=90.33% val=64.05% gap=+26.28 | loss=1.0810 | lr=0.00959 | t/ep=  1.3s t/eval= 0.2s | rem=   295s
+  [Trainer] Epoch  26 | train=91.86% val=69.36% gap=+22.50 | loss=1.0469 | lr=0.00956 | t/ep=  1.3s t/eval= 0.2s | rem=   293s
+  [Trainer] Epoch  27 | train=92.30% val=69.24% gap=+23.06 | loss=1.0215 | lr=0.00953 | t/ep=  1.3s t/eval= 0.2s | rem=   292s
+  [Trainer] Epoch  28 | train=93.40% val=68.65% gap=+24.75 | loss=1.0009 | lr=0.00949 | t/ep=  1.3s t/eval= 0.2s | rem=   290s
+  [Trainer] Epoch  29 | train=94.16% val=71.46% gap=+22.70 | loss=0.9769 | lr=0.00945 | t/ep=  1.3s t/eval= 0.2s | rem=   289s
+  [Trainer] Epoch  30 | train=95.16% val=68.41% gap=+26.75 | loss=0.9486 | lr=0.00941 | t/ep=  1.3s t/eval= 0.2s | rem=   287s
+  [Trainer] Epoch  31 | train=96.19% val=74.62% gap=+21.57 | loss=0.9230 | lr=0.00937 | t/ep=  1.3s t/eval= 0.2s | rem=   286s
+  [Trainer] Epoch  32 | train=95.84% val=73.48% gap=+22.36 | loss=0.9143 | lr=0.00933 | t/ep=  1.3s t/eval= 0.2s | rem=   284s
+  [Trainer] Epoch  33 | train=96.33% val=70.55% gap=+25.78 | loss=0.9062 | lr=0.00929 | t/ep=  1.3s t/eval= 0.2s | rem=   283s
+  [Trainer] Epoch  34 | train=96.54% val=76.21% gap=+20.34 | loss=0.8997 | lr=0.00925 | t/ep=  1.3s t/eval= 0.2s | rem=   281s
+  [Trainer] Epoch  35 | train=96.56% val=75.02% gap=+21.54 | loss=0.8886 | lr=0.00920 | t/ep=  1.4s t/eval= 0.2s | rem=   280s
+  [Trainer] Epoch  36 | train=97.68% val=78.38% gap=+19.29 | loss=0.8688 | lr=0.00915 | t/ep=  1.3s t/eval= 0.2s | rem=   278s
+  [Trainer] Epoch  37 | train=98.14% val=79.61% gap=+18.53 | loss=0.8515 | lr=0.00910 | t/ep=  1.3s t/eval= 0.2s | rem=   277s
+  [Trainer] Epoch  38 | train=97.54% val=77.83% gap=+19.71 | loss=0.8525 | lr=0.00906 | t/ep=  1.3s t/eval= 0.2s | rem=   275s
+  [Trainer] Epoch  39 | train=98.09% val=79.14% gap=+18.95 | loss=0.8392 | lr=0.00901 | t/ep=  1.3s t/eval= 0.2s | rem=   274s
+  [Trainer] Epoch  40 | train=98.40% val=76.96% gap=+21.44 | loss=0.8352 | lr=0.00896 | t/ep=  1.3s t/eval= 0.2s | rem=   272s
+  [Trainer] Epoch  41 | train=98.42% val=78.70% gap=+19.72 | loss=0.8305 | lr=0.00890 | t/ep=  1.3s t/eval= 0.2s | rem=   271s
+  [Trainer] Epoch  42 | train=98.40% val=80.44% gap=+17.96 | loss=0.8246 | lr=0.00885 | t/ep=  1.3s t/eval= 0.2s | rem=   269s
+  [Trainer] Epoch  43 | train=98.69% val=77.63% gap=+21.06 | loss=0.8180 | lr=0.00880 | t/ep=  1.3s t/eval= 0.2s | rem=   268s
+  [Trainer] Epoch  44 | train=98.98% val=81.79% gap=+17.19 | loss=0.8103 | lr=0.00874 | t/ep=  1.3s t/eval= 0.2s | rem=   266s
+  [Trainer] Epoch  45 | train=99.04% val=81.04% gap=+18.01 | loss=0.8107 | lr=0.00869 | t/ep=  1.3s t/eval= 0.2s | rem=   264s
+  [Trainer] Epoch  46 | train=98.93% val=81.79% gap=+17.14 | loss=0.8065 | lr=0.00863 | t/ep=  1.3s t/eval= 0.2s | rem=   263s
+  [Trainer] Epoch  47 | train=98.98% val=79.93% gap=+19.06 | loss=0.8012 | lr=0.00857 | t/ep=  1.3s t/eval= 0.2s | rem=   261s
+  [Trainer] Epoch  48 | train=99.12% val=80.48% gap=+18.64 | loss=0.7952 | lr=0.00851 | t/ep=  1.3s t/eval= 0.2s | rem=   260s
+  [Trainer] Epoch  49 | train=99.20% val=81.35% gap=+17.85 | loss=0.7888 | lr=0.00845 | t/ep=  1.3s t/eval= 0.2s | rem=   258s
+  [Trainer] Epoch  50 | train=99.32% val=81.51% gap=+17.80 | loss=0.7848 | lr=0.00839 | t/ep=  1.3s t/eval= 0.2s | rem=   257s
+  [Trainer] Epoch  51 | train=99.20% val=79.69% gap=+19.51 | loss=0.7840 | lr=0.00833 | t/ep=  1.3s t/eval= 0.2s | rem=   255s
+  [Trainer] Epoch  52 | train=99.28% val=81.12% gap=+18.16 | loss=0.7820 | lr=0.00826 | t/ep=  1.3s t/eval= 0.2s | rem=   254s
+  [Trainer] Epoch  53 | train=99.36% val=81.04% gap=+18.32 | loss=0.7791 | lr=0.00820 | t/ep=  1.3s t/eval= 0.2s | rem=   252s
+  [Trainer] Epoch  54 | train=99.53% val=83.41% gap=+16.12 | loss=0.7726 | lr=0.00814 | t/ep=  1.3s t/eval= 0.3s | rem=   251s
+  [Trainer] Epoch  55 | train=99.53% val=81.08% gap=+18.45 | loss=0.7716 | lr=0.00807 | t/ep=  1.3s t/eval= 0.2s | rem=   249s
+  [Trainer] Epoch  56 | train=99.18% val=83.17% gap=+16.00 | loss=0.7759 | lr=0.00800 | t/ep=  1.3s t/eval= 0.2s | rem=   248s
+  [Trainer] Epoch  57 | train=99.45% val=83.06% gap=+16.40 | loss=0.7712 | lr=0.00793 | t/ep=  1.4s t/eval= 0.2s | rem=   246s
+  [Trainer] Epoch  58 | train=99.49% val=84.24% gap=+15.25 | loss=0.7683 | lr=0.00786 | t/ep=  1.3s t/eval= 0.2s | rem=   245s
+  [Trainer] Epoch  59 | train=99.67% val=83.77% gap=+15.90 | loss=0.7643 | lr=0.00779 | t/ep=  1.3s t/eval= 0.2s | rem=   243s
+  [Trainer] Epoch  60 | train=99.73% val=82.70% gap=+17.03 | loss=0.7592 | lr=0.00772 | t/ep=  1.3s t/eval= 0.2s | rem=   242s
+  [Trainer] Epoch  61 | train=99.65% val=84.40% gap=+15.25 | loss=0.7603 | lr=0.00765 | t/ep=  1.3s t/eval= 0.2s | rem=   240s
+  [Trainer] Epoch  62 | train=99.67% val=84.24% gap=+15.42 | loss=0.7569 | lr=0.00758 | t/ep=  1.3s t/eval= 0.2s | rem=   239s
+  [Trainer] Epoch  63 | train=99.88% val=83.45% gap=+16.43 | loss=0.7536 | lr=0.00751 | t/ep=  1.3s t/eval= 0.2s | rem=   237s
+  [Trainer] Epoch  64 | train=99.84% val=83.41% gap=+16.43 | loss=0.7517 | lr=0.00743 | t/ep=  1.3s t/eval= 0.2s | rem=   236s
+  [Trainer] Epoch  65 | train=99.71% val=83.73% gap=+15.98 | loss=0.7515 | lr=0.00736 | t/ep=  1.3s t/eval= 0.2s | rem=   234s
+  [Trainer] Epoch  66 | train=99.61% val=83.37% gap=+16.24 | loss=0.7516 | lr=0.00729 | t/ep=  1.3s t/eval= 0.2s | rem=   233s
+  [Trainer] Epoch  67 | train=99.79% val=82.03% gap=+17.76 | loss=0.7490 | lr=0.00721 | t/ep=  1.3s t/eval= 0.2s | rem=   231s
+  [Trainer] Epoch  68 | train=99.80% val=84.40% gap=+15.40 | loss=0.7482 | lr=0.00714 | t/ep=  1.3s t/eval= 0.2s | rem=   230s
+  [Trainer] Epoch  69 | train=99.71% val=84.88% gap=+14.83 | loss=0.7459 | lr=0.00706 | t/ep=  1.3s t/eval= 0.2s | rem=   228s
+  [Trainer] Epoch  70 | train=99.55% val=84.88% gap=+14.67 | loss=0.7484 | lr=0.00698 | t/ep=  1.3s t/eval= 0.2s | rem=   227s
+  [Trainer] Epoch  71 | train=99.80% val=85.35% gap=+14.45 | loss=0.7462 | lr=0.00690 | t/ep=  1.3s t/eval= 0.2s | rem=   225s
+  [Trainer] Epoch  72 | train=99.79% val=84.76% gap=+15.03 | loss=0.7424 | lr=0.00683 | t/ep=  1.3s t/eval= 0.2s | rem=   224s
+  [Trainer] Epoch  73 | train=99.92% val=85.23% gap=+14.69 | loss=0.7391 | lr=0.00675 | t/ep=  1.3s t/eval= 0.2s | rem=   222s
+  [Trainer] Epoch  74 | train=99.69% val=85.23% gap=+14.45 | loss=0.7419 | lr=0.00667 | t/ep=  1.3s t/eval= 0.2s | rem=   221s
+  [Trainer] Epoch  75 | train=99.65% val=85.63% gap=+14.02 | loss=0.7408 | lr=0.00659 | t/ep=  1.3s t/eval= 0.2s | rem=   219s
+  [Trainer] Epoch  76 | train=99.86% val=85.71% gap=+14.15 | loss=0.7389 | lr=0.00651 | t/ep=  1.3s t/eval= 0.2s | rem=   217s
+  [Trainer] Epoch  77 | train=99.90% val=84.64% gap=+15.26 | loss=0.7362 | lr=0.00643 | t/ep=  1.3s t/eval= 0.2s | rem=   216s
+  [Trainer] Epoch  78 | train=99.86% val=84.92% gap=+14.95 | loss=0.7383 | lr=0.00635 | t/ep=  1.4s t/eval= 0.2s | rem=   214s
+  [Trainer] Epoch  79 | train=99.80% val=84.68% gap=+15.13 | loss=0.7369 | lr=0.00626 | t/ep=  1.3s t/eval= 0.2s | rem=   213s
+  [Trainer] Epoch  80 | train=99.90% val=85.31% gap=+14.59 | loss=0.7351 | lr=0.00618 | t/ep=  1.3s t/eval= 0.2s | rem=   211s
+  [Trainer] Epoch  81 | train=99.90% val=85.67% gap=+14.23 | loss=0.7320 | lr=0.00610 | t/ep=  1.3s t/eval= 0.2s | rem=   210s
+  [Trainer] Epoch  82 | train=99.84% val=85.15% gap=+14.69 | loss=0.7341 | lr=0.00602 | t/ep=  1.3s t/eval= 0.2s | rem=   208s
+  [Trainer] Epoch  83 | train=99.96% val=84.40% gap=+15.56 | loss=0.7316 | lr=0.00594 | t/ep=  1.3s t/eval= 0.2s | rem=   207s
+  [Trainer] Epoch  84 | train=99.86% val=85.27% gap=+14.59 | loss=0.7331 | lr=0.00585 | t/ep=  1.3s t/eval= 0.2s | rem=   205s
+  [Trainer] Epoch  85 | train=99.84% val=85.59% gap=+14.25 | loss=0.7328 | lr=0.00577 | t/ep=  1.3s t/eval= 0.2s | rem=   204s
+  [Trainer] Epoch  86 | train=99.94% val=85.39% gap=+14.55 | loss=0.7294 | lr=0.00569 | t/ep=  1.3s t/eval= 0.2s | rem=   202s
+  [Trainer] Epoch  87 | train=99.88% val=84.36% gap=+15.52 | loss=0.7301 | lr=0.00560 | t/ep=  1.3s t/eval= 0.2s | rem=   201s
+  [Trainer] Epoch  88 | train=99.96% val=85.55% gap=+14.41 | loss=0.7274 | lr=0.00552 | t/ep=  1.3s t/eval= 0.2s | rem=   199s
+  [Trainer] Epoch  89 | train=99.96% val=86.74% gap=+13.22 | loss=0.7274 | lr=0.00544 | t/ep=  1.3s t/eval= 0.2s | rem=   198s
+  [Trainer] Epoch  90 | train=99.96% val=85.87% gap=+14.09 | loss=0.7274 | lr=0.00535 | t/ep=  1.3s t/eval= 0.2s | rem=   196s
+  [Trainer] Epoch  91 | train=99.92% val=85.59% gap=+14.33 | loss=0.7272 | lr=0.00527 | t/ep=  1.3s t/eval= 0.2s | rem=   195s
+  [Trainer] Epoch  92 | train=99.90% val=85.63% gap=+14.27 | loss=0.7267 | lr=0.00519 | t/ep=  1.3s t/eval= 0.2s | rem=   193s
+  [Trainer] Epoch  93 | train=99.88% val=86.82% gap=+13.07 | loss=0.7265 | lr=0.00510 | t/ep=  1.3s t/eval= 0.2s | rem=   192s
+  [Trainer] Epoch  94 | train=99.90% val=86.54% gap=+13.36 | loss=0.7266 | lr=0.00502 | t/ep=  1.3s t/eval= 0.2s | rem=   190s
+  [Trainer] Epoch  95 | train=99.88% val=85.91% gap=+13.98 | loss=0.7260 | lr=0.00493 | t/ep=  1.3s t/eval= 0.2s | rem=   189s
+  [Trainer] Epoch  96 | train=99.88% val=86.82% gap=+13.07 | loss=0.7250 | lr=0.00485 | t/ep=  1.3s t/eval= 0.3s | rem=   187s
+  [Trainer] Epoch  97 | train=99.92% val=86.62% gap=+13.30 | loss=0.7241 | lr=0.00476 | t/ep=  1.3s t/eval= 0.2s | rem=   186s
+  [Trainer] Epoch  98 | train=99.94% val=86.38% gap=+13.56 | loss=0.7237 | lr=0.00468 | t/ep=  1.3s t/eval= 0.2s | rem=   184s
+  [Trainer] Epoch  99 | train=99.94% val=85.08% gap=+14.87 | loss=0.7234 | lr=0.00460 | t/ep=  1.3s t/eval= 0.2s | rem=   183s
+  [Trainer] Epoch 100 | train=99.90% val=86.66% gap=+13.24 | loss=0.7242 | lr=0.00451 | t/ep=  1.3s t/eval= 0.2s | rem=   181s
+  [Trainer] Epoch 101 | train=99.94% val=86.30% gap=+13.64 | loss=0.7220 | lr=0.00443 | t/ep=  1.3s t/eval= 0.2s | rem=   180s
+  [Trainer] Epoch 102 | train=99.94% val=86.22% gap=+13.72 | loss=0.7216 | lr=0.00435 | t/ep=  1.3s t/eval= 0.2s | rem=   178s
+  [Trainer] Epoch 103 | train=99.98% val=86.86% gap=+13.12 | loss=0.7224 | lr=0.00426 | t/ep=  1.3s t/eval= 0.2s | rem=   177s
+  [Trainer] Epoch 104 | train=99.94% val=87.21% gap=+12.73 | loss=0.7212 | lr=0.00418 | t/ep=  1.3s t/eval= 0.2s | rem=   175s
+  [Trainer] Epoch 105 | train=99.98% val=86.26% gap=+13.72 | loss=0.7192 | lr=0.00410 | t/ep=  1.3s t/eval= 0.2s | rem=   174s
+  [Trainer] Epoch 106 | train=99.98% val=86.30% gap=+13.68 | loss=0.7196 | lr=0.00402 | t/ep=  1.3s t/eval= 0.2s | rem=   172s
+  [Trainer] Epoch 107 | train=99.92% val=85.63% gap=+14.29 | loss=0.7200 | lr=0.00393 | t/ep=  1.3s t/eval= 0.2s | rem=   170s
+  [Trainer] Epoch 108 | train=99.88% val=86.54% gap=+13.34 | loss=0.7221 | lr=0.00385 | t/ep=  1.3s t/eval= 0.2s | rem=   169s
+  [Trainer] Epoch 109 | train=99.88% val=86.10% gap=+13.78 | loss=0.7211 | lr=0.00377 | t/ep=  1.3s t/eval= 0.2s | rem=   167s
+  [Trainer] Epoch 110 | train=99.94% val=85.83% gap=+14.11 | loss=0.7199 | lr=0.00369 | t/ep=  1.3s t/eval= 0.2s | rem=   166s
+  [Trainer] Epoch 111 | train=99.88% val=86.70% gap=+13.18 | loss=0.7204 | lr=0.00361 | t/ep=  1.3s t/eval= 0.2s | rem=   164s
+  [Trainer] Epoch 112 | train=99.96% val=86.18% gap=+13.78 | loss=0.7188 | lr=0.00353 | t/ep=  1.3s t/eval= 0.2s | rem=   163s
+  [Trainer] Epoch 113 | train=99.94% val=86.62% gap=+13.32 | loss=0.7192 | lr=0.00345 | t/ep=  1.4s t/eval= 0.2s | rem=   161s
+  [Trainer] Epoch 114 | train=99.98% val=86.70% gap=+13.28 | loss=0.7186 | lr=0.00337 | t/ep=  1.3s t/eval= 0.2s | rem=   160s
+  [Trainer] Epoch 115 | train=99.96% val=86.54% gap=+13.42 | loss=0.7179 | lr=0.00329 | t/ep=  1.3s t/eval= 0.2s | rem=   158s
+  [Trainer] Epoch 116 | train=99.98% val=87.65% gap=+12.33 | loss=0.7169 | lr=0.00321 | t/ep=  1.3s t/eval= 0.2s | rem=   157s
+  [Trainer] Epoch 117 | train=99.92% val=86.54% gap=+13.38 | loss=0.7188 | lr=0.00313 | t/ep=  1.3s t/eval= 0.2s | rem=   155s
+  [Trainer] Epoch 118 | train=99.96% val=86.74% gap=+13.22 | loss=0.7170 | lr=0.00305 | t/ep=  1.3s t/eval= 0.2s | rem=   154s
+  [Trainer] Epoch 119 | train=99.96% val=86.66% gap=+13.30 | loss=0.7172 | lr=0.00297 | t/ep=  1.3s t/eval= 0.2s | rem=   152s
+  [Trainer] Epoch 120 | train=99.98% val=87.09% gap=+12.89 | loss=0.7175 | lr=0.00290 | t/ep=  1.3s t/eval= 0.2s | rem=   151s
+  [Trainer] Epoch 121 | train=99.96% val=86.86% gap=+13.10 | loss=0.7162 | lr=0.00282 | t/ep=  1.4s t/eval= 0.2s | rem=   149s
+  [Trainer] Epoch 122 | train=99.96% val=86.70% gap=+13.26 | loss=0.7171 | lr=0.00274 | t/ep=  1.3s t/eval= 0.2s | rem=   148s
+  [Trainer] Epoch 123 | train=99.98% val=86.74% gap=+13.24 | loss=0.7165 | lr=0.00267 | t/ep=  1.3s t/eval= 0.2s | rem=   146s
+  [Trainer] Epoch 124 | train=99.98% val=86.22% gap=+13.76 | loss=0.7159 | lr=0.00260 | t/ep=  1.3s t/eval= 0.2s | rem=   145s
+  [Trainer] Epoch 125 | train=99.96% val=87.02% gap=+12.95 | loss=0.7159 | lr=0.00252 | t/ep=  1.3s t/eval= 0.2s | rem=   143s
+  [Trainer] Epoch 126 | train=100.00% val=87.13% gap=+12.87 | loss=0.7155 | lr=0.00245 | t/ep=  1.3s t/eval= 0.2s | rem=   142s
+  [Trainer] Epoch 127 | train=100.00% val=87.05% gap=+12.95 | loss=0.7145 | lr=0.00238 | t/ep=  1.3s t/eval= 0.2s | rem=   140s
+  [Trainer] Epoch 128 | train=100.00% val=86.82% gap=+13.18 | loss=0.7147 | lr=0.00231 | t/ep=  1.4s t/eval= 0.2s | rem=   139s
+  [Trainer] Epoch 129 | train=99.96% val=86.94% gap=+13.03 | loss=0.7152 | lr=0.00223 | t/ep=  1.3s t/eval= 0.2s | rem=   137s
+  [Trainer] Epoch 130 | train=99.98% val=87.33% gap=+12.65 | loss=0.7161 | lr=0.00217 | t/ep=  1.3s t/eval= 0.2s | rem=   136s
+  [Trainer] Epoch 131 | train=99.92% val=87.02% gap=+12.91 | loss=0.7151 | lr=0.00210 | t/ep=  1.4s t/eval= 0.2s | rem=   134s
+  [Trainer] Epoch 132 | train=99.98% val=86.94% gap=+13.04 | loss=0.7156 | lr=0.00202 | t/ep=  1.3s t/eval= 0.2s | rem=   132s
+  [Trainer] Epoch 133 | train=99.98% val=87.05% gap=+12.93 | loss=0.7143 | lr=0.00196 | t/ep=  1.3s t/eval= 0.2s | rem=   131s
+  [Trainer] Epoch 134 | train=99.98% val=86.94% gap=+13.04 | loss=0.7138 | lr=0.00189 | t/ep=  1.3s t/eval= 0.2s | rem=   129s
+  [Trainer] Epoch 135 | train=99.98% val=87.77% gap=+12.21 | loss=0.7149 | lr=0.00183 | t/ep=  1.3s t/eval= 0.2s | rem=   128s
+  [Trainer] Epoch 136 | train=99.98% val=87.17% gap=+12.81 | loss=0.7147 | lr=0.00176 | t/ep=  1.3s t/eval= 0.2s | rem=   126s
+  [Trainer] Epoch 137 | train=99.98% val=86.58% gap=+13.40 | loss=0.7138 | lr=0.00170 | t/ep=  1.3s t/eval= 0.2s | rem=   125s
+  [Trainer] Epoch 138 | train=99.98% val=87.21% gap=+12.77 | loss=0.7145 | lr=0.00164 | t/ep=  1.3s t/eval= 0.2s | rem=   123s
+  [Trainer] Epoch 139 | train=100.00% val=86.66% gap=+13.34 | loss=0.7138 | lr=0.00158 | t/ep=  1.3s t/eval= 0.2s | rem=   122s
+  [Trainer] Epoch 140 | train=100.00% val=87.02% gap=+12.98 | loss=0.7134 | lr=0.00152 | t/ep=  1.3s t/eval= 0.2s | rem=   120s
+  [Trainer] Epoch 141 | train=100.00% val=87.45% gap=+12.55 | loss=0.7139 | lr=0.00146 | t/ep=  1.3s t/eval= 0.2s | rem=   119s
+  [Trainer] Epoch 142 | train=100.00% val=87.37% gap=+12.63 | loss=0.7148 | lr=0.00140 | t/ep=  1.3s t/eval= 0.2s | rem=   117s
+  [Trainer] Epoch 143 | train=100.00% val=86.90% gap=+13.10 | loss=0.7127 | lr=0.00134 | t/ep=  1.3s t/eval= 0.2s | rem=   116s
+  [Trainer] Epoch 144 | train=100.00% val=86.86% gap=+13.14 | loss=0.7121 | lr=0.00128 | t/ep=  1.3s t/eval= 0.2s | rem=   114s
+  [Trainer] Epoch 145 | train=99.98% val=87.25% gap=+12.73 | loss=0.7128 | lr=0.00123 | t/ep=  1.3s t/eval= 0.2s | rem=   113s
+  [Trainer] Epoch 146 | train=100.00% val=86.94% gap=+13.06 | loss=0.7130 | lr=0.00117 | t/ep=  1.3s t/eval= 0.2s | rem=   111s
+  [Trainer] Epoch 147 | train=100.00% val=87.17% gap=+12.83 | loss=0.7124 | lr=0.00112 | t/ep=  1.3s t/eval= 0.2s | rem=   110s
+  [Trainer] Epoch 148 | train=99.98% val=87.02% gap=+12.97 | loss=0.7134 | lr=0.00107 | t/ep=  1.3s t/eval= 0.2s | rem=   108s
+  [Trainer] Epoch 149 | train=100.00% val=86.98% gap=+13.02 | loss=0.7130 | lr=0.00102 | t/ep=  1.3s t/eval= 0.3s | rem=   107s
+  [Trainer] Epoch 150 | train=100.00% val=87.13% gap=+12.87 | loss=0.7122 | lr=0.00096 | t/ep=  1.3s t/eval= 0.2s | rem=   105s
+  [Trainer] Epoch 151 | train=100.00% val=87.17% gap=+12.83 | loss=0.7120 | lr=0.00092 | t/ep=  1.3s t/eval= 0.2s | rem=   104s
+  [Trainer] Epoch 152 | train=99.96% val=87.25% gap=+12.71 | loss=0.7129 | lr=0.00087 | t/ep=  1.3s t/eval= 0.2s | rem=   102s
+  [Trainer] Epoch 153 | train=100.00% val=87.13% gap=+12.87 | loss=0.7131 | lr=0.00082 | t/ep=  1.3s t/eval= 0.2s | rem=   101s
+  [Trainer] Epoch 154 | train=100.00% val=87.21% gap=+12.79 | loss=0.7132 | lr=0.00077 | t/ep=  1.3s t/eval= 0.2s | rem=    99s
+  [Trainer] Epoch 155 | train=99.94% val=87.13% gap=+12.81 | loss=0.7136 | lr=0.00073 | t/ep=  1.3s t/eval= 0.2s | rem=    98s
+  [Trainer] Epoch 156 | train=100.00% val=87.05% gap=+12.95 | loss=0.7126 | lr=0.00069 | t/ep=  1.3s t/eval= 0.2s | rem=    96s
+  [Trainer] Epoch 157 | train=100.00% val=87.17% gap=+12.83 | loss=0.7124 | lr=0.00065 | t/ep=  1.3s t/eval= 0.2s | rem=    95s
+  [Trainer] Epoch 158 | train=99.98% val=87.25% gap=+12.73 | loss=0.7128 | lr=0.00061 | t/ep=  1.3s t/eval= 0.2s | rem=    93s
+  [Trainer] Epoch 159 | train=100.00% val=87.17% gap=+12.83 | loss=0.7124 | lr=0.00057 | t/ep=  1.3s t/eval= 0.2s | rem=    92s
+  [Trainer] Epoch 160 | train=99.98% val=87.29% gap=+12.69 | loss=0.7127 | lr=0.00053 | t/ep=  1.3s t/eval= 0.2s | rem=    90s
+  [Trainer] Epoch 161 | train=100.00% val=87.25% gap=+12.75 | loss=0.7117 | lr=0.00049 | t/ep=  1.3s t/eval= 0.2s | rem=    89s
+  [Trainer] Epoch 162 | train=100.00% val=87.29% gap=+12.71 | loss=0.7120 | lr=0.00046 | t/ep=  1.3s t/eval= 0.2s | rem=    87s
+  [Trainer] Epoch 163 | train=100.00% val=87.29% gap=+12.71 | loss=0.7113 | lr=0.00042 | t/ep=  1.3s t/eval= 0.2s | rem=    86s
+  [Trainer] Epoch 164 | train=100.00% val=87.21% gap=+12.79 | loss=0.7122 | lr=0.00039 | t/ep=  1.3s t/eval= 0.2s | rem=    84s
+  [Trainer] Epoch 165 | train=99.98% val=87.17% gap=+12.81 | loss=0.7120 | lr=0.00036 | t/ep=  1.3s t/eval= 0.2s | rem=    83s
+  [Trainer] Epoch 166 | train=100.00% val=87.33% gap=+12.67 | loss=0.7123 | lr=0.00033 | t/ep=  1.4s t/eval= 0.2s | rem=    81s
+  [Trainer] Epoch 167 | train=100.00% val=87.05% gap=+12.95 | loss=0.7124 | lr=0.00030 | t/ep=  1.3s t/eval= 0.2s | rem=    80s
+  [Trainer] Epoch 168 | train=99.98% val=87.05% gap=+12.93 | loss=0.7122 | lr=0.00027 | t/ep=  1.3s t/eval= 0.2s | rem=    78s
+  [Trainer] Epoch 169 | train=100.00% val=87.05% gap=+12.95 | loss=0.7121 | lr=0.00024 | t/ep=  1.3s t/eval= 0.2s | rem=    77s
+  [Trainer] Epoch 170 | train=100.00% val=87.25% gap=+12.75 | loss=0.7120 | lr=0.00022 | t/ep=  1.3s t/eval= 0.2s | rem=    75s
+  [Trainer] Epoch 171 | train=99.98% val=87.29% gap=+12.69 | loss=0.7127 | lr=0.00019 | t/ep=  1.3s t/eval= 0.2s | rem=    74s
+  [Trainer] Epoch 172 | train=100.00% val=87.17% gap=+12.83 | loss=0.7120 | lr=0.00017 | t/ep=  1.3s t/eval= 0.2s | rem=    72s
+  [Trainer] Epoch 173 | train=100.00% val=87.37% gap=+12.63 | loss=0.7114 | lr=0.00015 | t/ep=  1.3s t/eval= 0.2s | rem=    71s
+  [Trainer] Epoch 174 | train=100.00% val=87.37% gap=+12.63 | loss=0.7117 | lr=0.00013 | t/ep=  1.3s t/eval= 0.2s | rem=    69s
+  [Trainer] Epoch 175 | train=100.00% val=87.17% gap=+12.83 | loss=0.7119 | lr=0.00011 | t/ep=  1.3s t/eval= 0.2s | rem=    68s
+  [Trainer] Epoch 176 | train=100.00% val=87.13% gap=+12.87 | loss=0.7112 | lr=0.00010 | t/ep=  1.3s t/eval= 0.2s | rem=    66s
+  [Trainer] Epoch 177 | train=100.00% val=87.09% gap=+12.91 | loss=0.7118 | lr=0.00008 | t/ep=  1.3s t/eval= 0.2s | rem=    65s
+  [Trainer] Epoch 178 | train=99.98% val=87.02% gap=+12.97 | loss=0.7114 | lr=0.00007 | t/ep=  1.3s t/eval= 0.2s | rem=    63s
+  [Trainer] Epoch 179 | train=100.00% val=87.05% gap=+12.95 | loss=0.7118 | lr=0.00005 | t/ep=  1.3s t/eval= 0.3s | rem=    61s
+  [Trainer] Epoch 180 | train=100.00% val=87.09% gap=+12.91 | loss=0.7117 | lr=0.00004 | t/ep=  1.3s t/eval= 0.2s | rem=    60s
+  [Trainer] Epoch 181 | train=99.98% val=87.25% gap=+12.73 | loss=0.7123 | lr=0.00003 | t/ep=  1.4s t/eval= 0.2s | rem=    58s
+  [Trainer] Epoch 182 | train=100.00% val=86.98% gap=+13.02 | loss=0.7124 | lr=0.00002 | t/ep=  1.3s t/eval= 0.2s | rem=    57s
+  [Trainer] Epoch 183 | train=100.00% val=87.25% gap=+12.75 | loss=0.7114 | lr=0.00001 | t/ep=  1.3s t/eval= 0.2s | rem=    55s
+  [Trainer] Epoch 184 | train=99.98% val=87.17% gap=+12.81 | loss=0.7116 | lr=0.00001 | t/ep=  1.3s t/eval= 0.2s | rem=    54s
+  [Trainer] Epoch 185 | train=100.00% val=87.25% gap=+12.75 | loss=0.7112 | lr=0.00000 | t/ep=  1.3s t/eval= 0.2s | rem=    52s
+  [Trainer] Epoch 186 | train=100.00% val=87.17% gap=+12.83 | loss=0.7122 | lr=0.00000 | t/ep=  1.3s t/eval= 0.2s | rem=    51s
+[Trainer] summary: 186 epochs, best val 87.77% at epoch 135 (73% in), final train 100.00%
+
+=== Predicting ===
+  Allotted compute time remaining: ~50.83s
+Run time for Rhine: 309.316684268415
+Model Training and Prediction Complete
+finished dataset: Rhine
+done
+rm -Rf scoring
+mkdir scoring
+mkdir scoring/labels
+mkdir scoring/predictions
+rsync -avr --exclude='**/*x.npy' --exclude='**/train*.npy' --exclude='**/valid*.npy'   --include='**/test_y.npy' datasets/* scoring/labels/
+sending incremental file list
+Congo/
+Congo/metadata
+Congo/test_y.npy
+Ganges/
+Ganges/metadata
+Ganges/test_y.npy
+Rhine/
+Rhine/metadata
+Rhine/test_y.npy
+
+sent 27,264 bytes  received 142 bytes  54,812.00 bytes/sec
+total size is 26,729  speedup is 0.98
+cp -R package/predictions scoring
+cp evaluation/score.py scoring/score.py
+cd scoring; python3 score.py
+===========================================================================
+=============    Your Unseen Data 2026 Submission is scoring     =============
+===========================================================================
+== Scoring Ganges ==
+Raw Score:    26.667
+Adj Score:    -0.115
+Model Params: 1951590
+Runtime:      309.7s
+== Scoring Congo ==
+Raw Score:    68.200
+Adj Score:    2.518
+Model Params: 6321962
+Runtime:      308.3s
+== Scoring Rhine ==
+Raw Score:    87.530
+Adj Score:    -1.368
+Model Params: 1612875
+Runtime:      309.3s
+===========================
+Final Score: 1.035
+
