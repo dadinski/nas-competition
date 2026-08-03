@@ -755,8 +755,12 @@ evidence about how a small batch behaves on a scored dataset. The principled fol
 
 ### 7g. Test-suite notes
 
-Suites live in the session scratchpad; run them with the `stx_r` interpreter, passing the
-`submission_baseline` path as argv[1]:
+Suites now live in **`tests/` in the repository** (they were in a session scratchpad until
+2026-08-01 and would have been lost). Run them with the `stx_r` interpreter, passing the
+`submission_baseline` path as argv[1] — e.g. `python tests/test_changes.py submission_baseline`.
+`tests/README.md` documents all of them; `tests/experiments/` holds the A/B harnesses that
+produced the measurements this design rests on, `tests/diagnostics/` the one-off scripts behind
+numbers quoted in this file. Nothing in `tests/` ships in the submission zip.
 - `test_baseline.py` — the older consolidated suite.
 - `test_changes.py` — covers the 2026-07-28 changes: `derive_macro`/stem-stride table, a
   **regression guard that 28×28 cost is unchanged**, aliasing check (stem must use stride-2 convs
